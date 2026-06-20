@@ -1,0 +1,176 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+}
+
+// ─── ENUMS ───────────────────────────────────────────────────────────────────
+
+enum OrderStatus {
+  EN_ATTENTE
+  PAYEE
+  EN_PREPARATION
+  EXPEDIEE
+  LIVREE
+  ANNULEE
+}
+
+enum PaymentMethod {
+  CINETPAY
+  PAIEMENT_LIVRAISON
+}
+
+enum PaymentStatus {
+  EN_ATTENTE
+  REUSSIE
+  ECHOUEE
+  REMBOURSEE
+}
+
+enum EventType {
+  PAGE_VIEW
+  PRODUCT_VIEW
+  ADD_TO_CART
+  CHECKOUT_START
+  ORDER_PLACED
+}
+
+// ─── CATEGORY ────────────────────────────────────────────────────────────────
+
+model Category {
+  id        String    @id @default(cuid())
+  nom       String
+  slug      String    @unique
+  image     String?
+  actif     Boolean   @default(true)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  produits  Product[]
+
+  @@map("categories")
+}
+
+// ─── PRODUCT ─────────────────────────────────────────────────────────────────
+
+model Product {
+  id          String    @id @default(cuid())
+  nom         String
+  slug        String    @unique
+  description String?
+  prix        Decimal   @db.Decimal(10, 0)
+  images      String[]
+  actif       Boolean   @default(true)
+  featured    Boolean   @default(false)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  categorieId String    @map("categorie_id")
+  categorie   Category  @relation(fields: [categorieId], references: [id])
+
+  variantes   ProductVariant[]
+  analyticsEvents AnalyticsEvent[]
+
+  @@map("products")
+}
+
+// ─── PRODUCT VARIANT ─────────────────────────────────────────────────────────
+
+model ProductVariant {
+  id        String  @id @default(cuid())
+  taille    String?
+  couleur   String?
+  stock     Int     @default(0)
+  sku       String? @unique
+  prix      Decimal? @db.Decimal(10, 0) // prix spécifique à la variante (optionnel, sinon hérite du produit)
+
+  productId String  @map("product_id")
+  produit   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  orderItems OrderItem[]
+
+  @@map("product_variants")
+}
+
+// ─── ORDER ───────────────────────────────────────────────────────────────────
+
+model Order {
+  id              String        @id @default(cuid())
+  // Infos client
+  clientNom       String        @map("client_nom")
+  clientTelephone String        @map("client_telephone")
+  clientAdresse   String        @map("client_adresse")
+  clientVille     String        @map("client_ville")
+  // Commande
+  statut          OrderStatus   @default(EN_ATTENTE)
+  modePaiement    PaymentMethod @map("mode_paiement")
+  statutPaiement  PaymentStatus @default(EN_ATTENTE) @map("statut_paiement")
+  montantTotal    Decimal       @db.Decimal(10, 0) @map("montant_total")
+  // Référence CinetPay (si applicable)
+  cinetpayTxId    String?       @unique @map("cinetpay_tx_id")
+  // Notes internes
+  notes           String?
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  items           OrderItem[]
+
+  @@map("orders")
+}
+
+// ─── ORDER ITEM ───────────────────────────────────────────────────────────────
+
+model OrderItem {
+  id           String         @id @default(cuid())
+  quantite     Int
+  prixUnitaire Decimal        @db.Decimal(10, 0) @map("prix_unitaire")
+
+  orderId      String         @map("order_id")
+  ordre        Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  variantId    String         @map("variant_id")
+  variante     ProductVariant @relation(fields: [variantId], references: [id])
+
+  @@map("order_items")
+}
+
+// ─── STORE SETTINGS ──────────────────────────────────────────────────────────
+
+model StoreSettings {
+  id              String  @id @default(cuid())
+  nomBoutique     String  @default("KabiShop") @map("nom_boutique")
+  logoUrl         String? @map("logo_url")
+  telephone       String?
+  adresse         String?
+  ville           String? @default("Conakry")
+  pays            String? @default("Guinée")
+  whatsappNumber  String? @map("whatsapp_number")
+  facebookUrl     String? @map("facebook_url")
+  instagramUrl    String? @map("instagram_url")
+  email           String?
+  metaDescription String? @map("meta_description")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("store_settings")
+}
+
+// ─── ANALYTICS EVENT ─────────────────────────────────────────────────────────
+
+model AnalyticsEvent {
+  id        String    @id @default(cuid())
+  type      EventType
+  path      String?
+  sessionId String?   @map("session_id")
+  userAgent String?   @map("user_agent")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  productId String?   @map("product_id")
+  produit   Product?  @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([type])
+  @@index([createdAt])
+  @@index([productId])
+  @@map("analytics_events")
+}
