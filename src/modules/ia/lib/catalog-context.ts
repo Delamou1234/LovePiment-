@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache';
 import { prisma } from '@/shared/lib/prisma';
 
 export type ProduitCatalogueIa = {
@@ -10,7 +11,7 @@ export type ProduitCatalogueIa = {
   image: string | null;
 };
 
-export async function obtenirCatalogueIa(limit = 100): Promise<ProduitCatalogueIa[]> {
+async function chargerCatalogueIa(limit: number): Promise<ProduitCatalogueIa[]> {
   const produits = await prisma.product.findMany({
     where: { actif: true },
     include: { categorie: true },
@@ -27,6 +28,14 @@ export async function obtenirCatalogueIa(limit = 100): Promise<ProduitCatalogueI
     description: (p.description ?? '').slice(0, 160),
     image: p.images[0] ?? null,
   }));
+}
+
+export async function obtenirCatalogueIa(limit = 100): Promise<ProduitCatalogueIa[]> {
+  return unstable_cache(
+    () => chargerCatalogueIa(limit),
+    ['ia-catalogue', String(limit)],
+    { revalidate: 300, tags: ['products'] },
+  )();
 }
 
 export function formaterCataloguePourPrompt(catalogue: ProduitCatalogueIa[]): string {

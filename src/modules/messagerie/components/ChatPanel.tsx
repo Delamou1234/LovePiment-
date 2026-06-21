@@ -1,11 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, ImagePlus, Loader2 } from 'lucide-react';
 import type { ConversationDetailDto } from '../types';
-import { ChatMessageBubble } from './ChatMessageBubble';
 import { ChatInput } from './ChatInput';
+import { ChatMessageList } from './ChatMessageList';
 import { OnlineIndicator } from './OnlineIndicator';
+import { VoiceCallControls } from './VoiceCallControls';
+import { useFeatureFlags } from '@/shared/hooks/useFeatureFlags';
 import { chatSessionHeaders, getOrCreateChatSessionId } from '@/shared/lib/chat-session';
 
 type ChatMode = 'client' | 'admin';
@@ -33,18 +35,21 @@ export function ChatPanel({
   onBack,
   className = '',
 }: ChatPanelProps) {
+  const { appelsActifs } = useFeatureFlags();
   const [conversation, setConversation] = useState<ConversationDetailDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [connected, setConnected] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const participantId = mode === 'admin' ? 'vendeur-admin' : getOrCreateChatSessionId();
 
-  const headers = (): HeadersInit => {
+  const headers = useCallback((): HeadersInit => {
     if (mode === 'client') {
       return { 'Content-Type': 'application/json', ...chatSessionHeaders() };
     }
     return { 'Content-Type': 'application/json' };
-  };
+  }, [mode]);
 
   const load = useCallback(async () => {
     const res = await fetch(apiBase(mode, conversationId), { headers: headers() });
@@ -53,7 +58,7 @@ export function ChatPanel({
       setConversation(data.conversation);
     }
     setLoading(false);
-  }, [conversationId, mode]);
+  }, [conversationId, headers, mode]);
 
   useEffect(() => {
     load();
@@ -61,7 +66,7 @@ export function ChatPanel({
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [conversation?.messages.length]);
+  }, [conversation?.messages.length, uploading]);
 
   useEffect(() => {
     const session =
@@ -73,8 +78,12 @@ export function ChatPanel({
     es.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);
-        if (payload.type === 'update' && payload.conversation) {
-          setConversation(payload.conversation);
+        if (payload.type === 'update') {
+          if (payload.conversation) {
+            setConversation(payload.conversation);
+          } else if (payload.updatedAt) {
+            void load();
+          }
         }
       } catch {
         /* ignore */
@@ -87,58 +96,69 @@ export function ChatPanel({
 
   useEffect(() => {
     const ping = async (isTyping?: boolean) => {
-      await fetch(`${apiBase(mode, conversationId)}/presence`, {
-        method: 'POST',
-        headers: headers(),
-        body: JSON.stringify({ participantId, isTyping }),
-      });
+      try {
+        await fetch(`${apiBase(mode, conversationId)}/presence`, {
+          method: 'POST',
+          headers: headers(),
+          body: JSON.stringify({ participantId, isTyping }),
+        });
+      } catch {
+        /* serveur indisponible ou onglet en arrière-plan */
+      }
     };
 
     ping();
-    const interval = setInterval(() => ping(), 20_000);
+    const interval = setInterval(() => ping(), 45_000);
     return () => clearInterval(interval);
-  }, [conversationId, mode, participantId]);
+  }, [conversationId, headers, mode, participantId]);
 
   const sendMessage = async (body: Record<string, unknown>) => {
-    await fetch(`${apiBase(mode, conversationId)}/messages`, {
+    const res = await fetch(`${apiBase(mode, conversationId)}/messages`, {
       method: 'POST',
       headers: headers(),
       body: JSON.stringify(body),
     });
+    if (!res.ok) throw new Error('send_failed');
     await fetch(`${apiBase(mode, conversationId)}/read`, {
       method: 'PATCH',
       headers: headers(),
     });
+    await load();
   };
 
   const onSendText = async (text: string) => {
     await sendMessage({ type: 'TEXT', contenu: text });
   };
 
-  const onUpload = async (file: File, dureeMs?: number) => {
-    const form = new FormData();
-    form.append('conversationId', conversationId);
-    form.append('file', file);
+  const onUpload = async (file: File, dureeMs?: number, caption?: string) => {
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append('conversationId', conversationId);
+      form.append('file', file);
 
-    const uploadHeaders: HeadersInit =
-      mode === 'client' ? chatSessionHeaders() : {};
+      const uploadHeaders: HeadersInit = mode === 'client' ? chatSessionHeaders() : {};
 
-    const uploadRes = await fetch('/api/messagerie/upload', {
-      method: 'POST',
-      headers: uploadHeaders,
-      body: form,
-    });
+      const uploadRes = await fetch('/api/messagerie/upload', {
+        method: 'POST',
+        headers: uploadHeaders,
+        body: form,
+      });
 
-    if (!uploadRes.ok) return;
-    const uploaded = await uploadRes.json();
+      if (!uploadRes.ok) throw new Error('upload_failed');
+      const uploaded = await uploadRes.json();
 
-    await sendMessage({
-      type: uploaded.type,
-      fichierUrl: uploaded.url,
-      fichierNom: uploaded.nom,
-      fichierTaille: uploaded.taille,
-      dureeMs,
-    });
+      await sendMessage({
+        type: uploaded.type,
+        contenu: caption,
+        fichierUrl: uploaded.url,
+        fichierNom: uploaded.nom,
+        fichierTaille: uploaded.taille,
+        dureeMs,
+      });
+    } finally {
+      setUploading(false);
+    }
   };
 
   const onTyping = (typing: boolean) => {
@@ -157,7 +177,7 @@ export function ChatPanel({
   if (loading) {
     return (
       <div className={`flex items-center justify-center py-16 ${className}`}>
-        <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+        <Loader2 className="h-6 w-6 animate-spin text-olive" />
       </div>
     );
   }
@@ -171,47 +191,77 @@ export function ChatPanel({
   }
 
   return (
-    <div className={`flex flex-col h-full min-h-0 bg-white ${className}`}>
-      <div className="flex items-center gap-3 border-b border-zinc-100 px-4 py-3 shrink-0">
+    <div
+      className={`flex flex-col h-full min-h-0 bg-[#e8e4dc] ${className}`}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragOver(true);
+      }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setDragOver(false);
+        const file = e.dataTransfer.files?.[0];
+        if (file?.type.startsWith('image/')) void onUpload(file);
+      }}
+    >
+      <div className="flex items-center gap-3 border-b border-beige-border/80 bg-white px-4 py-3 shrink-0 relative shadow-sm">
         {onBack && (
-          <button type="button" onClick={onBack} className="rounded-full p-1.5 hover:bg-zinc-100">
+          <button type="button" onClick={onBack} className="rounded-full p-1.5 hover:bg-cream">
             <ArrowLeft className="h-4 w-4" />
           </button>
         )}
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-olive/10 text-sm font-bold text-olive">
+          {mode === 'client' ? 'K' : conversation.clientNom.charAt(0).toUpperCase()}
+        </div>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-sm text-zinc-900 truncate">
             {title ?? conversation.clientNom}
           </p>
           <div className="flex items-center gap-2 mt-0.5">
             <OnlineIndicator enLigne={enLigne} size="sm" />
-            {connected && (
-              <span className="text-[10px] text-emerald-600">· Temps réel</span>
-            )}
+            <span className="text-[11px] text-zinc-500">
+              {enLigne ? 'En ligne' : 'Hors ligne'}
+              {connected && ' · connecté'}
+            </span>
             {subtitle && (
-              <span className="text-[10px] text-zinc-400 truncate">{subtitle}</span>
+              <span className="hidden sm:inline text-[10px] text-zinc-400 truncate">· {subtitle}</span>
             )}
           </div>
         </div>
+        {appelsActifs && (
+          <VoiceCallControls
+            conversationId={conversationId}
+            mode={mode}
+            peerLabel={mode === 'client' ? 'Support KabiShop' : conversation.clientNom}
+          />
+        )}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 min-h-0">
-        {conversation.messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.senderRole === (mode === 'client' ? 'CLIENT' : 'VENDEUR') ? 'justify-end' : 'justify-start'}`}
-          >
-            <ChatMessageBubble
-              message={msg}
-              isMine={msg.senderRole === (mode === 'client' ? 'CLIENT' : 'VENDEUR')}
-            />
+      <div className="relative flex-1 min-h-0 overflow-y-auto">
+        {dragOver && (
+          <div className="absolute inset-3 z-10 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-olive bg-olive/10 backdrop-blur-sm">
+            <ImagePlus className="h-10 w-10 text-olive mb-2" />
+            <p className="text-sm font-semibold text-olive">Déposez votre image ici</p>
           </div>
-        ))}
-        {isTyping && (
-          <p className="text-xs text-zinc-400 italic px-1">
-            {mode === 'client' ? 'Le vendeur' : 'Le client'} est en train d&apos;écrire…
-          </p>
         )}
-        <div ref={bottomRef} />
+
+        {uploading && (
+          <div className="sticky top-0 z-10 flex items-center justify-center gap-2 bg-olive/90 px-3 py-2 text-xs font-medium text-white">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            Envoi en cours…
+          </div>
+        )}
+
+        <ChatMessageList
+          messages={conversation.messages}
+          mode={mode}
+          isTyping={isTyping}
+          typingLabel={
+            mode === 'client' ? "L'équipe KabiShop écrit…" : `${conversation.clientNom} écrit…`
+          }
+          bottomRef={bottomRef}
+        />
       </div>
 
       <ChatInput onSendText={onSendText} onUpload={onUpload} onTyping={onTyping} />

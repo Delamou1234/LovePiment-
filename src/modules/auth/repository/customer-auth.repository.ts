@@ -40,6 +40,13 @@ export class CustomerAuthRepository {
     });
   }
 
+  async mettreAJourAvatarUrl(id: string, avatarUrl: string | null) {
+    return prisma.customer.update({
+      where: { id },
+      data: { avatarUrl },
+    });
+  }
+
   async changerMotDePasse(id: string, ancien: string, nouveau: string): Promise<'ok' | 'invalid' | 'no_password'> {
     const customer = await this.trouverParId(id);
     if (!customer?.passwordHash) return 'no_password';

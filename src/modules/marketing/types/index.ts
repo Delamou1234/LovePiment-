@@ -50,3 +50,23 @@ export type CreerFlashSaleDto = {
   actif?: boolean;
   productIds: string[];
 };
+
+export type FilleulResume = {
+  id: string;
+  nom: string;
+  inscritLe: string;
+  premiereCommandePassee: boolean;
+};
+
+export type ParrainageStatut = {
+  monCode: string;
+  cheminPartage: string;
+  parrainageActif: boolean;
+  parrain: { nom: string; code: string } | null;
+  peutRattacherParrain: boolean;
+  codePourCheckout: string | null;
+  remiseFilleulPct: number;
+  pointsParrain: number;
+  filleuls: FilleulResume[];
+  filleulsCount: number;
+};

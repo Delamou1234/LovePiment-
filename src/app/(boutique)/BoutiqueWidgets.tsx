@@ -4,11 +4,6 @@ import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { usePageTracking } from '@/shared/hooks/useTracking';
 
-const CartDrawer = dynamic(
-  () => import('@/shared/ui/CartDrawer').then((m) => ({ default: m.CartDrawer })),
-  { ssr: false },
-);
-
 const AssistantWidget = dynamic(
   () =>
     import('@/modules/ia/components/AssistantWidget').then((m) => ({
@@ -45,7 +40,6 @@ export function BoutiqueWidgets() {
 
   return (
     <>
-      <CartDrawer />
       {deferSocial && (
         <>
           <AssistantWidget open={assistantOpen} onOpenChange={setAssistantOpen} />

@@ -1,7 +1,8 @@
 import { mkdir, writeFile } from 'fs/promises';
 import path from 'path';
 import { NextRequest, NextResponse } from 'next/server';
-import { getClientSessionFromRequest, requireAdmin } from '@/modules/messagerie/lib/chat-auth';
+import { getClientAccessFromRequest } from '@/modules/messagerie/lib/client-context';
+import { requireAdmin } from '@/modules/messagerie/lib/chat-auth';
 import { conversationService } from '@/modules/messagerie/services/conversation.service';
 
 const MAX_IMAGE = 5 * 1024 * 1024;
@@ -54,12 +55,16 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = await requireAdmin();
-  const sessionId = getClientSessionFromRequest(request);
+  const access = await getClientAccessFromRequest(request);
 
   if (admin) {
     // admin ok
-  } else if (sessionId) {
-    const allowed = await conversationService.peutAccederClient(conversationId, sessionId);
+  } else if (access) {
+    const allowed = await conversationService.peutAccederClient(
+      conversationId,
+      access.sessionId,
+      access.userId,
+    );
     if (!allowed) {
       return NextResponse.json({ message: 'Non autorisé' }, { status: 403 });
     }

@@ -7,7 +7,7 @@ import {
 } from '../lib/catalog-context';
 import type { ProduitRecommande } from '../types';
 
-const SYSTEM = `Tu es le moteur de recommandations KabiShop (parfums, huiles corporelles et capillaires, Guinée).
+const SYSTEM = `Tu es le moteur de recommandations KabiShop (parfums, huiles pour la peau, crèmes corporelles, Guinée).
 Sélectionne les produits les plus pertinents pour le client selon son historique de navigation et panier.
 Réponds en JSON avec productIds (tableau d'IDs exacts du catalogue) et reasons (objet id→raison courte en français).`;
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { productService } from '@/modules/produits/services/product.service';
+import { cachePublic } from '@/shared/lib/http-cache';
 
 // ─── Schéma de validation (Zod) ───────────────────────────────────────────────
 
@@ -60,7 +61,21 @@ export async function GET(request: NextRequest) {
       { page, limit },
     );
 
-    return NextResponse.json(result);
+    const isDefaultCatalog =
+      page === 1 &&
+      limit === 12 &&
+      !categorieSlug &&
+      !taille &&
+      !couleur &&
+      !marque &&
+      !enStock &&
+      prixMin === undefined &&
+      prixMax === undefined &&
+      !search;
+
+    return NextResponse.json(result, {
+      headers: isDefaultCatalog ? cachePublic(60, 120) : undefined,
+    });
   } catch (error) {
     console.error('[GET /api/produits]', error);
     return NextResponse.json(

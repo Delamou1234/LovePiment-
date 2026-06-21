@@ -3,9 +3,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Loader2, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Loader2, MessageSquare, Star } from 'lucide-react';
 import { ReviewForm } from './ReviewForm';
 import type { AvisEligible } from '../types';
+import {
+  COMPTE_CARD,
+  COMPTE_CARD_PAD,
+  COMPTE_SECTION_DESC,
+  COMPTE_SECTION_TITLE,
+} from '@/modules/compte/components/compte-ui';
 
 export function CompteAvisSection() {
   const [eligibles, setEligibles] = useState<AvisEligible[]>([]);
@@ -31,21 +37,22 @@ export function CompteAvisSection() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+      <div className="flex justify-center py-16">
+        <Loader2 className="h-6 w-6 animate-spin text-olive" />
       </div>
     );
   }
 
   if (selected) {
     return (
-      <div className="space-y-4">
+      <div className={`${COMPTE_CARD} ${COMPTE_CARD_PAD} space-y-6`}>
         <button
           type="button"
           onClick={() => setSelected(null)}
-          className="text-sm text-[#4a5240] hover:underline"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-olive hover:text-olive-dark transition"
         >
-          ← Retour
+          <ArrowLeft className="h-4 w-4" />
+          Retour aux avis
         </button>
         <ReviewForm
           productId={selected.productId}
@@ -61,32 +68,43 @@ export function CompteAvisSection() {
   }
 
   return (
-    <section className="rounded-2xl border border-[#ebe4d8] bg-white p-6 md:p-8 shadow-sm">
-      <h2 className="text-lg font-bold text-zinc-900 flex items-center gap-2 mb-2">
-        <MessageSquare className="h-5 w-5 text-[#4a5240]" />
-        Mes avis
-      </h2>
-      <p className="text-sm text-zinc-500 mb-6">
-        Notez les produits reçus — seuls les achats livrés peuvent être évalués.
-      </p>
+    <section className={`${COMPTE_CARD} ${COMPTE_CARD_PAD}`}>
+      <div className="mb-6 flex items-start gap-3 lg:hidden">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-olive-light text-olive">
+          <MessageSquare className="h-5 w-5" />
+        </div>
+        <div>
+          <h2 className={COMPTE_SECTION_TITLE}>Mes avis</h2>
+          <p className={COMPTE_SECTION_DESC}>
+            Partagez votre expérience après livraison
+          </p>
+        </div>
+      </div>
 
       {eligibles.length === 0 ? (
-        <p className="text-sm text-zinc-500">
-          Aucun produit en attente d&apos;avis. Passez commande et attendez la livraison pour
-          partager votre expérience.
-        </p>
+        <div className="py-12 text-center">
+          <Star className="mx-auto h-8 w-8 text-zinc-300 mb-3" />
+          <p className="font-serif text-lg font-bold text-zinc-900">Rien à noter pour l&apos;instant</p>
+          <p className="mt-2 text-sm text-zinc-500 max-w-md mx-auto leading-relaxed">
+            Après réception de votre commande, vos produits éligibles apparaîtront ici pour que
+            vous puissiez laisser un avis vérifié.
+          </p>
+        </div>
       ) : (
-        <ul className="divide-y divide-[#ebe4d8]">
+        <ul className="space-y-3">
           {eligibles.map((e) => (
-            <li key={`${e.orderId}-${e.productId}`} className="py-4 flex items-center gap-4">
+            <li
+              key={`${e.orderId}-${e.productId}`}
+              className="flex items-center gap-4 rounded-xl border border-beige-border bg-cream/30 p-4 transition hover:bg-cream hover:shadow-sm"
+            >
               {e.productImage && (
-                <div className="relative h-14 w-14 rounded-lg overflow-hidden border border-[#ebe4d8] shrink-0">
+                <div className="relative h-16 w-16 rounded-xl overflow-hidden ring-1 ring-beige-border shrink-0">
                   <Image src={e.productImage} alt="" fill className="object-cover" unoptimized />
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-zinc-900 truncate">{e.productNom}</p>
-                <p className="text-xs text-zinc-500">
+                <p className="font-semibold text-zinc-900 truncate">{e.productNom}</p>
+                <p className="text-xs text-zinc-500 mt-1">
                   Livré le{' '}
                   {new Intl.DateTimeFormat('fr-FR', {
                     day: 'numeric',
@@ -97,7 +115,7 @@ export function CompteAvisSection() {
               <button
                 type="button"
                 onClick={() => setSelected(e)}
-                className="text-sm font-semibold text-[#4a5240] hover:underline shrink-0"
+                className="shrink-0 rounded-full bg-olive px-4 py-2 text-sm font-semibold text-white hover:bg-olive-dark transition"
               >
                 Noter
               </button>
@@ -106,9 +124,9 @@ export function CompteAvisSection() {
         </ul>
       )}
 
-      <p className="text-xs text-zinc-400 mt-6">
-        Vous pouvez aussi laisser un avis directement sur la{' '}
-        <Link href="/produits" className="text-[#4a5240] hover:underline">
+      <p className="text-xs text-zinc-400 mt-6 pt-6 border-t border-beige-border/60">
+        Vous pouvez aussi laisser un avis sur la{' '}
+        <Link href="/produits" className="font-medium text-olive hover:text-olive-dark">
           fiche produit
         </Link>
         .

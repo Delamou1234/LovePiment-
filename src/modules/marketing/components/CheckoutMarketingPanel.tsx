@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { formaterPrixGN } from '@/shared/lib/shipping';
 import { LOYALTY } from '@/modules/marketing/lib/constants';
 import type { TotauxMarketing } from '@/modules/marketing/types';
+import { useFeatureFlags } from '@/shared/hooks/useFeatureFlags';
 
 type Props = {
   sousTotal: number;
@@ -26,6 +27,7 @@ export function CheckoutMarketingPanel({
   onTotauxChange,
   onMarketingChange,
 }: Props) {
+  const { parrainageActif } = useFeatureFlags();
   const [codeCoupon, setCodeCoupon] = useState('');
   const [codeParrainage, setCodeParrainage] = useState('');
   const [pointsUtilises, setPointsUtilises] = useState(0);
@@ -34,6 +36,17 @@ export function CheckoutMarketingPanel({
   const [loadingCoupon, setLoadingCoupon] = useState(false);
   const [loadingTotaux, setLoadingTotaux] = useState(false);
   const [totaux, setTotaux] = useState<TotauxMarketing | null>(null);
+
+  useEffect(() => {
+    if (!parrainageActif) return;
+    fetch('/api/compte/parrainage')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const code = data?.statut?.codePourCheckout as string | null | undefined;
+        if (code) setCodeParrainage(code);
+      })
+      .catch(() => {});
+  }, [parrainageActif]);
 
   const recalculer = useCallback(async () => {
     setLoadingTotaux(true);
@@ -46,7 +59,7 @@ export function CheckoutMarketingPanel({
           clientVille,
           codeCoupon: couponOk ? codeCoupon : null,
           pointsUtilises,
-          codeParrainage: codeParrainage.trim() || null,
+          codeParrainage: parrainageActif ? codeParrainage.trim() || null : null,
         }),
       });
       const data = await res.json();
@@ -56,7 +69,7 @@ export function CheckoutMarketingPanel({
       onMarketingChange({
         codeCoupon: couponOk ? codeCoupon.trim().toUpperCase() : null,
         pointsUtilises,
-        codeParrainage: codeParrainage.trim().toUpperCase() || null,
+        codeParrainage: parrainageActif ? codeParrainage.trim().toUpperCase() || null : null,
       });
     } catch (err) {
       setTotaux(null);
@@ -71,6 +84,7 @@ export function CheckoutMarketingPanel({
     couponOk,
     pointsUtilises,
     codeParrainage,
+    parrainageActif,
     onTotauxChange,
     onMarketingChange,
   ]);
@@ -164,6 +178,7 @@ export function CheckoutMarketingPanel({
         </div>
       )}
 
+      {parrainageActif && (
       <div className="space-y-2">
         <label className="text-xs font-black uppercase text-zinc-500 tracking-wider flex items-center gap-1">
           <Users className="h-3.5 w-3.5" /> Code parrainage (1ère commande)
@@ -175,7 +190,13 @@ export function CheckoutMarketingPanel({
           placeholder="Ex: KABI4X2YZ"
           className="input-kabishop uppercase"
         />
+        {codeParrainage && (
+          <p className="text-[11px] text-emerald-700 font-medium">
+            Remise parrainage −{Math.round(LOYALTY.FILLEUL_REMISE_PCT * 100)}% sur votre première commande
+          </p>
+        )}
       </div>
+      )}
 
       {loadingTotaux && (
         <p className="text-xs text-zinc-400 flex items-center gap-1">

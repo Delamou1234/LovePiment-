@@ -78,8 +78,7 @@ export function LoginForm({
         return;
       }
 
-      router.push(data.redirect ?? safeRedirect);
-      router.refresh();
+      router.replace(data.redirect ?? safeRedirect);
     } catch {
       setErrorMsg('Erreur réseau. Réessayez.');
     } finally {

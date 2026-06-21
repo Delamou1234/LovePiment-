@@ -1,6 +1,20 @@
 import { customerAuthRepository } from '@/modules/auth/repository/customer-auth.repository';
 import { marketingService } from '@/modules/marketing/services/marketing.service';
+import { unlink } from 'fs/promises';
+import { join } from 'path';
 import type { CustomerOrderResume, CustomerProfile, MettreAJourProfilDto } from '@/modules/compte/types';
+
+function isAvatarLocal(url: string | null | undefined): url is string {
+  return Boolean(url?.startsWith('/uploads/avatars/'));
+}
+
+async function supprimerAvatarLocal(url: string) {
+  try {
+    await unlink(join(process.cwd(), 'public', url));
+  } catch {
+    /* ignore */
+  }
+}
 
 export class CustomerProfileService {
   async obtenirProfil(customerId: string): Promise<CustomerProfile | null> {
@@ -37,6 +51,30 @@ export class CustomerProfileService {
   async mettreAJourProfil(customerId: string, dto: MettreAJourProfilDto) {
     const updated = await customerAuthRepository.mettreAJourProfil(customerId, dto);
     return this.obtenirProfil(updated.id);
+  }
+
+  async mettreAJourAvatar(customerId: string, avatarUrl: string) {
+    const customer = await customerAuthRepository.trouverParId(customerId);
+    if (!customer) return null;
+
+    if (isAvatarLocal(customer.avatarUrl)) {
+      await supprimerAvatarLocal(customer.avatarUrl);
+    }
+
+    await customerAuthRepository.mettreAJourAvatarUrl(customerId, avatarUrl);
+    return this.obtenirProfil(customerId);
+  }
+
+  async supprimerAvatar(customerId: string) {
+    const customer = await customerAuthRepository.trouverParId(customerId);
+    if (!customer) return null;
+
+    if (isAvatarLocal(customer.avatarUrl)) {
+      await supprimerAvatarLocal(customer.avatarUrl);
+    }
+
+    await customerAuthRepository.mettreAJourAvatarUrl(customerId, null);
+    return this.obtenirProfil(customerId);
   }
 
   async changerMotDePasse(customerId: string, ancien: string, nouveau: string) {

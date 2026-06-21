@@ -24,20 +24,30 @@ export class ReviewRepository {
   }
 
   async statsProduit(productId: string) {
-    const rows = await prisma.productReview.findMany({
-      where: { productId, statut: 'APPROUVE' },
-      select: { note: true },
-    });
+    const [aggregate, groups] = await Promise.all([
+      prisma.productReview.aggregate({
+        where: { productId, statut: 'APPROUVE' },
+        _avg: { note: true },
+        _count: true,
+      }),
+      prisma.productReview.groupBy({
+        by: ['note'],
+        where: { productId, statut: 'APPROUVE' },
+        _count: true,
+      }),
+    ]);
 
     const distribution = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 } as Record<1 | 2 | 3 | 4 | 5, number>;
-    for (const r of rows) {
-      const n = Math.min(5, Math.max(1, r.note)) as 1 | 2 | 3 | 4 | 5;
-      distribution[n] += 1;
+    for (const row of groups) {
+      const n = Math.min(5, Math.max(1, row.note)) as 1 | 2 | 3 | 4 | 5;
+      distribution[n] = row._count;
     }
 
-    const total = rows.length;
+    const total = aggregate._count;
     const moyenne =
-      total > 0 ? Math.round((rows.reduce((s, r) => s + r.note, 0) / total) * 10) / 10 : 0;
+      total > 0 && aggregate._avg.note != null
+        ? Math.round(aggregate._avg.note * 10) / 10
+        : 0;
 
     return { moyenne, total, distribution };
   }

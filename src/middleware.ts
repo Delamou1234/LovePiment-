@@ -5,5 +5,12 @@ export function middleware(request: import('next/server').NextRequest) {
 }
 
 export const config = {
-  matcher: ['/commande', '/commande/:path*', '/connexion', '/inscription'],
+  matcher: [
+    '/commande',
+    '/commande/:path*',
+    '/connexion',
+    '/inscription',
+    '/compte',
+    '/compte/:path*',
+  ],
 };

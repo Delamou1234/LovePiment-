@@ -3,44 +3,63 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Sparkles, Truck } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Sparkles, Truck } from 'lucide-react';
 
 const SLIDE_DURATION_MS = 6500;
 
 const HERO_SLIDES = [
   {
     id: 'parfums',
-    src: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=1920&q=90&auto=format&fit=crop',
+    src: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=1920&h=1080&fit=crop&crop=center&q=90&auto=format',
     alt: 'Collection de parfums',
-    position: 'object-[center_45%]',
-    tag: 'Nouvelle collection',
+    position: 'object-center',
+    tag: 'Parfums',
     title: 'Parfums d\'exception',
-    subtitle: 'Notes florales, boisées & orientales sélectionnées pour vous.',
-    cta: { label: 'Shop parfums', href: '/produits?categorie=parfums' },
+    subtitle: 'Oriental, floral ou gourmand — trouvez la fragrance qui vous ressemble.',
+    cta: { label: 'Découvrir les parfums', href: '/produits?categorie=parfums' },
   },
   {
     id: 'huiles-corps',
-    src: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=1920&q=90&auto=format&fit=crop',
-    alt: 'Huiles corporelles',
+    src: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=1920&h=1080&fit=crop&crop=center&q=90&auto=format',
+    alt: 'Huiles pour la peau',
     position: 'object-center',
-    tag: 'Soin premium',
-    title: 'Huiles corps & bien-être',
-    subtitle: 'Hydratation intense, parfums naturels, peau éclatante.',
-    cta: { label: 'Shop huiles', href: '/produits?categorie=huiles-corps' },
+    tag: 'Huiles peau',
+    title: 'Huiles pour la peau',
+    subtitle: 'Karité, coco, amande douce — nourrissent, hydratent et parfument votre peau.',
+    cta: { label: 'Voir les huiles', href: '/produits?categorie=huiles-corps' },
   },
   {
-    id: 'eaux-parfum',
-    src: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=1920&q=90&auto=format&fit=crop',
-    alt: 'Eaux de parfum',
-    position: 'object-[center_40%]',
-    tag: 'Best-sellers',
-    title: 'Eaux de parfum',
-    subtitle: 'Fraîcheur durable pour le quotidien à Conakry.',
-    cta: { label: 'Découvrir', href: '/produits?categorie=eaux-parfum' },
+    id: 'cremes-corporelles',
+    src: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=1920&h=1080&fit=crop&crop=center&q=90&auto=format',
+    alt: 'Crèmes corporelles',
+    position: 'object-center',
+    tag: 'Soin corps',
+    title: 'Crèmes corporelles',
+    subtitle: 'Textures onctueuses pour une peau douce, hydratée et délicatement parfumée.',
+    cta: { label: 'Découvrir les crèmes', href: '/produits?categorie=cremes-corporelles' },
   },
 ];
 
-export function HomeHero() {
+export type HeroCategoryLink = {
+  nom: string;
+  slug: string;
+  image: string;
+};
+
+export type HeroFeaturedPeek = {
+  nom: string;
+  slug: string;
+  image: string;
+  prix: number;
+  categorie: string;
+};
+
+type HomeHeroProps = {
+  categories?: HeroCategoryLink[];
+  featured?: HeroFeaturedPeek | null;
+};
+
+export function HomeHero({ categories = [], featured }: HomeHeroProps) {
   const [slideIndex, setSlideIndex] = useState(0);
   const [progressKey, setProgressKey] = useState(0);
 
@@ -60,45 +79,46 @@ export function HomeHero() {
   }, [nextSlide]);
 
   const slide = HERO_SLIDES[slideIndex];
+  const quickCategories = categories.slice(0, 3);
 
   return (
-    <section className="relative isolate min-h-[540px] h-[min(580px,85vh)] md:min-h-[620px] md:h-[min(680px,88vh)] overflow-hidden bg-[#1a1a18]">
-      {/* Carrousel */}
+    <section className="relative isolate min-h-[420px] h-[min(480px,78vh)] sm:min-h-[500px] sm:h-[min(540px,82vh)] md:min-h-[620px] md:h-[min(680px,88vh)] overflow-hidden bg-[#1a1a18]">
       <div className="absolute inset-0">
         {HERO_SLIDES.map((s, index) => {
           const active = index === slideIndex;
           return (
             <div
               key={s.id}
-              className={`absolute inset-0 transition-opacity duration-[1200ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${
+              className={`absolute inset-0 overflow-hidden transition-opacity duration-[1200ms] ease-[cubic-bezier(0.4,0,0.2,1)] ${
                 active ? 'opacity-100 z-[1]' : 'opacity-0 z-0'
               }`}
               aria-hidden={!active}
             >
-              <Image
-                src={s.src}
-                alt={s.alt}
-                fill
-                priority={index === 0}
-                quality={90}
-                sizes="100vw"
-                className={`object-cover ${s.position} ${
-                  active ? 'animate-heroZoomSlow' : 'scale-[1.03]'
-                }`}
-              />
+              {/* Zone élargie = moins de rognage (object-cover moins agressif) */}
+              <div className="absolute -inset-[12%] sm:-inset-[10%] md:-inset-[8%]">
+                <Image
+                  src={s.src}
+                  alt={s.alt}
+                  fill
+                  priority={index === 0}
+                  quality={90}
+                  sizes="100vw"
+                  className={`object-cover ${s.position}`}
+                  unoptimized
+                />
+              </div>
             </div>
           );
         })}
       </div>
 
-      <div className="absolute inset-0 z-[2] bg-gradient-to-r from-black/80 via-black/40 to-black/10" aria-hidden />
+      <div className="absolute inset-0 z-[2] bg-gradient-to-r from-black/80 via-black/45 to-black/20" aria-hidden />
       <div className="absolute inset-0 z-[2] bg-gradient-to-t from-black/50 via-transparent to-black/20" aria-hidden />
 
-      {/* Contenu e-commerce */}
-      <div className="relative z-10 flex h-full items-center pb-20 md:pb-24">
+      <div className="relative z-10 flex h-full items-center pb-16 sm:pb-20 md:pb-24">
         <div className="container-kabishop w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
-            <div className="lg:col-span-7 hero-content-enter" key={slide.id}>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+            <div className="lg:col-span-7 xl:col-span-8 hero-content-enter" key={slide.id}>
               <div className="flex flex-wrap items-center gap-3 mb-5">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-white">
                   <Sparkles className="h-3 w-3" />
@@ -111,72 +131,152 @@ export function HomeHero() {
               </div>
 
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/60 mb-3">
-                KabiShop · Parfums & Huiles
+                KabiShop · Parfums & soins du corps
               </p>
 
-              <h1 className="font-serif text-[2rem] leading-[1.1] font-bold tracking-tight text-white sm:text-5xl md:text-[3.25rem]">
+              <h1 className="font-serif text-[1.75rem] leading-[1.12] font-bold tracking-tight text-white sm:text-5xl md:text-[3.25rem]">
                 {slide.title}
               </h1>
 
-              <p className="mt-4 max-w-lg text-sm leading-relaxed text-white/80 md:text-base">
+              <p className="mt-3 sm:mt-4 max-w-lg text-sm leading-relaxed text-white/80 md:text-base">
                 {slide.subtitle}
               </p>
 
-              <div className="mt-8 flex flex-wrap items-center gap-4">
+              <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
                 <Link
                   href={slide.cta.href}
-                  className="group inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-bold text-zinc-900 shadow-xl shadow-black/25 transition hover:bg-[#faf7f2] hover:scale-[1.02]"
+                  className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-bold text-zinc-900 shadow-xl shadow-black/25 transition hover:bg-[#faf7f2] hover:scale-[1.02]"
                 >
                   {slide.cta.label}
                   <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
                 </Link>
                 <Link
                   href="/produits"
-                  className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 backdrop-blur-sm px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/20"
+                  className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full border border-white/30 bg-white/10 backdrop-blur-sm px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-white/20"
                 >
                   Toute la boutique
                 </Link>
               </div>
-            </div>
 
-            {/* Carte promo flottante — desktop */}
-            <div className="hidden lg:flex lg:col-span-5 justify-end">
-              <div className="w-full max-w-sm rounded-2xl border border-white/15 bg-white/10 backdrop-blur-xl p-6 shadow-2xl">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">
-                  Offre du moment
-                </p>
-                <p className="font-serif text-3xl font-bold text-white mt-2">-20%</p>
-                <p className="text-sm text-white/75 mt-1">
-                  Sur une sélection de parfums & huiles premium
-                </p>
-                <div className="mt-5 pt-5 border-t border-white/15 grid grid-cols-3 gap-3 text-center">
-                  <div>
-                    <p className="text-lg font-bold text-white">8+</p>
-                    <p className="text-[10px] text-white/50 mt-0.5">Produits</p>
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-white">100%</p>
-                    <p className="text-[10px] text-white/50 mt-0.5">Authentique</p>
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-white">7j/7</p>
-                    <p className="text-[10px] text-white/50 mt-0.5">Support</p>
+              {quickCategories.length > 0 && (
+                <div className="mt-6 lg:hidden -mx-1">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 mb-3">
+                    Collections
+                  </p>
+                  <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide snap-x snap-mandatory">
+                    {quickCategories.map((cat) => (
+                      <Link
+                        key={cat.slug}
+                        href={`/produits?categorie=${cat.slug}`}
+                        className="group flex shrink-0 snap-start items-center gap-2.5 rounded-xl border border-white/15 bg-black/30 backdrop-blur-sm px-3 py-2 min-w-[140px] max-w-[180px] transition hover:bg-white/10"
+                      >
+                        <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-lg ring-1 ring-white/20">
+                          <Image
+                            src={cat.image}
+                            alt={cat.nom}
+                            fill
+                            sizes="40px"
+                            className="object-cover"
+                            unoptimized={cat.image.startsWith('/')}
+                          />
+                        </div>
+                        <span className="text-xs font-semibold text-white line-clamp-2 leading-snug">
+                          {cat.nom}
+                        </span>
+                      </Link>
+                    ))}
                   </div>
                 </div>
+              )}
+            </div>
+
+            {/* Accès rapide — desktop */}
+            <div className="hidden lg:flex lg:col-span-5 xl:col-span-4 flex-col gap-4">
+              {quickCategories.length > 0 && (
+                <div className="rounded-2xl border border-white/10 bg-black/25 backdrop-blur-md p-5 shadow-2xl">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 mb-4">
+                    Explorer par collection
+                  </p>
+                  <ul className="space-y-2">
+                    {quickCategories.map((cat) => (
+                      <li key={cat.slug}>
+                        <Link
+                          href={`/produits?categorie=${cat.slug}`}
+                          className="group flex items-center gap-3 rounded-xl p-2 -mx-2 transition hover:bg-white/10"
+                        >
+                          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg ring-1 ring-white/20">
+                            <Image
+                              src={cat.image}
+                              alt={cat.nom}
+                              fill
+                              sizes="56px"
+                              className="object-cover transition duration-500 group-hover:scale-110"
+                              unoptimized={cat.image.startsWith('/')}
+                            />
+                          </div>
+                          <span className="flex-1 min-w-0">
+                            <span className="block text-sm font-semibold text-white truncate">
+                              {cat.nom}
+                            </span>
+                            <span className="block text-[11px] text-white/50 mt-0.5">
+                              Voir la collection
+                            </span>
+                          </span>
+                          <ArrowUpRight className="h-4 w-4 text-white/40 shrink-0 transition group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href="/produits"
+                    className="mt-4 flex items-center justify-center gap-1.5 text-xs font-semibold text-white/70 hover:text-white transition"
+                  >
+                    Toutes les catégories
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
+                </div>
+              )}
+
+              {featured && (
                 <Link
-                  href="/promos"
-                  className="mt-5 flex w-full items-center justify-center rounded-full bg-[#4a5240] py-3 text-sm font-semibold text-white hover:bg-[#3d4534] transition"
+                  href={`/produits/${featured.slug}`}
+                  className="group flex items-center gap-4 rounded-2xl border border-white/10 bg-white/95 p-4 shadow-2xl transition hover:shadow-white/10 hover:scale-[1.01]"
                 >
-                  Profiter de l&apos;offre
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-cream">
+                    {featured.image && (
+                      <Image
+                        src={featured.image}
+                        alt={featured.nom}
+                        fill
+                        sizes="80px"
+                        className="object-cover transition duration-500 group-hover:scale-105"
+                        unoptimized={featured.image.startsWith('/')}
+                      />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-olive">
+                      Coup de cœur
+                    </p>
+                    <p className="font-serif text-base font-bold text-zinc-900 line-clamp-1 mt-0.5">
+                      {featured.nom}
+                    </p>
+                    <p className="text-xs text-zinc-500 mt-0.5">{featured.categorie}</p>
+                    <p className="text-sm font-bold text-zinc-900 mt-1.5">
+                      {featured.prix.toLocaleString('fr-FR')} GN
+                    </p>
+                  </div>
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-olive text-white transition group-hover:bg-olive-dark">
+                    <ArrowUpRight className="h-4 w-4" />
+                  </span>
                 </Link>
-              </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Indicateurs */}
-      <div className="absolute bottom-8 left-1/2 z-[3] flex -translate-x-1/2 items-center gap-2 md:bottom-10">
+      <div className="absolute bottom-6 sm:bottom-8 left-1/2 z-[3] flex -translate-x-1/2 items-center gap-2 md:bottom-10">
         {HERO_SLIDES.map((s, index) => (
           <button
             key={s.id}

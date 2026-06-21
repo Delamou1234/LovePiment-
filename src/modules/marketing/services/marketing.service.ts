@@ -1,8 +1,9 @@
 import type { Prisma } from '@prisma/client';
 import { prisma } from '@/shared/lib/prisma';
+import { storeSettingsService } from '@/modules/admin/services/store-settings.service';
 import { calculerFraisLivraison } from '@/shared/lib/shipping';
 import { LOYALTY } from '../lib/constants';
-import { genererCodeParrainage } from '../lib/referral-code';
+import { cheminInscriptionParrainage, genererCodeParrainage, normaliserCodeParrainage } from '../lib/referral-code';
 import {
   marketingRepository,
   type MarketingRepository,
@@ -13,6 +14,7 @@ import type {
   CreerCouponDto,
   CreerFlashSaleDto,
   TotauxMarketing,
+  ParrainageStatut,
 } from '../types';
 
 export class MarketingService {
@@ -39,6 +41,81 @@ export class MarketingService {
       }
     }
     throw new Error('Impossible de générer un code parrainage');
+  }
+
+  async lierParrain(customerId: string, codeRaw: string): Promise<void> {
+    const flags = await storeSettingsService.getFeatureFlags();
+    if (!flags.parrainageActif) {
+      throw new Error('Le programme de parrainage est désactivé');
+    }
+
+    const code = normaliserCodeParrainage(codeRaw);
+    if (!code) throw new Error('Code parrainage requis');
+
+    const parrain = await this.repo.trouverClientParCodeParrainage(code);
+    if (!parrain) throw new Error('Code parrainage invalide');
+    if (parrain.id === customerId) {
+      throw new Error('Vous ne pouvez pas utiliser votre propre code');
+    }
+
+    const customer = await prisma.customer.findUnique({
+      where: { id: customerId },
+      select: { parrainId: true },
+    });
+    if (!customer) throw new Error('Compte introuvable');
+    if (customer.parrainId) throw new Error('Vous avez déjà un parrain');
+
+    const commandesPayees = await this.repo.compterCommandesPayees(customerId);
+    if (commandesPayees > 0) {
+      throw new Error('Le parrainage ne s\'applique qu\'avant votre première commande');
+    }
+
+    await prisma.customer.update({
+      where: { id: customerId },
+      data: { parrainId: parrain.id },
+    });
+  }
+
+  async obtenirStatutParrainage(customerId: string): Promise<ParrainageStatut> {
+    const flags = await storeSettingsService.getFeatureFlags();
+    const monCode = await this.ensureReferralCode(customerId);
+    const [client, commandesPayees, filleuls, filleulsCount] = await Promise.all([
+      this.repo.obtenirParrainageClient(customerId),
+      this.repo.compterCommandesPayees(customerId),
+      this.repo.listerFilleuls(customerId),
+      this.repo.compterFilleuls(customerId),
+    ]);
+
+    const parrain =
+      client?.parrain?.codeParrainage != null
+        ? {
+            nom: client.parrain.nom,
+            code: client.parrain.codeParrainage,
+          }
+        : null;
+
+    const peutRattacherParrain =
+      flags.parrainageActif && !client?.parrainId && commandesPayees === 0;
+    const codePourCheckout =
+      flags.parrainageActif && parrain?.code && commandesPayees === 0 ? parrain.code : null;
+
+    return {
+      monCode,
+      cheminPartage: cheminInscriptionParrainage(monCode),
+      parrain: flags.parrainageActif ? parrain : null,
+      peutRattacherParrain,
+      codePourCheckout,
+      parrainageActif: flags.parrainageActif,
+      remiseFilleulPct: Math.round(LOYALTY.FILLEUL_REMISE_PCT * 100),
+      pointsParrain: LOYALTY.PARRAIN_POINTS,
+      filleuls: filleuls.map((f) => ({
+        id: f.id,
+        nom: f.nom,
+        inscritLe: f.createdAt.toISOString(),
+        premiereCommandePassee: f._count.commandes > 0,
+      })),
+      filleulsCount,
+    };
   }
 
   async validerCoupon(code: string, sousTotal: number): Promise<CouponClient> {
@@ -118,6 +195,8 @@ export class MarketingService {
 
     let remiseParrainage = 0;
     if (input.codeParrainage?.trim() && input.customerId) {
+      const flags = await storeSettingsService.getFeatureFlags();
+      if (flags.parrainageActif) {
       const code = input.codeParrainage.trim().toUpperCase();
       const parrain = await this.repo.trouverClientParCodeParrainage(code);
       if (!parrain) throw new Error('Code parrainage invalide');
@@ -130,6 +209,7 @@ export class MarketingService {
         remiseParrainage = Math.round(apresCoupon * LOYALTY.FILLEUL_REMISE_PCT);
         codeParrainageUtilise = code;
         apresCoupon = Math.max(0, apresCoupon - remiseParrainage);
+      }
       }
     }
 

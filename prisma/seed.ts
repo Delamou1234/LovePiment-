@@ -14,11 +14,14 @@ const prisma = new PrismaClient({
 async function main() {
   console.log('🌱 Seeding KabiShop (parfums & huiles)...');
 
+  const { ensureDefaultAdmin } = await import('./ensure-admin');
+  await ensureDefaultAdmin(prisma);
+
   await prisma.storeSettings.upsert({
     where: { id: 'kabishop-settings' },
     update: {
       metaDescription:
-        'Parfums et huiles de qualité à Conakry, Guinée. Paiement Mobile Money et livraison rapide.',
+        'Parfums, huiles pour la peau et crèmes corporelles à Conakry, Guinée. Paiement Mobile Money et livraison rapide.',
     },
     create: {
       id: 'kabishop-settings',
@@ -29,8 +32,10 @@ async function main() {
       pays: 'Guinée',
       whatsappNumber: '224620000000',
       facebookUrl: 'https://www.facebook.com/kabishop',
+      parrainageActif: true,
+      appelsActifs: true,
       metaDescription:
-        'Parfums et huiles de qualité à Conakry, Guinée. Paiement Mobile Money et livraison rapide.',
+        'Parfums, huiles pour la peau et crèmes corporelles à Conakry, Guinée. Paiement Mobile Money et livraison rapide.',
     },
   });
 
@@ -81,6 +86,11 @@ async function main() {
       image: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=400&q=80',
     },
     {
+      slug: 'cremes-corporelles',
+      nom: 'Crèmes corporelles',
+      image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&q=80',
+    },
+    {
       slug: 'huiles-capillaires',
       nom: 'Huiles capillaires',
       image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&q=80',
@@ -113,6 +123,7 @@ async function main() {
     { slug: 'parfums-orientaux', nom: 'Parfums orientaux', parentSlug: 'parfums' },
     { slug: 'eaux-legere', nom: 'Eaux légères', parentSlug: 'eaux-parfum' },
     { slug: 'huiles-nourrissantes', nom: 'Huiles nourrissantes', parentSlug: 'huiles-corps' },
+    { slug: 'cremes-hydratantes', nom: 'Crèmes hydratantes', parentSlug: 'cremes-corporelles' },
     { slug: 'huiles-cheveux', nom: 'Soins cheveux', parentSlug: 'huiles-capillaires' },
   ];
 
@@ -198,6 +209,20 @@ async function main() {
       featured: true,
       categorieId: bySlug['huiles-corps'].id,
       variantes: [{ capacite: '200ml', couleur: 'Naturel', stock: 18, sku: 'HUI-KAR', codeBarre: '3760003001001' }],
+    },
+    {
+      nom: 'Crème Corporelle Karité & Cacao',
+      slug: 'creme-corps-karite-cacao',
+      marque: 'KabiShop',
+      description:
+        'Crème riche au beurre de karité et beurre de cacao. Nourrit, adoucit et parfume la peau sans la graisser.',
+      prix: 58000,
+      prixPromo: 46400,
+      promoFin,
+      images: ['https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600&q=80'],
+      featured: true,
+      categorieId: bySlug['cremes-corporelles'].id,
+      variantes: [{ capacite: '250ml', couleur: 'Naturel', stock: 22, sku: 'CRM-KAR', codeBarre: '3760003002001' }],
     },
     {
       nom: 'Huile Capillaire Croissance & Brillance',

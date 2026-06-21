@@ -4,9 +4,16 @@ import { Suspense } from 'react';
 import { Lock, ShieldCheck, Truck } from 'lucide-react';
 import { LoginForm } from '@/modules/auth/components/LoginForm';
 import { AuthSplitLayout } from '@/modules/auth/components/AuthSplitLayout';
-import { getSafeRedirect, isAdminRedirect, isCheckoutRedirect } from '@/shared/lib/auth-redirect';
+import {
+  getSafeRedirect,
+  getSafeRedirectForCustomer,
+  isAdminRedirect,
+  isCheckoutRedirect,
+} from '@/shared/lib/auth-redirect';
+import { isValidCustomerSession } from '@/shared/lib/auth/customer-session';
 import { getSocialAuthFlags } from '@/shared/lib/auth/social-auth-config';
-import { getCustomerSession } from '@/shared/lib/auth/session';
+import { adminAuthRepository } from '@/modules/auth/repository/admin-auth.repository';
+import { getCustomerSession, getSession } from '@/shared/lib/auth/session';
 
 export const metadata: Metadata = {
   title: 'Connexion',
@@ -28,14 +35,26 @@ export default async function ConnexionPage({
   searchParams: SearchParams;
 }) {
   const { redirect: redirectParam, error } = await searchParams;
+  const isAdmin = isAdminRedirect(redirectParam);
 
-  const customer = await getCustomerSession();
-  if (customer) {
-    const fallback = isCheckoutRedirect(redirectParam) ? '/commande' : '/compte';
-    redirect(getSafeRedirect(redirectParam, fallback));
+  if (isAdmin) {
+    const session = await getSession();
+    if (session?.role === 'admin') {
+      const admin =
+        (session.id ? await adminAuthRepository.trouverParId(session.id) : null) ??
+        (await adminAuthRepository.trouverParEmail(session.email));
+      if (admin?.actif) {
+        redirect(getSafeRedirect(redirectParam, '/admin'));
+      }
+    }
   }
 
-  const isAdmin = isAdminRedirect(redirectParam);
+  const customer = await getCustomerSession();
+  if (isValidCustomerSession(customer) && !isAdmin) {
+    const fallback = isCheckoutRedirect(redirectParam) ? '/commande' : '/compte';
+    redirect(getSafeRedirectForCustomer(redirectParam, fallback));
+  }
+
   const isCheckout = isCheckoutRedirect(redirectParam);
   const social = getSocialAuthFlags();
 

@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400&display=swap");
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -15,12 +15,13 @@
   --primary-100: #ebe4d8;
   --primary-200: #d9cfc0;
 
-  /* Accent boutique */
-  --accent: #4a5240;
-  --accent-dark: #3d4534;
-  --accent-light: #eef0eb;
+  /* Marque KabiShop */
+  --olive: #4a5240;
+  --olive-dark: #3d4534;
+  --olive-light: #eef0eb;
   --cream: #faf7f2;
   --beige: #f5f0e8;
+  --beige-border: #ebe4d8;
 
   /* Neutres */
   --muted: oklch(0.97 0 0);
@@ -88,11 +89,12 @@
   --color-primary: var(--primary);
   --color-primary-dark: var(--primary-dark);
   --color-primary-light: var(--primary-light);
-  --color-accent: var(--accent);
-  --color-accent-dark: var(--accent-dark);
-  --color-accent-light: var(--accent-light);
+  --color-olive: var(--olive);
+  --color-olive-dark: var(--olive-dark);
+  --color-olive-light: var(--olive-light);
   --color-cream: var(--cream);
   --color-beige: var(--beige);
+  --color-beige-border: var(--beige-border);
   --font-serif: "Playfair Display", Georgia, serif;
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
@@ -101,7 +103,7 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-error: var(--error);
-  --font-sans: var(--font-sans);
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -146,15 +148,29 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  overflow-x: clip;
 }
 
 body {
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
   background-color: var(--cream);
   font-size: 16px;
   line-height: 1.6;
+  letter-spacing: -0.01em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.safe-area-bottom {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+}
+
+.safe-area-fab {
+  bottom: max(1.25rem, env(safe-area-inset-bottom));
+  right: max(1.25rem, env(safe-area-inset-right));
 }
 
 /* ─── SCROLLBAR PERSONNALISÉE ───────────────────────────────────────────────── */
@@ -300,7 +316,7 @@ body {
   justify-content: center;
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
-  background: var(--accent);
+  background: var(--olive);
   color: white;
   font-weight: 600;
   border-radius: var(--radius-full);
@@ -311,8 +327,9 @@ body {
 }
 
 .btn-accent:hover {
-  background: var(--accent-dark);
+  background: var(--olive-dark);
   transform: translateY(-1px);
+  box-shadow: var(--shadow-accent);
 }
 
 .btn-outline-dark {
@@ -381,7 +398,7 @@ body {
 .product-card:hover {
   box-shadow: var(--shadow-lg);
   transform: translateY(-4px);
-  border-color: var(--accent-light);
+  border-color: var(--olive-light);
 }
 
 /* Badge */
@@ -490,7 +507,7 @@ body {
 }
 
 .input-kabishop:focus {
-  border-color: var(--accent);
+  border-color: var(--olive);
   box-shadow: 0 0 0 3px rgba(74, 82, 64, 0.12);
 }
 
@@ -583,12 +600,34 @@ body {
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Bandes de section boutique */
+.section-band {
+  @apply py-16 md:py-24;
+}
+
+.section-band-cream {
+  @apply bg-cream border-t border-beige-border/60;
+}
+
+.section-band-white {
+  @apply bg-white border-y border-beige-border/60;
+}
+
+@keyframes home-promo-progress {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+.home-promo-progress {
+  animation: home-promo-progress linear forwards;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-cream text-foreground;
   }
   html {
     @apply font-sans;

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePanier } from '@/store/panier';
@@ -20,6 +21,15 @@ export function CartDrawer() {
     lastSavedAt,
   } = panier;
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const sousTotal = getSousTotal();
@@ -35,11 +45,11 @@ export function CartDrawer() {
         aria-hidden
       />
 
-      <div className="absolute inset-y-0 right-0 flex max-w-full pl-10">
-        <div className="flex h-full w-screen max-w-md flex-col bg-white shadow-2xl animate-slideInRight">
-          <div className="flex items-center justify-between border-b border-[#ebe4d8] bg-[#faf7f2] px-5 py-4">
+      <div className="absolute inset-y-0 right-0 flex max-w-full">
+        <div className="flex h-full w-full max-w-md flex-col bg-white shadow-2xl animate-slideInRight sm:max-w-md">
+          <div className="flex items-center justify-between border-b border-beige-border bg-cream px-5 py-4">
             <div className="flex items-center gap-2">
-              <ShoppingBag className="h-5 w-5 text-accent" />
+              <ShoppingBag className="h-5 w-5 text-olive" />
               <h2 className="font-serif text-base font-bold text-zinc-900">Votre panier</h2>
             </div>
             <button
@@ -120,7 +130,7 @@ export function CartDrawer() {
           </div>
 
           {items.length > 0 && (
-            <div className="space-y-4 border-t border-[#ebe4d8] bg-[#faf7f2] p-5">
+            <div className="safe-area-bottom space-y-4 border-t border-[#ebe4d8] bg-[#faf7f2] p-5">
               <div className="space-y-1.5 text-sm text-zinc-600">
                 <div className="flex justify-between">
                   <span>Sous-total</span>

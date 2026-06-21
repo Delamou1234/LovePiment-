@@ -1,5 +1,9 @@
 import { trackingRepository, type TrackingRepository } from '../repository/tracking.repository';
 import {
+  buildNotificationContext,
+  orderNotificationService,
+} from '@/modules/notifications/services/order-notification.service';
+import {
   DESCRIPTIONS_STATUT,
   estimerLivraison,
   formaterDate,
@@ -79,11 +83,21 @@ export class TrackingService {
       notifier?: boolean;
     },
   ) {
-    return this.repo.enregistrerChangementStatut(orderId, statut, options);
+    const order = await this.repo.enregistrerChangementStatut(orderId, statut, options);
+
+    if (options?.notifier !== false) {
+      orderNotificationService.notifyStatusChange(
+        buildNotificationContext(order, { statutMessage: options?.message }),
+      );
+    }
+
+    return order;
   }
 
   async confirmerPaiementLivraison(orderId: string) {
-    return this.repo.confirmerPaiementLivraison(orderId);
+    const order = await this.repo.confirmerPaiementLivraison(orderId);
+    orderNotificationService.notifyPaymentConfirmed(buildNotificationContext(order));
+    return order;
   }
 
   async listerTransporteurs() {

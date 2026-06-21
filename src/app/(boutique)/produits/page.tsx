@@ -4,6 +4,7 @@ import { ChevronRight, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProductCard } from '@/shared/components/ProductCard';
 import { variantePourCarte } from '@/shared/lib/product-card';
+import { getCachedCategoriesArbre } from '@/modules/produits/lib/cached-queries';
 import { productService } from '@/modules/produits/services/product.service';
 import { avisService } from '@/modules/avis/services/review.service';
 import { notesPourProduit, chargerNotesProduits } from '@/modules/produits/lib/product-ratings';
@@ -43,7 +44,7 @@ export default async function CatalogPage({
   };
 
   const [categories, facettes, { produits: products }] = await Promise.all([
-    productService.listerCategoriesArbre(),
+    getCachedCategoriesArbre(),
     productService.obtenirFacettesCatalogue(filtres),
     productService.listerProduits(filtres, catalogTriToRepository(activeTri), { page: 1, limit: 100 }),
   ]);
@@ -81,19 +82,20 @@ export default async function CatalogPage({
       : 'Parfums & Huiles';
 
   return (
-    <div className="container-kabishop animate-fadeIn py-8">
-      <div className="mb-6 flex items-center gap-1.5 text-xs text-zinc-500">
-        <Link href="/" className="font-medium transition hover:text-accent">
+    <div className="container-kabishop animate-fadeIn py-8 md:py-14">
+      <div className="mb-8 flex items-center gap-1.5 text-xs text-zinc-500">
+        <Link href="/" className="font-medium transition hover:text-olive">
           Accueil
         </Link>
         <ChevronRight className="h-3 w-3" />
-        <span className="font-bold text-zinc-800">{pageTitle}</span>
+        <span className="font-semibold text-zinc-800">{pageTitle}</span>
       </div>
 
-      <div className="mb-8">
-        <h1 className="font-serif text-2xl font-bold text-zinc-900 md:text-3xl">{pageTitle}</h1>
-        <p className="mt-1 text-sm text-zinc-500">
-          {products.length} produit{products.length !== 1 ? 's' : ''} — parfums et huiles
+      <div className="mb-10">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-olive mb-2">Catalogue</p>
+        <h1 className="font-serif text-2xl font-bold text-zinc-900 md:text-3xl tracking-tight">{pageTitle}</h1>
+        <p className="mt-2 text-sm text-zinc-500">
+          {products.length} produit{products.length !== 1 ? 's' : ''} — parfums, huiles & crèmes
         </p>
       </div>
 
@@ -103,23 +105,23 @@ export default async function CatalogPage({
         </div>
 
         <div className="space-y-6 lg:col-span-3">
-          <div className="flex flex-col gap-4 border-b border-zinc-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 border-b border-beige-border pb-5 sm:flex-row sm:items-center sm:justify-between">
             <Suspense fallback={null}>
               <CatalogSearchBar currentParams={params} defaultQuery={params.search ?? ''} />
             </Suspense>
 
-            <div className="flex items-center justify-between gap-4 sm:justify-end">
-              <span className="text-sm font-medium text-zinc-500">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+              <span className="text-sm font-medium text-zinc-500 shrink-0">
                 <span className="font-bold text-zinc-800">{products.length}</span> article(s)
               </span>
-              <div className="flex flex-wrap items-center gap-1 rounded-lg bg-zinc-100/80 p-1">
+              <div className="flex flex-nowrap items-center gap-1 overflow-x-auto rounded-xl border border-beige-border bg-cream p-1 scrollbar-hide">
                 {CATALOG_TRI_OPTIONS.map((opt) => (
                   <Link
                     key={opt.value}
                     href={buildCatalogUrl(params, { tri: opt.value })}
-                    className={`rounded-md px-2.5 py-1.5 text-xs font-bold transition duration-200 ${
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition duration-200 ${
                       activeTri === opt.value
-                        ? 'bg-white text-primary shadow-sm'
+                        ? 'bg-white text-olive shadow-sm ring-1 ring-beige-border'
                         : 'text-zinc-600 hover:text-zinc-900'
                     }`}
                   >
@@ -131,11 +133,11 @@ export default async function CatalogPage({
           </div>
 
           {/* Filtres mobile */}
-          <details className="rounded-xl border border-zinc-200 bg-zinc-50 lg:hidden">
-            <summary className="cursor-pointer px-4 py-3 text-sm font-bold text-zinc-800">
+          <details className="rounded-xl border border-beige-border bg-cream lg:hidden">
+            <summary className="cursor-pointer px-4 py-3 text-sm font-semibold text-zinc-800">
               Filtres & catégories
             </summary>
-            <div className="border-t border-zinc-200 p-4">
+            <div className="border-t border-beige-border p-4">
               <CatalogFilters categories={categories} facettes={facettes} params={params} />
             </div>
           </details>
@@ -217,7 +219,7 @@ export default async function CatalogPage({
               );})}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-100 py-16 text-center">
+            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-beige-border bg-white py-16 text-center">
               <Filter className="mb-4 h-12 w-12 text-zinc-300" />
               <h3 className="mb-2 text-lg font-bold text-zinc-950">
                 Aucun article ne correspond à votre recherche

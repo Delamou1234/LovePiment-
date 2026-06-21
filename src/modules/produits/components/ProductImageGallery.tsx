@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils';
 const IMAGE_FALLBACK =
   'https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&q=80';
 
+const AUTOPLAY_MS = 4500;
+
 type Props = {
   images: string[];
   alt: string;
@@ -16,12 +18,15 @@ type Props = {
 
 export function ProductImageGallery({ images, alt, badge }: Props) {
   const gallery = images.length > 0 ? images : [IMAGE_FALLBACK];
+  const hasMultiple = gallery.length > 1;
   const [activeIndex, setActiveIndex] = useState(0);
   const [zoomOpen, setZoomOpen] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const dragging = useRef(false);
   const dragStart = useRef({ x: 0, y: 0, ox: 0, oy: 0 });
+  const touchStartX = useRef<number | null>(null);
 
   const activeImage = gallery[activeIndex];
 
@@ -30,15 +35,31 @@ export function ProductImageGallery({ images, alt, badge }: Props) {
     setOffset({ x: 0, y: 0 });
   }, []);
 
+  const selectIndex = useCallback(
+    (index: number) => {
+      setActiveIndex(index);
+      resetZoom();
+    },
+    [resetZoom],
+  );
+
   const goPrev = useCallback(() => {
-    setActiveIndex((i) => (i <= 0 ? gallery.length - 1 : i - 1));
-    resetZoom();
-  }, [gallery.length, resetZoom]);
+    selectIndex(activeIndex <= 0 ? gallery.length - 1 : activeIndex - 1);
+  }, [activeIndex, gallery.length, selectIndex]);
 
   const goNext = useCallback(() => {
-    setActiveIndex((i) => (i >= gallery.length - 1 ? 0 : i + 1));
-    resetZoom();
-  }, [gallery.length, resetZoom]);
+    selectIndex(activeIndex >= gallery.length - 1 ? 0 : activeIndex + 1);
+  }, [activeIndex, gallery.length, selectIndex]);
+
+  useEffect(() => {
+    if (!hasMultiple || zoomOpen || paused) return;
+
+    const timer = window.setInterval(() => {
+      setActiveIndex((i) => (i >= gallery.length - 1 ? 0 : i + 1));
+    }, AUTOPLAY_MS);
+
+    return () => window.clearInterval(timer);
+  }, [gallery.length, hasMultiple, paused, zoomOpen]);
 
   useEffect(() => {
     if (!zoomOpen) return;
@@ -79,57 +100,119 @@ export function ProductImageGallery({ images, alt, badge }: Props) {
     dragging.current = false;
   };
 
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0]?.clientX ?? null;
+  };
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current == null || !hasMultiple) return;
+    const delta = (e.changedTouches[0]?.clientX ?? 0) - touchStartX.current;
+    touchStartX.current = null;
+    if (Math.abs(delta) < 40) return;
+    if (delta > 0) goPrev();
+    else goNext();
+  };
+
   return (
     <>
       <div className="space-y-4 lg:sticky lg:top-24">
-        <div className="group relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-[#f5f0e8] ring-1 ring-[#ebe4d8]">
-          <Image
-            src={activeImage}
-            alt={alt}
-            fill
-            sizes="(max-width: 1024px) 100vw, 45vw"
-            className="cursor-zoom-in object-cover object-center transition duration-500 group-hover:scale-[1.02]"
-            priority
-            onClick={() => setZoomOpen(true)}
-          />
+        <div
+          className="group relative aspect-[4/5] w-full overflow-hidden rounded-2xl bg-[#f5f0e8] ring-1 ring-[#ebe4d8]"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+          onFocus={() => setPaused(true)}
+          onBlur={() => setPaused(false)}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
+          <div
+            className="flex h-full transition-transform duration-700 ease-in-out"
+            style={{ transform: `translateX(-${activeIndex * 100}%)` }}
+          >
+            {gallery.map((img, idx) => (
+              <button
+                key={`${img}-${idx}`}
+                type="button"
+                className="relative h-full min-w-full shrink-0 cursor-zoom-in"
+                onClick={() => setZoomOpen(true)}
+                aria-label={`${alt} — image ${idx + 1} sur ${gallery.length}`}
+              >
+                <Image
+                  src={img}
+                  alt={`${alt} — ${idx + 1}/${gallery.length}`}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 45vw"
+                  className="object-cover object-center"
+                  priority={idx === 0}
+                />
+              </button>
+            ))}
+          </div>
+
           {badge}
+
           <button
             type="button"
             onClick={() => setZoomOpen(true)}
-            className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-full bg-white/95 px-3.5 py-2 text-xs font-semibold text-zinc-800 shadow-md transition sm:opacity-0 sm:group-hover:opacity-100"
+            className="absolute bottom-4 right-4 z-10 flex items-center gap-1.5 rounded-full bg-white/95 px-3.5 py-2 text-xs font-semibold text-zinc-800 shadow-md transition sm:opacity-0 sm:group-hover:opacity-100"
           >
             <ZoomIn className="h-3.5 w-3.5" />
             Agrandir
           </button>
-          {gallery.length > 1 && (
+
+          {hasMultiple && (
             <>
               <button
                 type="button"
-                onClick={goPrev}
-                className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow-md opacity-0 transition group-hover:opacity-100"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goPrev();
+                }}
+                className="absolute left-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow-md opacity-90 transition hover:bg-white sm:opacity-0 sm:group-hover:opacity-100"
                 aria-label="Image précédente"
               >
                 <ChevronLeft className="h-4 w-4" />
               </button>
               <button
                 type="button"
-                onClick={goNext}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow-md opacity-0 transition group-hover:opacity-100"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  goNext();
+                }}
+                className="absolute right-3 top-1/2 z-10 -translate-y-1/2 rounded-full bg-white/90 p-2 shadow-md opacity-90 transition hover:bg-white sm:opacity-0 sm:group-hover:opacity-100"
                 aria-label="Image suivante"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
+
+              <div className="absolute bottom-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/35 px-2.5 py-1.5 backdrop-blur-sm">
+                {gallery.map((_, idx) => (
+                  <button
+                    key={`dot-${idx}`}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      selectIndex(idx);
+                    }}
+                    className={cn(
+                      'h-1.5 rounded-full transition-all',
+                      activeIndex === idx ? 'w-4 bg-white' : 'w-1.5 bg-white/50 hover:bg-white/80',
+                    )}
+                    aria-label={`Image ${idx + 1}`}
+                  />
+                ))}
+              </div>
             </>
           )}
         </div>
 
-        {gallery.length > 1 && (
+        {hasMultiple && (
           <div className="scrollbar-hide flex gap-2.5 overflow-x-auto pb-1">
             {gallery.map((img, idx) => (
               <button
                 key={`${img}-${idx}`}
                 type="button"
-                onClick={() => setActiveIndex(idx)}
+                onClick={() => selectIndex(idx)}
                 className={cn(
                   'relative h-[72px] w-[72px] shrink-0 overflow-hidden rounded-xl ring-2 transition',
                   activeIndex === idx
@@ -213,7 +296,7 @@ export function ProductImageGallery({ images, alt, badge }: Props) {
               </div>
             </div>
 
-            {gallery.length > 1 && (
+            {hasMultiple && (
               <>
                 <button
                   type="button"
@@ -233,13 +316,13 @@ export function ProductImageGallery({ images, alt, badge }: Props) {
             )}
           </div>
 
-          {gallery.length > 1 && (
+          {hasMultiple && (
             <div className="flex justify-center gap-2 px-4 py-3">
               {gallery.map((img, idx) => (
                 <button
                   key={`zoom-thumb-${idx}`}
                   type="button"
-                  onClick={() => setActiveIndex(idx)}
+                  onClick={() => selectIndex(idx)}
                   className={cn(
                     'relative h-12 w-12 overflow-hidden rounded-lg ring-2',
                     activeIndex === idx ? 'ring-white' : 'ring-transparent opacity-50',

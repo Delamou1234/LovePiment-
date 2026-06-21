@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowRight, Loader2, Lock, Mail, Phone, User } from 'lucide-react';
+import { ArrowRight, Loader2, Lock, Mail, Phone, User, Users } from 'lucide-react';
 import { getSafeRedirect } from '@/shared/lib/auth-redirect';
+import { PARRAINAGE_SESSION_KEY } from '@/modules/marketing/lib/referral-code';
+import { useFeatureFlags } from '@/shared/hooks/useFeatureFlags';
 import { AuthField } from './AuthField';
 import { authInputClass, authSubmitClass } from './auth-styles';
 import { SocialLoginButtons, SocialLoginDivider } from './SocialLoginButtons';
@@ -23,6 +25,7 @@ const registerSchema = z
     email: z.string().email('Adresse e-mail invalide'),
     password: z.string().min(6, 'Minimum 6 caractères'),
     confirmPassword: z.string().min(6, 'Confirmez votre mot de passe'),
+    codeParrainage: z.string().max(40).optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Les mots de passe ne correspondent pas',
@@ -44,14 +47,22 @@ export function RegisterForm({
   facebookEnabled = false,
   appleEnabled = false,
 }: RegisterFormProps) {
+  const { parrainageActif } = useFeatureFlags();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get('redirect');
+  const parrainParam = searchParams.get('parrain')?.trim().toUpperCase() ?? '';
   const safeRedirect = getSafeRedirect(redirectParam, isCheckout ? '/commande' : '/compte');
   const loginHref = `/connexion${redirectParam ? `?redirect=${encodeURIComponent(safeRedirect)}` : ''}`;
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+
+  useEffect(() => {
+    if (parrainParam && parrainageActif) {
+      sessionStorage.setItem(PARRAINAGE_SESSION_KEY, parrainParam);
+    }
+  }, [parrainParam, parrainageActif]);
 
   const {
     register,
@@ -59,6 +70,9 @@ export function RegisterForm({
     formState: { errors },
   } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
+    defaultValues: {
+      codeParrainage: parrainParam,
+    },
   });
 
   const onSubmit = async (values: RegisterFormValues) => {
@@ -75,6 +89,7 @@ export function RegisterForm({
           nom: values.nom,
           telephone: values.telephone,
           redirect: safeRedirect,
+          codeParrainage: parrainageActif ? values.codeParrainage?.trim() || undefined : undefined,
         }),
       });
       const data = await res.json();
@@ -82,8 +97,7 @@ export function RegisterForm({
         setErrorMsg(data.message ?? 'Inscription impossible.');
         return;
       }
-      router.push(data.redirect ?? safeRedirect);
-      router.refresh();
+      router.replace(data.redirect ?? safeRedirect);
     } catch {
       setErrorMsg('Erreur réseau. Réessayez.');
     } finally {
@@ -167,6 +181,21 @@ export function RegisterForm({
             {...register('email')}
           />
         </AuthField>
+
+        {parrainageActif && (
+        <AuthField
+          label="Code parrainage (optionnel)"
+          error={errors.codeParrainage?.message}
+        >
+          <Users className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <input
+            type="text"
+            placeholder="Ex : KABI4X2YZ"
+            className={`${authInputClass} uppercase`}
+            {...register('codeParrainage')}
+          />
+        </AuthField>
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <AuthField label="Mot de passe" error={errors.password?.message}>

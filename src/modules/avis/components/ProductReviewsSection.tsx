@@ -5,55 +5,86 @@ import Image from 'next/image';
 import { BadgeCheck, Loader2, MessageSquare } from 'lucide-react';
 import { StarRating } from './StarRating';
 import { ReviewForm } from './ReviewForm';
-import type { AvisProduitPublic, AvisProduitStats } from '../types';
+import type { AvisEligible, AvisProduitPublic, AvisProduitStats } from '../types';
 
 type Props = {
   productId: string;
   productSlug: string;
   productNom: string;
+  initialStats?: AvisProduitStats;
+  initialAvis?: AvisProduitPublic[];
+  initialTotalPages?: number;
+  initialEligibles?: AvisEligible[];
 };
 
-export function ProductReviewsSection({ productId, productSlug, productNom }: Props) {
-  const [stats, setStats] = useState<AvisProduitStats | null>(null);
-  const [avis, setAvis] = useState<AvisProduitPublic[]>([]);
+export function ProductReviewsSection({
+  productId,
+  productSlug,
+  productNom,
+  initialStats,
+  initialAvis,
+  initialTotalPages = 1,
+  initialEligibles,
+}: Props) {
+  const hasInitialPage = initialStats != null && initialAvis != null;
+
+  const [stats, setStats] = useState<AvisProduitStats | null>(initialStats ?? null);
+  const [avis, setAvis] = useState<AvisProduitPublic[]>(initialAvis ?? []);
   const [eligibles, setEligibles] = useState<
     { orderId: string; productId: string; productNom: string }[]
-  >([]);
-  const [loading, setLoading] = useState(true);
+  >(initialEligibles ?? []);
+  const [loading, setLoading] = useState(!hasInitialPage);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+  const [totalPages, setTotalPages] = useState(initialTotalPages);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const [avisRes, eligRes] = await Promise.all([
-        fetch(`/api/produits/${productSlug}/avis?page=${page}`),
-        fetch('/api/compte/avis/eligibles'),
-      ]);
+  const load = useCallback(
+    async (opts?: { force?: boolean }) => {
+      const skipAvis = page === 1 && hasInitialPage && !opts?.force;
 
-      if (avisRes.ok) {
-        const data = await avisRes.json();
-        setStats(data.stats);
-        setAvis(data.avis ?? []);
-        setTotalPages(data.pagination?.totalPages ?? 1);
+      if (!skipAvis) setLoading(true);
+      try {
+        const tasks: Promise<void>[] = [];
+
+        if (!skipAvis) {
+          tasks.push(
+            fetch(`/api/produits/${productSlug}/avis?page=${page}`)
+              .then(async (avisRes) => {
+                if (!avisRes.ok) return;
+                const data = await avisRes.json();
+                setStats(data.stats);
+                setAvis(data.avis ?? []);
+                setTotalPages(data.pagination?.totalPages ?? 1);
+              }),
+          );
+        }
+
+        if (initialEligibles == null) {
+          tasks.push(
+            fetch('/api/compte/avis/eligibles')
+              .then(async (eligRes) => {
+                if (!eligRes.ok) return;
+                const data = await eligRes.json();
+                setEligibles(
+                  (data.eligibles ?? []).filter(
+                    (e: { productId: string }) => e.productId === productId,
+                  ),
+                );
+              }),
+          );
+        }
+
+        await Promise.all(tasks);
+      } finally {
+        if (!skipAvis) setLoading(false);
       }
-
-      if (eligRes.ok) {
-        const data = await eligRes.json();
-        setEligibles(
-          (data.eligibles ?? []).filter(
-            (e: { productId: string }) => e.productId === productId,
-          ),
-        );
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [productSlug, productId, page]);
+    },
+    [productSlug, productId, page, hasInitialPage, initialEligibles],
+  );
 
   useEffect(() => {
+    if (page === 1 && hasInitialPage) return;
     load();
-  }, [load]);
+  }, [load, page, hasInitialPage]);
 
   const eligible = eligibles[0];
 
@@ -105,7 +136,7 @@ export function ProductReviewsSection({ productId, productSlug, productNom }: Pr
           productId={eligible.productId}
           orderId={eligible.orderId}
           productNom={productNom}
-          onSuccess={load}
+          onSuccess={() => load({ force: true })}
         />
       )}
 
@@ -152,7 +183,14 @@ export function ProductReviewsSection({ productId, productSlug, productNom }: Pr
                       key={url}
                       className="relative h-20 w-20 rounded-lg overflow-hidden border border-[#ebe4d8]"
                     >
-                      <Image src={url} alt="Photo client" fill className="object-cover" unoptimized />
+                      <Image
+                        src={url}
+                        alt="Photo client"
+                        fill
+                        sizes="80px"
+                        className="object-cover"
+                        unoptimized
+                      />
                     </div>
                   ))}
                 </div>

@@ -1,4 +1,4 @@
-import { getAppUrl } from '@/shared/lib/auth/session';
+import { getAppUrl } from '@/shared/lib/app-url';
 import { createOAuthState, verifyOAuthState } from '@/shared/lib/auth/oauth-state';
 
 const FACEBOOK_AUTH_URL = 'https://www.facebook.com/v21.0/dialog/oauth';

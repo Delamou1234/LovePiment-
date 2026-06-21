@@ -1,9 +1,12 @@
 import { requireAdmin } from '@/modules/messagerie/lib/chat-auth';
 import { conversationService } from '@/modules/messagerie/services/conversation.service';
+import { closeSseStream, createSseSender, bindSseLifecycle, getSseMaxMs } from '@/shared/lib/sse-stream';
 
 type Params = Promise<{ id: string }>;
 
-/** GET /api/admin/messagerie/conversations/[id]/stream — SSE admin */
+const POLL_MS = 8_000;
+
+/** GET /api/admin/messagerie/conversations/[id]/stream — SSE admin (métadonnées uniquement). */
 export async function GET(request: Request, { params }: { params: Params }) {
   const user = await requireAdmin();
   if (!user) {
@@ -14,25 +17,29 @@ export async function GET(request: Request, { params }: { params: Params }) {
   const encoder = new TextEncoder();
   let lastUpdatedAt = '';
   let closed = false;
+  let interval: ReturnType<typeof setInterval> | undefined;
+
+  const shutdown = () => {
+    closed = true;
+  };
 
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (data: unknown) => {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-      };
+      const send = createSseSender(controller, encoder, () => closed, shutdown);
 
       const poll = async () => {
         if (closed) return;
         try {
-          const conversation = await conversationService.obtenirSnapshot(id);
-          if (!conversation) {
+          const indicator = await conversationService.obtenirIndicateurMaj(id);
+          if (!indicator) {
             send({ error: 'not_found' });
-            controller.close();
+            if (interval) clearInterval(interval);
+            closeSseStream(controller, () => closed, shutdown);
             return;
           }
-          if (conversation.updatedAt !== lastUpdatedAt) {
-            lastUpdatedAt = conversation.updatedAt;
-            send({ type: 'update', conversation });
+          if (indicator.updatedAt !== lastUpdatedAt) {
+            lastUpdatedAt = indicator.updatedAt;
+            send({ type: 'update', updatedAt: indicator.updatedAt });
           } else {
             send({ type: 'heartbeat', at: new Date().toISOString() });
           }
@@ -42,12 +49,11 @@ export async function GET(request: Request, { params }: { params: Params }) {
       };
 
       await poll();
-      const interval = setInterval(poll, 3000);
+      interval = setInterval(poll, POLL_MS);
 
-      request.signal.addEventListener('abort', () => {
-        closed = true;
-        clearInterval(interval);
-        controller.close();
+      bindSseLifecycle(request, getSseMaxMs(), () => {
+        if (interval) clearInterval(interval);
+        closeSseStream(controller, () => closed, shutdown);
       });
     },
   });

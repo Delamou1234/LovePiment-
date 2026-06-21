@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache';
 import type { ReviewStatus } from '@prisma/client';
 import { reviewRepository, type ReviewRepository } from '../repository/review.repository';
 import { anonymiserNomClient } from '../lib/anonymiser';
@@ -38,7 +39,11 @@ export class AvisService {
   }
 
   async statsProduit(productId: string): Promise<AvisProduitStats> {
-    return this.repo.statsProduit(productId);
+    return unstable_cache(
+      () => this.repo.statsProduit(productId),
+      ['avis-stats', productId],
+      { revalidate: 120, tags: ['reviews', `reviews-${productId}`] },
+    )();
   }
 
   async statsPlusieursProduits(productIds: string[]) {

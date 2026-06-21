@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache';
 import { prisma } from '@/shared/lib/prisma';
 
 const STOCK_FAIBLE_SEUIL = 5;
@@ -19,6 +20,14 @@ export type AdminDashboardStats = {
 
 export class AdminStatsService {
   async obtenirDashboard(): Promise<AdminDashboardStats> {
+    return unstable_cache(
+      () => this.obtenirDashboardDirect(),
+      ['admin-dashboard-stats'],
+      { revalidate: 30, tags: ['admin-stats'] },
+    )();
+  }
+
+  private async obtenirDashboardDirect(): Promise<AdminDashboardStats> {
     const depuis7j = new Date();
     depuis7j.setDate(depuis7j.getDate() - 7);
     const debutJour = new Date();
@@ -33,7 +42,7 @@ export class AdminStatsService {
       caAgg,
       commandesTotal,
       commandesAujourdhui,
-      variantesStock,
+      stockFaible,
       promosActives,
       messagesAgg,
       clientsInscrits,
@@ -55,7 +64,7 @@ export class AdminStatsService {
       }),
       prisma.order.count(),
       prisma.order.count({ where: { createdAt: { gte: debutJour } } }),
-      prisma.productVariant.findMany({ select: { stock: true } }),
+      prisma.productVariant.count({ where: { stock: { lte: STOCK_FAIBLE_SEUIL } } }),
       prisma.product.count({
         where: {
           OR: [
@@ -72,8 +81,6 @@ export class AdminStatsService {
       prisma.customer.count(),
       prisma.order.count({ where: { satisfactionStatut: { not: null } } }),
     ]);
-
-    const stockFaible = variantesStock.filter((v) => v.stock <= STOCK_FAIBLE_SEUIL).length;
 
     return {
       produitsActifs,

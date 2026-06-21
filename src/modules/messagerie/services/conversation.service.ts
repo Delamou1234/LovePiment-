@@ -1,5 +1,8 @@
 import type { MessageSenderRole } from '@prisma/client';
+import { customerAuthRepository } from '@/modules/auth/repository/customer-auth.repository';
+import type { ChatClientContext } from '../lib/client-context';
 import { conversationRepository } from '../repository/conversation.repository';
+import { SUPPORT_LABEL } from '../lib/support';
 import type {
   ConversationDetailDto,
   ConversationResume,
@@ -70,9 +73,57 @@ export class ConversationService {
     return toResume(conv!);
   }
 
-  async listerPourClient(clientSessionId: string): Promise<ConversationResume[]> {
-    const list = await this.repo.listerParSession(clientSessionId);
+  async listerPourClient(
+    clientSessionId: string,
+    clientUserId?: string | null,
+  ): Promise<ConversationResume[]> {
+    const list = await this.repo.listerParSession(clientSessionId, clientUserId);
     return list.map(toResume);
+  }
+
+  async obtenirOuCreerSupport(params: {
+    clientSessionId: string;
+    clientUserId?: string | null;
+    clientNom: string;
+    clientTelephone?: string | null;
+    messageInitial?: string;
+  }) {
+    if (params.clientUserId) {
+      await this.repo.lierSessionAuUser(params.clientSessionId, params.clientUserId);
+    }
+
+    let existing = await this.repo.trouverSupport(
+      params.clientSessionId,
+      params.clientUserId,
+    );
+
+    if (!existing) {
+      existing = await this.repo.creer({
+        clientSessionId: params.clientSessionId,
+        clientUserId: params.clientUserId ?? undefined,
+        clientNom: params.clientNom,
+        clientTelephone: params.clientTelephone ?? undefined,
+        sujet: SUPPORT_LABEL,
+        messageInitial: params.messageInitial,
+      });
+    } else if (params.clientUserId && !existing.clientUserId) {
+      await this.repo.lierSessionAuUser(params.clientSessionId, params.clientUserId);
+    }
+
+    return toResume(existing!);
+  }
+
+  async enrichirContexteClient(ctx: ChatClientContext): Promise<ChatClientContext> {
+    if (!ctx.userId) return ctx;
+
+    const customer = await customerAuthRepository.trouverParId(ctx.userId);
+    if (!customer) return ctx;
+
+    return {
+      ...ctx,
+      nom: customer.nom,
+      telephone: customer.telephone,
+    };
   }
 
   async listerPourAdmin(): Promise<ConversationResume[]> {
@@ -120,13 +171,29 @@ export class ConversationService {
     return this.repo.obtenirPresences(conversationId);
   }
 
+  async obtenirIndicateurMaj(conversationId: string) {
+    const conv = await this.repo.obtenirIndicateurMaj(conversationId);
+    if (!conv) return null;
+    return {
+      updatedAt: conv.updatedAt.toISOString(),
+      dernierMessageAt: conv.dernierMessageAt?.toISOString() ?? null,
+    };
+  }
+
   async obtenirSnapshot(conversationId: string) {
     return this.obtenirDetail(conversationId, 'CLIENT', { marquerLu: false });
   }
 
-  async peutAccederClient(conversationId: string, clientSessionId: string): Promise<boolean> {
+  async peutAccederClient(
+    conversationId: string,
+    clientSessionId: string,
+    clientUserId?: string | null,
+  ): Promise<boolean> {
     const conv = await this.repo.trouverParId(conversationId);
-    return conv?.clientSessionId === clientSessionId;
+    if (!conv) return false;
+    if (conv.clientSessionId === clientSessionId) return true;
+    if (clientUserId && conv.clientUserId === clientUserId) return true;
+    return false;
   }
 }
 

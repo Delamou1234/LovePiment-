@@ -15,14 +15,14 @@ import {
 export const metadata: Metadata = {
   title: 'À propos — KabiShop',
   description:
-    'KabiShop, boutique de parfums et huiles à Conakry. Authenticité, livraison rapide et paiement Mobile Money.',
+    'KabiShop, boutique de parfums, huiles pour la peau et crèmes corporelles à Conakry. Authenticité, livraison rapide et paiement Mobile Money.',
 };
 
 const VALEURS = [
   {
     icon: BadgeCheck,
     title: 'Produits authentiques',
-    text: 'Parfums et huiles sélectionnés avec soin, sans contrefaçon.',
+    text: 'Parfums, huiles peau et crèmes corporelles sélectionnés avec soin, sans contrefaçon.',
   },
   {
     icon: Truck,
@@ -64,9 +64,9 @@ export default function AProposPage() {
                 <span className="text-[#4a5240]">livrée à Conakry</span>
               </h1>
               <p className="mt-5 text-base md:text-lg text-zinc-600 leading-relaxed max-w-xl">
-                KabiShop est née d&apos;une passion pour les parfums orientaux et les huiles
-                corporelles & capillaires de qualité. Nous rendons ces produits accessibles aux
-                Guinéens avec un service fiable, transparent et chaleureux.
+                KabiShop est née d&apos;une passion pour les parfums et les soins du corps : huiles
+                pour la peau et crèmes corporelles de qualité. Nous rendons ces produits accessibles
+                aux Guinéens avec un service fiable, transparent et chaleureux.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
@@ -87,7 +87,7 @@ export default function AProposPage() {
             <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-lg">
               <Image
                 src="https://images.unsplash.com/photo-1615634260167-c8cdede054de?w=900&q=85&auto=format&fit=crop"
-                alt="Parfums et huiles KabiShop"
+                alt="Parfums et soins du corps KabiShop"
                 fill
                 className="object-cover"
                 sizes="(max-width: 1024px) 100vw, 50vw"
@@ -179,7 +179,7 @@ export default function AProposPage() {
           <div className="rounded-2xl bg-white/10 border border-white/20 p-6 md:p-8 backdrop-blur-sm">
             <p className="text-lg font-semibold mb-4">Prêt à commander ?</p>
             <p className="text-sm text-white/75 mb-6">
-              Parcourez nos collections parfums, huiles corps et capillaires, ou profitez de nos
+              Parcourez nos parfums, huiles pour la peau et crèmes corporelles, ou profitez de nos
               promotions en cours.
             </p>
             <div className="flex flex-col sm:flex-row gap-3">

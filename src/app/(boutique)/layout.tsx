@@ -6,7 +6,7 @@ import { BoutiqueProviders } from './BoutiqueProviders';
 export default function BoutiqueLayout({ children }: { children: React.ReactNode }) {
   return (
     <BoutiqueProviders>
-      <div className="flex min-h-screen flex-col bg-white">
+      <div className="flex min-h-screen flex-col overflow-x-clip bg-cream">
         <ShopHeader />
         <main className="flex-grow pb-28">{children}</main>
         <ShopFooter />

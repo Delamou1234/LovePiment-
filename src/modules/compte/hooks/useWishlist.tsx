@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { fetchApi } from '@/shared/lib/client-fetch';
 
 type WishlistContextValue = {
   productIds: Set<string>;
@@ -18,7 +19,7 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = useCallback(async () => {
     try {
-      const res = await fetch('/api/compte/wishlist/ids', { cache: 'no-store' });
+      const res = await fetchApi('/api/compte/wishlist/ids', { cache: 'no-store' });
       if (res.ok) {
         const data = (await res.json()) as { productIds: string[] };
         setProductIds(new Set(data.productIds));

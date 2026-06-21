@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePanier, selectTotalItems } from '@/store/panier';
+import { usePanier, selectTotalQuantity } from '@/store/panier';
 import { formaterPrixGN, LIVRAISON_CONFIG } from '@/shared/lib/shipping';
 import { 
   Trash2, 
@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 
 export default function CartPage() {
   const panier = usePanier();
-  const totalItems = usePanier(selectTotalItems);
+  const totalItems = usePanier(selectTotalQuantity);
   const [mounted, setMounted] = useState(false);
 
   // Fix hydration mismatch

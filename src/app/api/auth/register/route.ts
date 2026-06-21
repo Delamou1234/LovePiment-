@@ -6,6 +6,8 @@ import {
   setSessionCookie,
 } from '@/shared/lib/auth/session';
 import { customerAuthRepository } from '@/modules/auth/repository/customer-auth.repository';
+import { marketingService } from '@/modules/marketing/services/marketing.service';
+import { storeSettingsService } from '@/modules/admin/services/store-settings.service';
 import { getSafeRedirect } from '@/shared/lib/auth-redirect';
 
 const registerSchema = z.object({
@@ -14,6 +16,7 @@ const registerSchema = z.object({
   nom: z.string().min(2).max(100),
   telephone: z.string().max(30).optional(),
   redirect: z.string().optional(),
+  codeParrainage: z.string().max(40).optional(),
 });
 
 /** POST /api/auth/register — inscription client */
@@ -32,7 +35,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email, password, nom, telephone, redirect } = parsed.data;
+    const { email, password, nom, telephone, redirect, codeParrainage } = parsed.data;
     const existing = await customerAuthRepository.trouverParEmail(email);
     if (existing) {
       if (existing.googleId && !existing.passwordHash) {
@@ -53,6 +56,17 @@ export async function POST(request: NextRequest) {
       nom,
       telephone,
     });
+
+    if (codeParrainage?.trim()) {
+      const flags = await storeSettingsService.getFeatureFlags();
+      if (flags.parrainageActif) {
+        try {
+          await marketingService.lierParrain(customer.id, codeParrainage);
+        } catch (parrainError) {
+          console.warn('[POST /api/auth/register] parrainage:', parrainError);
+        }
+      }
+    }
 
     const token = createSessionToken({
       id: customer.id,

@@ -4,9 +4,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { Loader2, MapPin, Plus, Star, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { CustomerAddress } from '@/modules/compte/types';
-
-const inputClass =
-  'w-full rounded-xl border border-[#ebe4d8] bg-white px-4 py-3 text-sm outline-none focus:border-[#4a5240] focus:ring-2 focus:ring-[#4a5240]/10';
+import {
+  COMPTE_BTN_PRIMARY,
+  COMPTE_CARD,
+  COMPTE_CARD_PAD,
+  COMPTE_INPUT,
+  COMPTE_SECTION_DESC,
+  COMPTE_SECTION_TITLE,
+} from './compte-ui';
 
 const emptyForm = { label: '', adresse: '', ville: 'Conakry', telephone: '', parDefaut: false };
 
@@ -72,112 +77,142 @@ export function CompteAdressesSection() {
   };
 
   return (
-    <section className="rounded-2xl border border-[#ebe4d8] bg-white p-6 md:p-8 shadow-sm">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="flex items-center gap-2 text-lg font-bold text-zinc-900">
-          <MapPin className="h-5 w-5 text-[#4a5240]" />
-          Mes adresses
-        </h2>
-        <Button size="sm" variant="outline" onClick={() => setShowForm(true)}>
-          <Plus className="mr-1 h-4 w-4" />
-          Ajouter
-        </Button>
-      </div>
-
-      {loading ? (
-        <div className="flex justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
+    <div className="space-y-6">
+      <div className={`${COMPTE_CARD} ${COMPTE_CARD_PAD}`}>
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-olive-light text-olive">
+              <MapPin className="h-5 w-5" />
+            </div>
+            <div className="lg:hidden">
+              <h2 className={COMPTE_SECTION_TITLE}>Mes adresses</h2>
+              <p className={COMPTE_SECTION_DESC}>Enregistrez vos adresses de livraison à Conakry</p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowForm(true)}
+            className="rounded-full border-beige-border"
+          >
+            <Plus className="mr-1 h-4 w-4" />
+            Ajouter
+          </Button>
         </div>
-      ) : adresses.length === 0 && !showForm ? (
-        <p className="text-sm text-zinc-500">Aucune adresse enregistrée.</p>
-      ) : (
-        <div className="space-y-3">
-          {adresses.map((a) => (
-            <div
-              key={a.id}
-              className={`rounded-xl border p-4 ${a.parDefaut ? 'border-[#4a5240] bg-[#faf7f2]' : 'border-zinc-100'}`}
-            >
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <p className="font-semibold text-zinc-900">
-                    {a.label || 'Adresse'}
-                    {a.parDefaut && (
-                      <span className="ml-2 inline-flex items-center gap-0.5 rounded-full bg-[#4a5240] px-2 py-0.5 text-[10px] font-bold text-white">
-                        <Star className="h-3 w-3" />
-                        Par défaut
-                      </span>
+
+        {loading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-6 w-6 animate-spin text-olive" />
+          </div>
+        ) : adresses.length === 0 && !showForm ? (
+          <div className="rounded-xl border border-dashed border-beige-border bg-cream/50 py-12 text-center">
+            <MapPin className="mx-auto h-8 w-8 text-zinc-300 mb-3" />
+            <p className="text-sm text-zinc-500">Aucune adresse enregistrée pour le moment.</p>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2">
+            {adresses.map((a) => (
+              <div
+                key={a.id}
+                className={`relative rounded-xl border p-5 transition hover:shadow-sm ${
+                  a.parDefaut
+                    ? 'border-olive/40 bg-cream ring-1 ring-olive/10'
+                    : 'border-beige-border bg-white'
+                }`}
+              >
+                <div className="flex flex-col gap-4 h-full">
+                  <div className="flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-zinc-900">{a.label || 'Adresse'}</p>
+                      {a.parDefaut && (
+                        <span className="inline-flex items-center gap-0.5 rounded-full bg-olive px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                          <Star className="h-3 w-3" />
+                          Défaut
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-2 text-sm text-zinc-600 leading-relaxed">{a.adresse}</p>
+                    <p className="text-sm text-zinc-500 mt-1">{a.ville}</p>
+                    {a.telephone && (
+                      <p className="text-xs text-zinc-400 mt-2 font-medium">{a.telephone}</p>
                     )}
-                  </p>
-                  <p className="mt-1 text-sm text-zinc-600">{a.adresse}</p>
-                  <p className="text-sm text-zinc-500">{a.ville}</p>
-                  {a.telephone && <p className="text-xs text-zinc-400 mt-1">{a.telephone}</p>}
-                </div>
-                <div className="flex gap-1">
-                  {!a.parDefaut && (
-                    <Button size="sm" variant="outline" onClick={() => setDefault(a.id)}>
-                      Définir par défaut
-                    </Button>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => supprimer(a.id)}
-                    className="rounded-lg p-2 text-red-500 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  </div>
+                  <div className="flex gap-2 pt-2 border-t border-beige-border/60">
+                    {!a.parDefaut && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setDefault(a.id)}
+                        className="rounded-full text-xs h-8"
+                      >
+                        Par défaut
+                      </Button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => supprimer(a.id)}
+                      className="ml-auto rounded-full p-2 text-zinc-400 hover:bg-red-50 hover:text-red-500 transition"
+                      aria-label="Supprimer"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      {showForm && (
-        <div className="mt-6 space-y-3 rounded-xl border border-dashed border-zinc-200 p-4">
-          <input
-            className={inputClass}
-            placeholder="Libellé (ex. Maison, Bureau)"
-            value={form.label}
-            onChange={(e) => setForm({ ...form, label: e.target.value })}
-          />
-          <input
-            className={inputClass}
-            placeholder="Adresse complète *"
-            value={form.adresse}
-            onChange={(e) => setForm({ ...form, adresse: e.target.value })}
-          />
-          <div className="grid gap-3 sm:grid-cols-2">
+        {showForm && (
+          <div className="mt-6 space-y-4 rounded-xl border border-dashed border-beige-border bg-cream/30 p-5 md:p-6">
+            <p className="text-sm font-semibold text-zinc-900">Nouvelle adresse</p>
             <input
-              className={inputClass}
-              placeholder="Ville"
-              value={form.ville}
-              onChange={(e) => setForm({ ...form, ville: e.target.value })}
+              className={COMPTE_INPUT}
+              placeholder="Libellé (ex. Maison, Bureau)"
+              value={form.label}
+              onChange={(e) => setForm({ ...form, label: e.target.value })}
             />
             <input
-              className={inputClass}
-              placeholder="Téléphone"
-              value={form.telephone}
-              onChange={(e) => setForm({ ...form, telephone: e.target.value })}
+              className={COMPTE_INPUT}
+              placeholder="Adresse complète *"
+              value={form.adresse}
+              onChange={(e) => setForm({ ...form, adresse: e.target.value })}
             />
+            <div className="grid gap-3 sm:grid-cols-2">
+              <input
+                className={COMPTE_INPUT}
+                placeholder="Ville"
+                value={form.ville}
+                onChange={(e) => setForm({ ...form, ville: e.target.value })}
+              />
+              <input
+                className={COMPTE_INPUT}
+                placeholder="Téléphone"
+                value={form.telephone}
+                onChange={(e) => setForm({ ...form, telephone: e.target.value })}
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-zinc-600 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.parDefaut}
+                onChange={(e) => setForm({ ...form, parDefaut: e.target.checked })}
+                className="rounded border-beige-border text-olive focus:ring-olive/20"
+              />
+              Définir comme adresse par défaut
+            </label>
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button type="button" onClick={creer} disabled={saving} className={COMPTE_BTN_PRIMARY}>
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                Enregistrer
+              </button>
+              <Button variant="outline" onClick={() => setShowForm(false)} className="rounded-full">
+                Annuler
+              </Button>
+            </div>
           </div>
-          <label className="flex items-center gap-2 text-sm text-zinc-600">
-            <input
-              type="checkbox"
-              checked={form.parDefaut}
-              onChange={(e) => setForm({ ...form, parDefaut: e.target.checked })}
-            />
-            Adresse par défaut
-          </label>
-          <div className="flex gap-2">
-            <Button onClick={creer} disabled={saving} className="bg-[#4a5240] hover:bg-[#3d4534] text-white">
-              Enregistrer
-            </Button>
-            <Button variant="outline" onClick={() => setShowForm(false)}>
-              Annuler
-            </Button>
-          </div>
-        </div>
-      )}
-    </section>
+        )}
+      </div>
+    </div>
   );
 }

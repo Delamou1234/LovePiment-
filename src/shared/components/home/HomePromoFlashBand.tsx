@@ -34,29 +34,29 @@ export function HomePromoFlashBand({
     ? `${flash.productCount} produit${flash.productCount > 1 ? 's' : ''} · fin ${finFlash?.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`
     : stats.total > 0
       ? `${stats.total} produit${stats.total > 1 ? 's' : ''} à prix réduit`
-      : 'Configurez vos promos dans l’administration';
-
-  const href = flash ? '/promos' : '/promos';
+      : 'Promotions mises à jour régulièrement';
 
   return (
-    <section className="container-kabishop mt-10 md:mt-14">
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl bg-zinc-900 px-6 py-4 md:px-8 md:py-5">
-        <div className="flex items-center gap-3 text-white">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#4a5240]">
-            {flash ? <Zap className="h-4 w-4" /> : <Clock className="h-4 w-4" />}
-          </span>
-          <div>
-            <p className="text-sm font-bold">{titre}</p>
-            <p className="text-xs text-white/60">{sousTitre}</p>
+    <section className="w-full bg-zinc-950">
+      <div className="container-kabishop">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 py-5 sm:py-6 md:gap-8">
+          <div className="flex items-center gap-4 text-white min-w-0">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-olive shadow-lg shadow-olive/30">
+              {flash ? <Zap className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm md:text-base font-bold leading-snug">{titre}</p>
+              <p className="text-xs md:text-sm text-white/55 mt-1">{sousTitre}</p>
+            </div>
           </div>
+          <Link
+            href="/promos"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 text-sm font-bold text-zinc-900 hover:bg-cream transition shrink-0 w-full sm:w-auto"
+          >
+            {flash ? 'Voir la vente flash' : 'Voir les promos'}
+            <ArrowRight className="h-4 w-4" />
+          </Link>
         </div>
-        <Link
-          href={href}
-          className="inline-flex items-center gap-2 rounded-full bg-white px-6 py-2.5 text-sm font-bold text-zinc-900 hover:bg-[#faf7f2] transition shrink-0"
-        >
-          {flash ? 'Voir la vente flash' : 'Voir les promos'}
-          <ArrowRight className="h-4 w-4" />
-        </Link>
       </div>
     </section>
   );

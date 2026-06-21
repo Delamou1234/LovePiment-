@@ -3,8 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { usePanier, selectTotalItems } from '@/store/panier';
+import { usePanier, selectDistinctProductCount } from '@/store/panier';
 import { ProductSearchBar } from '@/shared/components/ProductSearchBar';
+import { CustomerAvatar } from '@/shared/components/CustomerAvatar';
+import { AVATAR_UPDATED_EVENT } from '@/modules/compte/lib/avatar-events';
 import {
   Menu,
   X,
@@ -18,6 +20,7 @@ type AuthUser = {
   name: string;
   email: string;
   role: 'admin' | 'customer';
+  avatarUrl?: string | null;
 };
 
 const AUTH_ME_CACHE = 'kabishop_auth_me_v1';
@@ -33,16 +36,16 @@ const NAV_AFTER_BOUTIQUE = [
 const BOUTIQUE_LINKS = [
   { name: 'Toute la boutique', href: '/produits' },
   { name: 'Parfums', href: '/produits?categorie=parfums' },
-  { name: 'Huiles corporelles', href: '/produits?categorie=huiles-corps' },
-  { name: 'Huiles capillaires', href: '/produits?categorie=huiles-capillaires' },
-  { name: 'Eaux de parfum', href: '/produits?categorie=eaux-parfum' },
+  { name: 'Huiles pour la peau', href: '/produits?categorie=huiles-corps' },
+  { name: 'Crèmes corporelles', href: '/produits?categorie=cremes-corporelles' },
+  { name: 'Promotions', href: '/promos' },
 ];
 
 export function ShopHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const panier = usePanier();
-  const totalItems = usePanier(selectTotalItems);
+  const cartProductCount = usePanier(selectDistinctProductCount);
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [boutiqueOpen, setBoutiqueOpen] = useState(false);
@@ -70,7 +73,15 @@ export function ShopHeader() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (cancelled) return;
-        const user = data?.user?.role === 'customer' ? (data.user as AuthUser) : null;
+        const user =
+          data?.user?.role === 'customer'
+            ? ({
+                name: data.user.name,
+                email: data.user.email,
+                role: 'customer' as const,
+                avatarUrl: data.user.avatarUrl ?? null,
+              } satisfies AuthUser)
+            : null;
         setAuthUser(user);
         try {
           sessionStorage.setItem(
@@ -87,6 +98,28 @@ export function ShopHeader() {
       cancelled = true;
     };
   }, [pathname]);
+
+  useEffect(() => {
+    const onAvatarUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<{ avatarUrl: string | null }>).detail;
+      setAuthUser((prev) => {
+        if (!prev) return prev;
+        const next = { ...prev, avatarUrl: detail.avatarUrl };
+        try {
+          sessionStorage.setItem(
+            AUTH_ME_CACHE,
+            JSON.stringify({ user: next, ts: Date.now() }),
+          );
+        } catch {
+          /* ignore */
+        }
+        return next;
+      });
+    };
+
+    window.addEventListener(AVATAR_UPDATED_EVENT, onAvatarUpdated);
+    return () => window.removeEventListener(AVATAR_UPDATED_EVENT, onAvatarUpdated);
+  }, []);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -109,7 +142,16 @@ export function ShopHeader() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const totalItemsDisplay = mounted ? totalItems : 0;
+  useEffect(() => {
+    if (!menuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [menuOpen]);
+
+  const cartProductCountDisplay = mounted ? cartProductCount : 0;
 
   const loginHref =
     pathname === '/connexion' || pathname === '/inscription'
@@ -120,27 +162,27 @@ export function ShopHeader() {
 
   const navLinkClass = (href: string) => {
     const active = href === '/' ? pathname === '/' : pathname.startsWith(href.split('?')[0]) && href !== '/';
-    return `text-sm font-medium transition-colors hover:text-zinc-900 ${
-      active ? 'text-zinc-900' : 'text-zinc-500'
+    return `text-sm font-medium transition-colors hover:text-olive ${
+      active ? 'text-olive' : 'text-zinc-500'
     }`;
   };
 
   return (
     <>
       {/* Barre annonce */}
-      <div className="bg-zinc-900 py-1.5 text-center">
-        <p className="text-[11px] text-white font-medium tracking-wide">
-          Livraison offerte dès 500&nbsp;000 GN à Conakry&nbsp;!
+      <div className="bg-olive px-3 py-2 text-center">
+        <p className="text-[10px] sm:text-[11px] text-white/90 font-medium tracking-[0.06em] sm:tracking-[0.08em] leading-snug">
+          Livraison offerte dès 500&nbsp;000 GN à Conakry
         </p>
       </div>
 
-      <header className="sticky top-0 z-40 border-b border-[#ebe4d8] bg-white">
+      <header className="sticky top-0 z-40 border-b border-beige-border/80 bg-white/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/90">
         <div className="container-kabishop">
           {/* Desktop : logo | nav centrée | actions */}
-          <div className="hidden lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:h-14 lg:gap-3">
-            <Link href="/" className="justify-self-start">
-              <span className="font-serif text-xl font-bold tracking-tight text-zinc-900">
-                KabiShop<span className="text-zinc-900">.</span>
+          <div className="hidden lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:h-16 lg:gap-3">
+            <Link href="/" className="justify-self-start group">
+              <span className="font-serif text-[1.35rem] font-bold tracking-tight text-zinc-900 transition group-hover:text-olive">
+                KabiShop<span className="text-olive">.</span>
               </span>
             </Link>
 
@@ -159,13 +201,13 @@ export function ShopHeader() {
                   <ChevronDown className={`h-3.5 w-3.5 transition ${boutiqueOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {boutiqueOpen && (
-                  <div className="absolute left-1/2 -translate-x-1/2 top-full mt-3 w-52 rounded-lg border border-[#ebe4d8] bg-white py-1.5 shadow-lg animate-fadeIn">
+                  <div className="absolute left-1/2 -translate-x-1/2 top-full mt-3 w-56 rounded-xl border border-beige-border bg-white py-2 shadow-[0_12px_40px_rgba(0,0,0,0.08)] animate-fadeIn">
                     {BOUTIQUE_LINKS.map((link) => (
                       <Link
                         key={link.href}
                         href={link.href}
                         onClick={() => setBoutiqueOpen(false)}
-                        className="block px-4 py-2.5 text-sm text-zinc-600 hover:bg-[#faf7f2] hover:text-zinc-900"
+                        className="block px-4 py-2.5 text-sm text-zinc-600 hover:bg-cream hover:text-zinc-900 transition-colors"
                       >
                         {link.name}
                       </Link>
@@ -185,16 +227,20 @@ export function ShopHeader() {
               <ProductSearchBar compact />
 
               {authUser ? (
-                <div className="flex items-center gap-1">
-                  <Link
-                    href="/compte"
-                    className="flex h-8 w-8 items-center justify-center text-zinc-600 hover:text-zinc-900 transition"
-                    aria-label="Mon compte"
-                    title={authUser.name}
-                  >
-                    <User className="h-4 w-4" strokeWidth={1.5} />
-                  </Link>
-                </div>
+                <Link
+                  href="/compte"
+                  className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full transition hover:opacity-90"
+                  aria-label="Mon compte"
+                  title={authUser.name}
+                >
+                  <CustomerAvatar
+                    name={authUser.name}
+                    avatarUrl={authUser.avatarUrl}
+                    size="xs"
+                    ringClassName="ring-beige-border"
+                    className="shadow-sm"
+                  />
+                </Link>
               ) : (
                 <Link
                   href={loginHref}
@@ -210,12 +256,12 @@ export function ShopHeader() {
                 type="button"
                 onClick={() => panier.ouvrirPanier()}
                 className="relative flex h-8 w-8 items-center justify-center text-zinc-700 hover:text-zinc-900 transition"
-                aria-label={`Panier${totalItemsDisplay > 0 ? ` (${totalItemsDisplay} articles)` : ''}`}
+                aria-label={`Panier${cartProductCountDisplay > 0 ? ` (${cartProductCountDisplay} produit${cartProductCountDisplay > 1 ? 's' : ''})` : ''}`}
               >
                 <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
-                {totalItemsDisplay > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-zinc-900 px-0.5 text-[9px] font-bold text-white">
-                    {totalItemsDisplay > 99 ? '99+' : totalItemsDisplay}
+                {cartProductCountDisplay > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-olive px-0.5 text-[9px] font-bold text-white">
+                    {cartProductCountDisplay > 99 ? '99+' : cartProductCountDisplay}
                   </span>
                 )}
               </button>
@@ -223,34 +269,40 @@ export function ShopHeader() {
           </div>
 
           {/* Mobile / tablette */}
-          <div className="flex lg:hidden h-12 items-center justify-between gap-3">
+          <div className="flex lg:hidden h-14 items-center justify-between gap-2">
             <button
               type="button"
-              className="p-2 text-zinc-700"
+              className="flex h-11 w-11 items-center justify-center rounded-lg text-zinc-700 active:bg-zinc-100"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label="Menu"
+              aria-expanded={menuOpen}
             >
               {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
 
             <Link href="/">
-              <span className="font-serif text-lg font-bold text-zinc-900">KabiShop.</span>
+              <span className="font-serif text-lg font-bold text-zinc-900">KabiShop<span className="text-olive">.</span></span>
             </Link>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5">
               {authUser ? (
                 <Link
                   href="/compte"
-                  className="p-2 text-zinc-700"
+                  className="flex h-11 w-11 items-center justify-center overflow-hidden rounded-full"
                   aria-label="Mon compte"
                   title={authUser.name}
                 >
-                  <User className="h-5 w-5" strokeWidth={1.5} />
+                  <CustomerAvatar
+                    name={authUser.name}
+                    avatarUrl={authUser.avatarUrl}
+                    size="xs"
+                    ringClassName="ring-beige-border"
+                  />
                 </Link>
               ) : (
                 <Link
                   href={loginHref}
-                  className="p-2 text-zinc-700"
+                  className="flex h-11 w-11 items-center justify-center rounded-lg text-zinc-700 active:bg-zinc-100"
                   aria-label="Connexion"
                   title="Connexion"
                 >
@@ -260,13 +312,13 @@ export function ShopHeader() {
               <button
                 type="button"
                 onClick={() => panier.ouvrirPanier()}
-                className="relative p-2 text-zinc-700"
-                aria-label={`Panier${totalItemsDisplay > 0 ? ` (${totalItemsDisplay} articles)` : ''}`}
+                className="relative flex h-11 w-11 items-center justify-center rounded-lg text-zinc-700 active:bg-zinc-100"
+                aria-label={`Panier${cartProductCountDisplay > 0 ? ` (${cartProductCountDisplay} produit${cartProductCountDisplay > 1 ? 's' : ''})` : ''}`}
               >
                 <ShoppingBag className="h-5 w-5" />
-                {totalItemsDisplay > 0 && (
-                  <span className="absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-zinc-900 px-0.5 text-[9px] font-bold text-white">
-                    {totalItemsDisplay > 99 ? '99+' : totalItemsDisplay}
+                {cartProductCountDisplay > 0 && (
+                  <span className="absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-olive px-0.5 text-[9px] font-bold text-white">
+                    {cartProductCountDisplay > 99 ? '99+' : cartProductCountDisplay}
                   </span>
                 )}
               </button>
@@ -275,20 +327,20 @@ export function ShopHeader() {
         </div>
 
         {menuOpen && (
-          <div className="border-t border-[#ebe4d8] bg-white lg:hidden animate-fadeIn">
-            <div className="container-kabishop py-4 space-y-1">
+          <div className="border-t border-beige-border bg-white lg:hidden animate-fadeIn max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain">
+            <div className="container-kabishop py-4 space-y-1 safe-area-bottom">
               <ProductSearchBar fullWidth className="mb-4" onNavigate={closeMenu} />
-              <Link href="/" onClick={() => setMenuOpen(false)} className="block py-2.5 text-sm font-medium">
+              <Link href="/" onClick={() => setMenuOpen(false)} className="block py-3 text-sm font-medium">
                 Accueil
               </Link>
               <p className="pt-2 pb-1 text-[10px] font-bold uppercase tracking-widest text-zinc-400">Boutique</p>
               {BOUTIQUE_LINKS.map((link) => (
-                <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)} className="block py-2 pl-2 text-sm text-zinc-600">
+                <Link key={link.href} href={link.href} onClick={() => setMenuOpen(false)} className="block py-3 pl-2 text-sm text-zinc-600">
                   {link.name}
                 </Link>
               ))}
               {NAV_AFTER_BOUTIQUE.map((link) => (
-                <Link key={link.name} href={link.href} onClick={() => setMenuOpen(false)} className="block py-2.5 text-sm font-medium">
+                <Link key={link.name} href={link.href} onClick={() => setMenuOpen(false)} className="block py-3 text-sm font-medium">
                   {link.name}
                 </Link>
               ))}
@@ -297,9 +349,14 @@ export function ShopHeader() {
                   <Link
                     href="/compte"
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-2 py-2.5 text-sm font-medium border-t border-[#ebe4d8] mt-2 pt-4"
+                    className="flex items-center gap-3 py-2.5 text-sm font-medium border-t border-beige-border mt-2 pt-4"
                   >
-                    <User className="h-4 w-4" strokeWidth={1.5} />
+                    <CustomerAvatar
+                      name={authUser.name}
+                      avatarUrl={authUser.avatarUrl}
+                      size="sm"
+                      ringClassName="ring-beige-border"
+                    />
                     Mon compte ({authUser.name})
                   </Link>
                   <button

@@ -66,6 +66,14 @@ enum ChatParticipantRole {
   VENDEUR
 }
 
+enum CallSignalType {
+  OFFER
+  ANSWER
+  ICE
+  END
+  REJECT
+}
+
 enum ContactSubject {
   GENERAL
   COMMANDE
@@ -284,9 +292,25 @@ model StoreSettings {
   instagramUrl    String? @map("instagram_url")
   email           String?
   metaDescription String? @map("meta_description")
+  parrainageActif Boolean @default(true) @map("parrainage_actif")
+  appelsActifs    Boolean @default(true) @map("appels_actifs")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@map("store_settings")
+}
+
+// ─── ADMIN ───────────────────────────────────────────────────────────────────
+
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  nom          String   @default("Administrateur")
+  actif        Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("admin_users")
 }
 
 // ─── ANALYTICS EVENT ─────────────────────────────────────────────────────────
@@ -449,6 +473,7 @@ model Conversation {
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
   messages         ChatMessage[]
+  callSignals      ChatCallSignal[]
 
   @@index([clientSessionId])
   @@index([dernierMessageAt])
@@ -484,6 +509,19 @@ model ChatPresence {
   @@unique([conversationId, role, participantId])
   @@index([conversationId])
   @@map("chat_presences")
+}
+
+model ChatCallSignal {
+  id             String            @id @default(cuid())
+  conversationId String            @map("conversation_id")
+  conversation   Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  fromRole       MessageSenderRole   @map("from_role")
+  type           CallSignalType
+  payload        String            @default("{}")
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  @@index([conversationId, createdAt])
+  @@map("chat_call_signals")
 }
 
 // ─── CONTACT ─────────────────────────────────────────────────────────────────

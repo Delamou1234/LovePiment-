@@ -1,5 +1,6 @@
 import { trackingService } from '@/modules/livraison/services/tracking.service';
-import { adminUnauthorized, requireAdmin } from '@/modules/admin/lib/require-admin';
+import { requireAdmin } from '@/modules/admin/lib/require-admin';
+import { closeSseStream, createSseSender, bindSseLifecycle, getSseMaxMs } from '@/shared/lib/sse-stream';
 
 /** GET /api/admin/notifications/stream — SSE avis clients en temps réel */
 export async function GET(request: Request) {
@@ -11,13 +12,16 @@ export async function GET(request: Request) {
   const encoder = new TextEncoder();
   const sentIds = new Set<string>();
   let closed = false;
+  let interval: ReturnType<typeof setInterval> | undefined;
   const since = new Date();
+
+  const shutdown = () => {
+    closed = true;
+  };
 
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (data: unknown) => {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-      };
+      const send = createSseSender(controller, encoder, () => closed, shutdown);
 
       const poll = async () => {
         if (closed) return;
@@ -36,12 +40,11 @@ export async function GET(request: Request) {
       };
 
       await poll();
-      const interval = setInterval(poll, 3000);
+      interval = setInterval(poll, 10_000);
 
-      request.signal.addEventListener('abort', () => {
-        closed = true;
-        clearInterval(interval);
-        controller.close();
+      bindSseLifecycle(request, getSseMaxMs(), () => {
+        if (interval) clearInterval(interval);
+        closeSseStream(controller, () => closed, shutdown);
       });
     },
   });

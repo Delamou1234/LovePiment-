@@ -1,50 +1,50 @@
 'use client';
 
-import { Check, CheckCheck, FileText, Mic } from 'lucide-react';
+import { Check, CheckCheck, Download, FileText } from 'lucide-react';
 import type { MessageDto } from '../types';
+import { formatMessageTime } from '../lib/format';
+import { VoiceMessagePlayer } from './VoiceMessagePlayer';
+import { ImageMessagePreview } from './ImageMessagePreview';
 
 type ChatMessageBubbleProps = {
   message: MessageDto;
   isMine: boolean;
 };
 
-function formatTime(date: Date | string) {
-  return new Intl.DateTimeFormat('fr-FR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(date));
-}
-
-function formatDuration(ms: number) {
-  const sec = Math.round(ms / 1000);
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
+function formatFileSize(bytes?: number | null) {
+  if (!bytes) return null;
+  if (bytes < 1024) return `${bytes} o`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} Ko`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
 }
 
 export function ChatMessageBubble({ message, isMine }: ChatMessageBubbleProps) {
   const read = Boolean(message.luLe);
-  const align = isMine ? 'items-end' : 'items-start';
+
   const bubble = isMine
-    ? 'bg-[#4a5240] text-white rounded-2xl rounded-br-md'
-    : 'bg-zinc-100 text-zinc-900 rounded-2xl rounded-bl-md';
+    ? 'bg-olive text-white rounded-2xl rounded-br-sm shadow-sm'
+    : 'bg-white text-zinc-900 rounded-2xl rounded-bl-sm shadow-sm ring-1 ring-black/[0.04]';
+
+  const mediaBubble =
+    message.type === 'IMAGE'
+      ? isMine
+        ? 'rounded-2xl rounded-br-sm overflow-hidden shadow-sm'
+        : 'rounded-2xl rounded-bl-sm overflow-hidden shadow-sm ring-1 ring-black/[0.04]'
+      : bubble;
 
   return (
-    <div className={`flex flex-col gap-1 max-w-[85%] ${align}`}>
-      <div className={`px-3.5 py-2.5 text-sm ${bubble}`}>
+    <div className={`flex flex-col gap-1 max-w-[min(320px,85%)] ${isMine ? 'items-end' : 'items-start'}`}>
+      <div className={`${message.type === 'IMAGE' ? mediaBubble : bubble} ${message.type !== 'IMAGE' ? 'px-3 py-2' : ''}`}>
         {message.type === 'TEXT' && (
-          <p className="whitespace-pre-wrap break-words">{message.contenu}</p>
+          <p className="whitespace-pre-wrap break-words text-[15px] leading-relaxed">{message.contenu}</p>
         )}
 
         {message.type === 'IMAGE' && message.fichierUrl && (
-          <a href={message.fichierUrl} target="_blank" rel="noopener noreferrer">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={message.fichierUrl}
-              alt={message.fichierNom ?? 'Image'}
-              className="max-h-48 rounded-lg object-cover"
-            />
-          </a>
+          <ImageMessagePreview
+            src={message.fichierUrl}
+            alt={message.fichierNom ?? 'Image'}
+            isMine={isMine}
+          />
         )}
 
         {message.type === 'DOCUMENT' && message.fichierUrl && (
@@ -52,36 +52,59 @@ export function ChatMessageBubble({ message, isMine }: ChatMessageBubbleProps) {
             href={message.fichierUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 underline-offset-2 hover:underline"
+            download={message.fichierNom ?? undefined}
+            className={`flex items-center gap-3 rounded-xl p-2 transition ${
+              isMine ? 'hover:bg-white/10' : 'hover:bg-zinc-50'
+            }`}
           >
-            <FileText className="h-4 w-4 shrink-0" />
-            <span className="truncate">{message.fichierNom ?? 'Document'}</span>
+            <span
+              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                isMine ? 'bg-white/15' : 'bg-olive/10 text-olive'
+              }`}
+            >
+              <FileText className="h-5 w-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-medium">
+                {message.fichierNom ?? 'Document'}
+              </span>
+              {message.fichierTaille && (
+                <span className={`text-[11px] ${isMine ? 'text-white/70' : 'text-zinc-500'}`}>
+                  {formatFileSize(message.fichierTaille)}
+                </span>
+              )}
+            </span>
+            <Download className={`h-4 w-4 shrink-0 opacity-60 ${isMine ? 'text-white' : 'text-zinc-400'}`} />
           </a>
         )}
 
         {message.type === 'VOICE' && message.fichierUrl && (
-          <div className="flex items-center gap-2 min-w-[200px]">
-            <Mic className="h-4 w-4 shrink-0 opacity-80" />
-            <audio controls src={message.fichierUrl} className="h-8 w-full max-w-[220px]" />
-            {message.dureeMs ? (
-              <span className="text-[10px] opacity-70">{formatDuration(message.dureeMs)}</span>
-            ) : null}
-          </div>
+          <VoiceMessagePlayer
+            src={message.fichierUrl}
+            durationMs={message.dureeMs}
+            isMine={isMine}
+          />
         )}
 
         {message.contenu && message.type !== 'TEXT' && (
-          <p className="mt-1.5 text-xs opacity-80 whitespace-pre-wrap">{message.contenu}</p>
+          <p
+            className={`px-3 pb-2 text-sm whitespace-pre-wrap ${
+              isMine ? 'text-white/90' : 'text-zinc-700'
+            } ${message.type === 'IMAGE' ? 'pt-2' : 'pt-1'}`}
+          >
+            {message.contenu}
+          </p>
         )}
       </div>
 
       <div className={`flex items-center gap-1 px-1 ${isMine ? 'flex-row-reverse' : ''}`}>
-        <span className="text-[10px] text-zinc-400">{formatTime(message.createdAt)}</span>
+        <span className="text-[10px] text-zinc-400 tabular-nums">{formatMessageTime(message.createdAt)}</span>
         {isMine && (
-          <span className="text-zinc-400" title={read ? 'Lu' : 'Envoyé'}>
+          <span title={read ? 'Lu' : 'Envoyé'}>
             {read ? (
-              <CheckCheck className="h-3 w-3 text-sky-500" />
+              <CheckCheck className="h-3.5 w-3.5 text-sky-500" />
             ) : (
-              <Check className="h-3 w-3" />
+              <Check className="h-3.5 w-3.5 text-zinc-400" />
             )}
           </span>
         )}

@@ -28,7 +28,7 @@ export async function GET() {
   if (!session?.id) return unauthorized();
 
   const profil = await customerProfileService.obtenirProfil(session.id);
-  if (!profil) return NextResponse.json({ message: 'Compte introuvable' }, { status: 404 });
+  if (!profil) return NextResponse.json({ message: 'Compte introuvable' }, { status: 401 });
 
   return NextResponse.json({ profil });
 }
@@ -48,7 +48,7 @@ export async function PATCH(request: NextRequest) {
   }
 
   const profil = await customerProfileService.mettreAJourProfil(session.id, parsed.data);
-  if (!profil) return NextResponse.json({ message: 'Compte introuvable' }, { status: 404 });
+  if (!profil) return NextResponse.json({ message: 'Compte introuvable' }, { status: 401 });
 
   const response = NextResponse.json({ profil, message: 'Profil mis à jour' });
 

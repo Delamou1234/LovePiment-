@@ -1,4 +1,5 @@
 import { trackingService } from '@/modules/livraison/services/tracking.service';
+import { closeSseStream, createSseSender, bindSseLifecycle, getSseMaxMs } from '@/shared/lib/sse-stream';
 
 type Params = Promise<{ token: string }>;
 
@@ -9,12 +10,15 @@ export async function GET(request: Request, { params }: { params: Params }) {
   const encoder = new TextEncoder();
   let lastUpdatedAt = '';
   let closed = false;
+  let interval: ReturnType<typeof setInterval> | undefined;
+
+  const shutdown = () => {
+    closed = true;
+  };
 
   const stream = new ReadableStream({
     async start(controller) {
-      const send = (data: unknown) => {
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-      };
+      const send = createSseSender(controller, encoder, () => closed, shutdown);
 
       const poll = async () => {
         if (closed) return;
@@ -22,7 +26,8 @@ export async function GET(request: Request, { params }: { params: Params }) {
           const suivi = await trackingService.obtenirSuiviParToken(token);
           if (!suivi) {
             send({ error: 'not_found' });
-            controller.close();
+            if (interval) clearInterval(interval);
+            closeSseStream(controller, () => closed, shutdown);
             return;
           }
           if (suivi.updatedAt !== lastUpdatedAt) {
@@ -37,13 +42,14 @@ export async function GET(request: Request, { params }: { params: Params }) {
       };
 
       await poll();
-      const interval = setInterval(poll, 5000);
+      interval = setInterval(poll, 10_000);
 
-      request.signal.addEventListener('abort', () => {
-        closed = true;
-        clearInterval(interval);
-        controller.close();
-      });
+      const stop = () => {
+        if (interval) clearInterval(interval);
+        closeSseStream(controller, () => closed, shutdown);
+      };
+
+      bindSseLifecycle(request, getSseMaxMs(), stop);
     },
   });
 

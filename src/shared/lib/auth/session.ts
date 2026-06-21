@@ -126,7 +126,3 @@ export function getAdminCredentials() {
 export function isAuthConfigured(): boolean {
   return Boolean(process.env.AUTH_SECRET && process.env.AUTH_SECRET.length >= 16);
 }
-
-export function getAppUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-}

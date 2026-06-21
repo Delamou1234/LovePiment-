@@ -1,4 +1,4 @@
-import { getAppUrl } from '@/shared/lib/auth/session';
+import { getAppUrl } from '@/shared/lib/app-url';
 import { createOAuthState, verifyOAuthState } from '@/shared/lib/auth/oauth-state';
 
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';

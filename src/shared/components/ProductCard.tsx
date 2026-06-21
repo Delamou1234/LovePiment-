@@ -103,9 +103,9 @@ export function ProductCard({
 
   return (
     <>
-      <article className="group flex flex-col bg-transparent">
-        <div className="relative aspect-[3/4] w-full rounded-lg mb-3">
-          <div className="absolute inset-0 overflow-hidden rounded-lg bg-[#f5f0e8]">
+      <article className="group flex flex-col bg-transparent transition-transform duration-300 hover:-translate-y-0.5">
+        <div className="relative aspect-[3/4] w-full rounded-xl mb-3.5">
+          <div className="absolute inset-0 overflow-hidden rounded-xl bg-beige shadow-sm ring-1 ring-beige-border/40 group-hover:shadow-md group-hover:ring-beige-border/60 transition-all duration-300">
             <Link href={`/produits/${slug}`} className="absolute inset-0">
               <Image
                 src={image}
@@ -120,7 +120,7 @@ export function ProductCard({
           </div>
 
           {enPromo && (
-            <span className="absolute top-2.5 left-2.5 z-10 rounded-full bg-red-600 px-2 py-0.5 text-[10px] font-bold text-white shadow-sm">
+            <span className="absolute top-3 left-3 z-10 rounded-full bg-zinc-900/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
               -{remisePct}%
             </span>
           )}
@@ -148,7 +148,7 @@ export function ProductCard({
                 type="button"
                 onClick={handleBuyNow}
                 disabled={busy}
-                className="flex flex-1 items-center justify-center gap-1 rounded-full bg-zinc-900 py-2 text-[11px] font-semibold text-white shadow-sm hover:bg-zinc-800"
+                className="flex flex-1 items-center justify-center gap-1 rounded-full bg-olive py-2.5 text-[11px] font-semibold text-white shadow-sm hover:bg-olive-dark transition-colors"
                 aria-label={`Achat en un clic — ${nom}`}
               >
                 <Zap className="h-3.5 w-3.5" />
@@ -164,7 +164,7 @@ export function ProductCard({
               e.stopPropagation();
               await toggleProduct();
             }}
-            className="absolute top-2.5 right-2.5 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-sm transition hover:scale-105"
+            className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-sm ring-1 ring-black/5 transition hover:scale-105 hover:bg-white"
             aria-label="Favoris"
           >
             <Heart
@@ -173,15 +173,15 @@ export function ProductCard({
           </button>
         </div>
 
-        <Link href={`/produits/${slug}`} className="space-y-0.5 px-0.5">
-          <h3 className="text-sm font-semibold text-zinc-900 leading-snug line-clamp-1 group-hover:underline underline-offset-2">
+        <Link href={`/produits/${slug}`} className="space-y-1 px-1">
+          <h3 className="text-sm font-semibold text-zinc-900 leading-snug line-clamp-2 group-hover:text-olive transition-colors">
             {nom}
           </h3>
-          <p className="text-[11px] text-zinc-400">{categorie}</p>
-          <div className="pt-0.5">
+          <p className="text-[11px] uppercase tracking-wide text-zinc-400">{categorie}</p>
+          <div className="pt-1">
             {enPromo ? (
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                <p className="text-sm font-bold text-red-600">{formattedPrice}</p>
+                <p className="text-sm font-bold text-zinc-900">{formattedPrice}</p>
                 <p className="text-xs text-zinc-400 line-through">{formattedOriginal}</p>
               </div>
             ) : (

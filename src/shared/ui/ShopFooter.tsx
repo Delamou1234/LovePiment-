@@ -7,9 +7,8 @@ const FACEBOOK = process.env.NEXT_PUBLIC_FACEBOOK_PAGE_URL ?? 'https://facebook.
 const BOUTIQUE_LINKS = [
   { label: 'Tous les produits', href: '/produits' },
   { label: 'Parfums', href: '/produits?categorie=parfums' },
-  { label: 'Huiles corps', href: '/produits?categorie=huiles-corps' },
-  { label: 'Huiles cheveux', href: '/produits?categorie=huiles-capillaires' },
-  { label: 'Eaux de parfum', href: '/produits?categorie=eaux-parfum' },
+  { label: 'Huiles pour la peau', href: '/produits?categorie=huiles-corps' },
+  { label: 'Crèmes corporelles', href: '/produits?categorie=cremes-corporelles' },
   { label: 'Promotions', href: '/promos' },
 ];
 
@@ -89,8 +88,11 @@ export function ShopFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer id="contact" className="mt-auto bg-[#4a5240] text-white">
-      <div className="container-kabishop px-6 sm:px-8 md:px-10 lg:px-12 py-14 md:py-20">
+    <footer
+      id="contact"
+      className="mt-10 md:mt-14 rounded-t-2xl md:rounded-t-3xl overflow-hidden bg-olive text-white shadow-[0_-8px_32px_rgba(74,82,64,0.12)]"
+    >
+      <div className="container-kabishop pt-12 pb-10 sm:pt-16 sm:pb-14 md:pt-20 md:pb-16 lg:pt-24 lg:pb-20">
         <div className="grid grid-cols-1 gap-12 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-8 xl:gap-x-12">
           {/* Marque */}
           <div className="lg:col-span-4 space-y-6 pr-0 sm:pr-4">
@@ -98,8 +100,8 @@ export function ShopFooter() {
               KabiShop
             </Link>
             <p className="text-sm leading-relaxed text-white/70 max-w-sm">
-              Parfums et huiles d&apos;exception à Conakry. Livraison rapide, paiement sécurisé
-              Mobile Money & CinetPay.
+              Parfums, huiles pour la peau et crèmes corporelles à Conakry. Livraison rapide,
+              paiement sécurisé Mobile Money & CinetPay.
             </p>
             <div className="flex gap-2">
               {SOCIAL.map(({ label, href, icon }) => (
@@ -158,11 +160,11 @@ export function ShopFooter() {
               <input
                 type="email"
                 placeholder="Votre e-mail"
-                className="w-full rounded-lg border border-white/20 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/40 focus:bg-white/15"
+                className="w-full rounded-xl border border-white/20 bg-white/10 px-4 py-3 text-sm text-white placeholder:text-white/40 outline-none focus:border-white/40 focus:bg-white/15"
               />
               <button
                 type="button"
-                className="w-full rounded-lg bg-white py-3 text-sm font-semibold text-[#4a5240] hover:bg-[#faf7f2] transition"
+                className="w-full rounded-xl bg-white py-3 text-sm font-semibold text-olive hover:bg-cream transition"
               >
                 S&apos;inscrire
               </button>
@@ -176,7 +178,7 @@ export function ShopFooter() {
 
       {/* Barre copyright */}
       <div className="border-t border-white/10">
-        <div className="container-kabishop px-6 sm:px-8 md:px-10 lg:px-12 py-5 md:py-6 flex flex-col-reverse sm:flex-row items-center justify-between gap-4 text-[11px] text-white/50">
+        <div className="container-kabishop px-8 sm:px-10 md:px-12 lg:px-14 py-7 md:py-8 flex flex-col-reverse sm:flex-row items-center justify-between gap-4 text-[11px] text-white/50">
           <p>&copy; {year} KabiShop. Tous droits réservés.</p>
           <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1" aria-label="Liens légaux">
             <Link href="/apropos" className="hover:text-white transition">

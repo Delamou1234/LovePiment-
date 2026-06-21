@@ -1,5 +1,9 @@
 import { orderRepository, type OrderRepository } from '../repository/order.repository';
 import { trackingService } from '@/modules/livraison/services/tracking.service';
+import {
+  buildNotificationContext,
+  orderNotificationService,
+} from '@/modules/notifications/services/order-notification.service';
 import type { CommandeAvecItems, CreerCommandeDto, FiltresCommandes } from '../types';
 import type { Pagination } from '@/types';
 
@@ -24,6 +28,7 @@ export class OrderService {
 
     const commande = await this.repo.creer(dto);
     await trackingService.initialiserSuivi(commande.id, dto.clientVille);
+    orderNotificationService.notifyOrderCreated(buildNotificationContext(commande));
     return commande;
   }
 

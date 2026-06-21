@@ -1,4 +1,5 @@
 import type { MessagingProvider, EnvoyerMessageParams, GenererLienParams } from './messaging-provider.interface';
+import { whatsAppCloudProvider } from '@/modules/notifications/providers/whatsapp-cloud.provider';
 
 /**
  * WhatsAppProvider — génère des liens wa.me contextuels.
@@ -19,9 +20,18 @@ export class WhatsAppProvider implements MessagingProvider {
     return `https://wa.me/${numNettoyé}?text=${messageEncode}`;
   }
 
-  // Pas d'envoi serveur pour l'instant (WhatsApp Business API nécessite un compte vérifié)
-  async envoyerMessage(_params: EnvoyerMessageParams): Promise<{ success: boolean; error?: string }> {
-    return { success: false, error: 'WhatsApp Business API non configurée' };
+  async envoyerMessage(params: EnvoyerMessageParams): Promise<{ success: boolean; error?: string }> {
+    if (!whatsAppCloudProvider.configured) {
+      return { success: false, error: 'WhatsApp Cloud API non configurée (WHATSAPP_CLOUD_TOKEN)' };
+    }
+
+    const num = params.destinataire.replace(/[\s+\-()]/g, '');
+    const result = await whatsAppCloudProvider.envoyerTexte({
+      to: num.startsWith('224') ? num : `224${num.replace(/^0/, '')}`,
+      body: params.message,
+    });
+
+    return { success: result.success, error: result.error };
   }
 }
 

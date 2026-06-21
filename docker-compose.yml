@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: kabishop-postgres
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: kabishop
+      POSTGRES_PASSWORD: kabishop
+      POSTGRES_DB: kabishop
+    volumes:
+      - kabishop_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U kabishop -d kabishop']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  kabishop_pg_data:

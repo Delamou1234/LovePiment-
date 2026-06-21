@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { adminAuthRepository } from '@/modules/auth/repository/admin-auth.repository';
 import { getSession } from '@/shared/lib/auth/session';
 import { customerAuthRepository } from '@/modules/auth/repository/customer-auth.repository';
 
@@ -10,7 +11,20 @@ export async function GET() {
   }
 
   if (session.role === 'admin') {
-    return NextResponse.json({ user: session });
+    const admin =
+      (session.id ? await adminAuthRepository.trouverParId(session.id) : null) ??
+      (await adminAuthRepository.trouverParEmail(session.email));
+    if (!admin?.actif) {
+      return NextResponse.json({ user: null });
+    }
+    return NextResponse.json({
+      user: {
+        id: admin.id,
+        email: admin.email,
+        name: admin.nom,
+        role: 'admin' as const,
+      },
+    });
   }
 
   if (!session.id) {

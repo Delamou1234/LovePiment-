@@ -76,6 +76,45 @@ export class MarketingRepository {
     });
   }
 
+  async obtenirParrainageClient(customerId: string) {
+    return prisma.customer.findUnique({
+      where: { id: customerId },
+      select: {
+        parrainId: true,
+        codeParrainage: true,
+        parrain: {
+          select: { id: true, nom: true, codeParrainage: true },
+        },
+      },
+    });
+  }
+
+  async listerFilleuls(parrainId: string, limit = 20) {
+    return prisma.customer.findMany({
+      where: { parrainId },
+      select: {
+        id: true,
+        nom: true,
+        createdAt: true,
+        _count: {
+          select: {
+            commandes: {
+              where: {
+                statut: { in: ['PAYEE', 'EN_PREPARATION', 'EXPEDIEE', 'LIVREE'] },
+              },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+  }
+
+  async compterFilleuls(parrainId: string) {
+    return prisma.customer.count({ where: { parrainId } });
+  }
+
   async listerFlashSales() {
     return prisma.flashSale.findMany({ orderBy: { debut: 'desc' } });
   }

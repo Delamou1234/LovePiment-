@@ -4,11 +4,11 @@ import { ChevronRight } from 'lucide-react';
 import ProductDetailsSection from '@/modules/produits/components/ProductDetailsSection';
 import { ProductSimilarSection } from '@/modules/produits/components/ProductSimilarSection';
 import { serialiserProduitPourClient } from '@/modules/produits/lib/serialize-product';
-import { productService } from '@/modules/produits/services/product.service';
+import { getCachedProduct } from '@/modules/produits/lib/cached-queries';
 import { notFound } from 'next/navigation';
-import { ProductAiRecommendationsLazy } from '@/modules/ia/components/ProductAiRecommendationsLazy';
 import { ProductReviewsSection } from '@/modules/avis/components/ProductReviewsSection';
 import { avisService } from '@/modules/avis/services/review.service';
+import { getSession } from '@/shared/lib/auth/session';
 
 type Params = Promise<{ slug: string }>;
 
@@ -19,17 +19,27 @@ export default async function ProductDetailPage({ params }: { params: Params }) 
 
   let product;
   try {
-    product = await productService.obtenirProduit(slug);
+    product = await getCachedProduct(slug);
   } catch {
     notFound();
   }
 
   const productClient = serialiserProduitPourClient(product);
-  const avisStats = await avisService.statsProduit(product.id);
+
+  const [avisStats, avisPage, session] = await Promise.all([
+    avisService.statsProduit(product.id),
+    avisService.listerAvisProduit(product.id, 1, 10),
+    getSession(),
+  ]);
+
+  const eligibles =
+    session?.id != null
+      ? (await avisService.listerEligibles(session.id)).filter((e) => e.productId === product.id)
+      : [];
 
   return (
-    <div className="container-kabishop py-8 space-y-16 animate-fadeIn">
-      <div className="flex items-center gap-1.5 text-xs text-zinc-500">
+    <div className="container-kabishop animate-fadeIn py-6 sm:py-8 space-y-12 sm:space-y-16">
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs text-zinc-500 scrollbar-hide whitespace-nowrap">
         <Link href="/" className="hover:text-primary transition font-medium">
           Accueil
         </Link>
@@ -56,9 +66,11 @@ export default async function ProductDetailPage({ params }: { params: Params }) 
         productId={productClient.id}
         productSlug={productClient.slug}
         productNom={productClient.nom}
+        initialStats={avisStats}
+        initialAvis={avisPage.avis}
+        initialTotalPages={avisPage.pagination.totalPages}
+        initialEligibles={eligibles}
       />
-
-      <ProductAiRecommendationsLazy productId={productClient.id} categorieId={productClient.categorieId} />
     </div>
   );
 }

@@ -119,7 +119,7 @@ export function CatalogSearchBar({ currentParams, defaultQuery = '', className }
           }}
           onFocus={() => suggestions.length > 0 && setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder="Rechercher un parfum, une huile, une marque..."
+          placeholder="Rechercher un parfum, une huile, une crème..."
           className="w-full rounded-full border border-zinc-200 bg-zinc-50 py-2.5 pl-4 pr-10 text-sm outline-none transition focus:border-primary focus:bg-white"
           autoComplete="off"
         />

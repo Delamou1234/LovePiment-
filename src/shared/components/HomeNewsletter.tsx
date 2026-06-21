@@ -27,7 +27,7 @@ export function HomeNewsletter() {
               -10% sur votre première commande
             </h2>
             <p className="mt-4 text-sm md:text-base text-white/75 leading-relaxed max-w-md">
-              Inscrivez-vous pour recevoir nos offres exclusives, nouveautés parfums & huiles, et conseils bien-être.
+              Inscrivez-vous pour recevoir nos offres exclusives, nouveautés parfums & soins du corps.
             </p>
             <div className="mt-6 flex flex-wrap gap-4 text-xs text-white/60">
               <span className="flex items-center gap-1.5">

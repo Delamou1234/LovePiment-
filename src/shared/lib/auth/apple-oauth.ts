@@ -1,5 +1,5 @@
 import { sign } from 'crypto';
-import { getAppUrl } from '@/shared/lib/auth/session';
+import { getAppUrl } from '@/shared/lib/app-url';
 import { createOAuthState, verifyOAuthState } from '@/shared/lib/auth/oauth-state';
 
 const APPLE_AUTH_URL = 'https://appleid.apple.com/auth/authorize';

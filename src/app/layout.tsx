@@ -1,23 +1,14 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import { Inter } from 'next/font/google';
-import { cn } from '@/lib/utils';
-
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-sans',
-  display: 'swap',
-  preload: true,
-});
 
 export const metadata: Metadata = {
   title: {
-    default: 'KabiShop — Parfums & Huiles à Conakry, Guinée',
+    default: 'KabiShop — Parfums, huiles & crèmes corporelles à Conakry',
     template: '%s | KabiShop',
   },
   description:
-    'Parfums orientaux et huiles de qualité chez KabiShop à Conakry. Livraison rapide, paiement Mobile Money et carte bancaire.',
-  keywords: ['parfums', 'huiles', 'Conakry', 'Guinée', 'KabiShop', 'boutique en ligne'],
+    'Parfums, huiles pour la peau et crèmes corporelles à Conakry. Livraison rapide, paiement Mobile Money et carte bancaire.',
+  keywords: ['parfums', 'huiles corporelles', 'crèmes corporelles', 'Conakry', 'Guinée', 'KabiShop'],
   authors: [{ name: 'KabiShop' }],
   creator: 'KabiShop',
   openGraph: {
@@ -25,14 +16,14 @@ export const metadata: Metadata = {
     locale: 'fr_GN',
     url: process.env.NEXT_PUBLIC_APP_URL,
     siteName: 'KabiShop',
-    title: 'KabiShop — Parfums & Huiles à Conakry, Guinée',
+    title: 'KabiShop — Parfums, huiles & crèmes corporelles à Conakry',
     description:
-      'Parfums et huiles de qualité chez KabiShop à Conakry.',
+      'Parfums, huiles pour la peau et crèmes corporelles chez KabiShop à Conakry.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'KabiShop — Parfums & Huiles à Conakry, Guinée',
-    description: 'Parfums orientaux et huiles sélectionnées à Conakry.',
+    title: 'KabiShop — Parfums, huiles & crèmes corporelles à Conakry',
+    description: 'Parfums, huiles peau et crèmes corporelles sélectionnées à Conakry.',
   },
   robots: {
     index: true,
@@ -52,6 +43,7 @@ export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -60,7 +52,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className={cn('font-sans', inter.variable)} data-scroll-behavior="smooth">
+    <html lang="fr" className="font-sans" data-scroll-behavior="smooth">
       <body className="antialiased">{children}</body>
     </html>
   );

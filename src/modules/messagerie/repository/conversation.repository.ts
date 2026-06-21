@@ -47,10 +47,43 @@ export class ConversationRepository {
     return prisma.conversation.findUnique({ where: { id } });
   }
 
-  async listerParSession(clientSessionId: string) {
+  async obtenirIndicateurMaj(id: string) {
+    return prisma.conversation.findUnique({
+      where: { id },
+      select: { updatedAt: true, dernierMessageAt: true },
+    });
+  }
+
+  async listerParSession(clientSessionId: string, clientUserId?: string | null) {
+    if (clientUserId) {
+      return prisma.conversation.findMany({
+        where: { clientUserId },
+        orderBy: { dernierMessageAt: 'desc' },
+      });
+    }
     return prisma.conversation.findMany({
       where: { clientSessionId },
       orderBy: { dernierMessageAt: 'desc' },
+    });
+  }
+
+  async trouverSupport(clientSessionId: string, clientUserId?: string | null) {
+    if (clientUserId) {
+      return prisma.conversation.findFirst({
+        where: { clientUserId },
+        orderBy: { createdAt: 'asc' },
+      });
+    }
+    return prisma.conversation.findFirst({
+      where: { clientSessionId, sujet: 'Support KabiShop' },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  async lierSessionAuUser(clientSessionId: string, clientUserId: string) {
+    await prisma.conversation.updateMany({
+      where: { clientSessionId, clientUserId: null },
+      data: { clientUserId },
     });
   }
 

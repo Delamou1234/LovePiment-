@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { ProductCard } from '@/shared/components/ProductCard';
 import { variantePourCarte } from '@/shared/lib/product-card';
-import { productService } from '@/modules/produits/services/product.service';
+import { getCachedSimilarProducts } from '@/modules/produits/lib/cached-queries';
 
 type Props = {
   productId: string;
@@ -10,7 +10,7 @@ type Props = {
 };
 
 export async function ProductSimilarSection({ productId, categorieId }: Props) {
-  const similaires = await productService.obtenirProduitsSimilaires(productId, categorieId, 4);
+  const similaires = await getCachedSimilarProducts(productId, categorieId);
 
   if (similaires.length === 0) return null;
 

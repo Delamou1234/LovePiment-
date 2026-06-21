@@ -37,8 +37,15 @@ interface PanierState {
   getTotalAvecLivraison: (ville?: string) => number;
 }
 
-export const selectTotalItems = (state: PanierState) =>
+export const selectTotalQuantity = (state: PanierState) =>
   state.items.reduce((acc, item) => acc + item.quantite, 0);
+
+/** Nombre de produits différents (productId distincts) — badge panier. */
+export const selectDistinctProductCount = (state: PanierState) =>
+  new Set(state.items.map((item) => item.productId)).size;
+
+/** @deprecated Préférer selectTotalQuantity ou selectDistinctProductCount selon le contexte. */
+export const selectTotalItems = selectTotalQuantity;
 
 export const selectQuantityForVariant = (variantId: string) => (state: PanierState) =>
   state.items.find((item) => item.variantId === variantId)?.quantite ?? 0;

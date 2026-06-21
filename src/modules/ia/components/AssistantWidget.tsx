@@ -8,7 +8,7 @@ import type { MessageAssistant, ReponseAssistant } from '@/modules/ia/types';
 
 const SUGGESTIONS = [
   'Quel parfum pour un cadeau ?',
-  'Huile capillaire pour cheveux secs',
+  'Huile ou crème pour peau sèche ?',
   'Livraison à Conakry ?',
 ];
 
@@ -150,9 +150,9 @@ export function AssistantWidget({ open: openProp, onOpenChange }: AssistantWidge
   return (
     <>
       {open && (
-        <div className="fixed inset-0 z-50 flex items-end justify-end p-4 sm:p-6 pointer-events-none">
+        <div className="fixed inset-0 z-50 flex items-end justify-end p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:p-6 pointer-events-none">
           <div
-            className="pointer-events-auto w-full max-w-md h-[min(520px,calc(100vh-8rem))] rounded-2xl border border-[#ebe4d8] bg-white shadow-2xl flex flex-col overflow-hidden animate-fadeIn"
+            className="pointer-events-auto flex h-[min(520px,calc(100dvh-5rem))] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-[#ebe4d8] bg-white shadow-2xl animate-fadeIn"
             role="dialog"
             aria-label="Assistant IA KabiShop"
           >

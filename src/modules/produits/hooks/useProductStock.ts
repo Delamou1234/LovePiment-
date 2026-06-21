@@ -3,8 +3,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { StockVarianteClient } from '../types';
 
-const POLL_INTERVAL_MS = 20_000;
-
 export function useProductStock(slug: string, initialVariantes: StockVarianteClient[]) {
   const [variantes, setVariantes] = useState(initialVariantes);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
@@ -31,8 +29,11 @@ export function useProductStock(slug: string, initialVariantes: StockVarianteCli
   }, [initialVariantes]);
 
   useEffect(() => {
-    const interval = setInterval(refresh, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
   }, [refresh]);
 
   return { variantes, lastUpdated, loading, refresh };

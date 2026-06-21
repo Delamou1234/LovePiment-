@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import {
   createSessionToken,
-  getAppUrl,
   isAuthConfigured,
   setSessionCookie,
 } from '@/shared/lib/auth/session';
+import { getAppUrl } from '@/shared/lib/app-url';
 import {
   fetchFacebookUserFromCode,
   isFacebookAuthConfigured,

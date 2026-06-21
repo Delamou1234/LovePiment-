@@ -5,7 +5,7 @@ import {
   isAuthConfigured,
   setSessionCookie,
 } from '@/shared/lib/auth/session';
-import { verifyAdminLogin } from '@/shared/lib/auth/credentials';
+import { adminAuthRepository } from '@/modules/auth/repository/admin-auth.repository';
 import { customerAuthRepository } from '@/modules/auth/repository/customer-auth.repository';
 import { getSafeRedirect, isAdminRedirect } from '@/shared/lib/auth-redirect';
 
@@ -37,13 +37,15 @@ export async function POST(request: NextRequest) {
       mode === 'admin' || (mode !== 'customer' && isAdminRedirect(redirect));
 
     if (isAdmin) {
-      if (!verifyAdminLogin(email, password)) {
+      const admin = await adminAuthRepository.verifierConnexion(email, password);
+      if (!admin) {
         return NextResponse.json({ message: 'E-mail ou mot de passe incorrect' }, { status: 401 });
       }
 
       const token = createSessionToken({
-        email: email.trim().toLowerCase(),
-        name: email.split('@')[0],
+        id: admin.id,
+        email: admin.email,
+        name: admin.nom,
         role: 'admin',
       });
 

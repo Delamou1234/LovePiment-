@@ -9,6 +9,15 @@ const ALLOWED_PREFIXES = [
   '/suivi',
 ];
 
+/** Redirect post-connexion client : jamais vers /admin sans session admin. */
+export function getSafeRedirectForCustomer(
+  redirect: string | null | undefined,
+  fallback = '/compte',
+): string {
+  if (isAdminRedirect(redirect)) return fallback;
+  return getSafeRedirect(redirect, fallback);
+}
+
 export function getSafeRedirect(
   redirect: string | null | undefined,
   fallback = '/',
