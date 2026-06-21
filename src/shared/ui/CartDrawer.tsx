@@ -3,18 +3,29 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePanier } from '@/store/panier';
-import { X, Plus, Minus, Trash2, ArrowRight, ShoppingBag } from 'lucide-react';
-
-const FRAIS_LIVRAISON = 15000;
+import { formaterPrixGN, LIVRAISON_CONFIG } from '@/shared/lib/shipping';
+import { X, Plus, Minus, Trash2, ArrowRight, ShoppingBag, Cloud } from 'lucide-react';
 
 export function CartDrawer() {
   const panier = usePanier();
-  const { items, isOpen, fermerPanier, modifierQuantite, retirerItem, totalPrix } = panier;
+  const {
+    items,
+    isOpen,
+    fermerPanier,
+    modifierQuantite,
+    retirerItem,
+    getSousTotal,
+    getFraisLivraison,
+    getTotalAvecLivraison,
+    lastSavedAt,
+  } = panier;
 
   if (!isOpen) return null;
 
-  const grandTotal = totalPrix + (items.length > 0 ? FRAIS_LIVRAISON : 0);
-  const formatPrix = (val: number) => val.toLocaleString('fr-FR') + ' GN';
+  const sousTotal = getSousTotal();
+  const fraisLivraison = getFraisLivraison();
+  const total = getTotalAvecLivraison();
+  const livraisonGratuite = fraisLivraison === 0 && items.length > 0;
 
   return (
     <div className="fixed inset-0 z-50 overflow-hidden">
@@ -67,7 +78,7 @@ export function CartDrawer() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <h3 className="truncate text-sm font-semibold text-zinc-900">{item.nomProduit}</h3>
-                    <p className="mt-0.5 text-xs font-bold text-zinc-700">{formatPrix(item.prix)}</p>
+                    <p className="mt-0.5 text-xs font-bold text-zinc-700">{formaterPrixGN(item.prix)}</p>
                     {(item.taille || item.couleur) && (
                       <p className="mt-1 text-[10px] uppercase tracking-wider text-zinc-400">
                         {[item.taille, item.couleur].filter(Boolean).join(' · ')}
@@ -78,8 +89,8 @@ export function CartDrawer() {
                         <button
                           type="button"
                           onClick={() => modifierQuantite(item.variantId, item.quantite - 1)}
-                          className="p-1.5 text-zinc-500 hover:text-accent disabled:opacity-40"
-                          disabled={item.quantite <= 1}
+                          className="p-1.5 text-zinc-500 hover:text-accent"
+                          aria-label="Diminuer la quantité"
                         >
                           <Minus className="h-3.5 w-3.5" />
                         </button>
@@ -88,6 +99,7 @@ export function CartDrawer() {
                           type="button"
                           onClick={() => modifierQuantite(item.variantId, item.quantite + 1)}
                           className="p-1.5 text-zinc-500 hover:text-accent"
+                          aria-label="Augmenter la quantité"
                         >
                           <Plus className="h-3.5 w-3.5" />
                         </button>
@@ -112,17 +124,32 @@ export function CartDrawer() {
               <div className="space-y-1.5 text-sm text-zinc-600">
                 <div className="flex justify-between">
                   <span>Sous-total</span>
-                  <span className="font-semibold text-zinc-900">{formatPrix(totalPrix)}</span>
+                  <span className="font-semibold text-zinc-900">{formaterPrixGN(sousTotal)}</span>
                 </div>
                 <div className="flex justify-between text-xs">
                   <span>Livraison (Conakry)</span>
-                  <span>{formatPrix(FRAIS_LIVRAISON)}</span>
+                  <span className={livraisonGratuite ? 'font-semibold text-emerald-600' : ''}>
+                    {livraisonGratuite ? 'Offerte' : formaterPrixGN(fraisLivraison)}
+                  </span>
                 </div>
+                {!livraisonGratuite && sousTotal > 0 && (
+                  <p className="text-[10px] text-zinc-400">
+                    Livraison offerte dès {formaterPrixGN(LIVRAISON_CONFIG.seuilGratuit)}
+                  </p>
+                )}
                 <div className="flex justify-between border-t border-[#ebe4d8] pt-2 font-serif text-base font-bold text-zinc-900">
                   <span>Total</span>
-                  <span>{formatPrix(grandTotal)}</span>
+                  <span>{formaterPrixGN(total)}</span>
                 </div>
               </div>
+
+              {lastSavedAt && (
+                <p className="flex items-center justify-center gap-1 text-[10px] text-zinc-400">
+                  <Cloud className="h-3 w-3" />
+                  Panier enregistré sur cet appareil
+                </p>
+              )}
+
               <Link
                 href="/commande"
                 onClick={fermerPanier}
@@ -130,6 +157,9 @@ export function CartDrawer() {
               >
                 Passer la commande <ArrowRight className="h-4 w-4" />
               </Link>
+              <p className="text-center text-[11px] text-zinc-400">
+                Connexion requise à l&apos;étape suivante pour payer.
+              </p>
               <button
                 type="button"
                 onClick={fermerPanier}

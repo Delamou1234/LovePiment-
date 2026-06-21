@@ -1,258 +1,382 @@
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  throw new Error('DATABASE_URL manquant — vérifiez .env ou .env.local');
+}
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString }),
+});
 
 async function main() {
-  console.log('🌱 Seeding KabiShop database...');
+  console.log('🌱 Seeding KabiShop (parfums & huiles)...');
 
-  // ─── Paramètres boutique ────────────────────────────────────────────────────
   await prisma.storeSettings.upsert({
     where: { id: 'kabishop-settings' },
-    update: {},
+    update: {
+      metaDescription:
+        'Parfums et huiles de qualité à Conakry, Guinée. Paiement Mobile Money et livraison rapide.',
+    },
     create: {
       id: 'kabishop-settings',
       nomBoutique: 'KabiShop',
       telephone: '+224 620 00 00 00',
-      adresse: 'J94Q+7VG',
+      adresse: 'Conakry, Guinée',
       ville: 'Conakry',
       pays: 'Guinée',
       whatsappNumber: '224620000000',
       facebookUrl: 'https://www.facebook.com/kabishop',
       metaDescription:
-        'Boutique de vêtements tendance à Conakry, Guinée. Paiement Mobile Money et livraison rapide.',
+        'Parfums et huiles de qualité à Conakry, Guinée. Paiement Mobile Money et livraison rapide.',
     },
   });
 
-  // ─── Catégories ─────────────────────────────────────────────────────────────
-  const categories = await Promise.all([
-    prisma.category.upsert({
-      where: { slug: 'robes' },
-      update: {},
-      create: {
-        nom: 'Robes',
-        slug: 'robes',
-        image: 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&q=80',
-      },
-    }),
-    prisma.category.upsert({
-      where: { slug: 'hauts' },
-      update: {},
-      create: {
-        nom: 'Hauts & Tops',
-        slug: 'hauts',
-        image: 'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=400&q=80',
-      },
-    }),
-    prisma.category.upsert({
-      where: { slug: 'pantalons' },
-      update: {},
-      create: {
-        nom: 'Pantalons & Jupes',
-        slug: 'pantalons',
-        image: 'https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?w=400&q=80',
-      },
-    }),
-    prisma.category.upsert({
-      where: { slug: 'accessoires' },
-      update: {},
-      create: {
-        nom: 'Accessoires',
-        slug: 'accessoires',
-        image: 'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=400&q=80',
-      },
-    }),
-    prisma.category.upsert({
-      where: { slug: 'tenues-soiree' },
-      update: {},
-      create: {
-        nom: 'Tenues de Soirée',
-        slug: 'tenues-soiree',
-        image: 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=400&q=80',
-      },
-    }),
-  ]);
-
-  console.log(`✅ ${categories.length} catégories créées`);
-
-  // ─── Produits fictifs ────────────────────────────────────────────────────────
-  const produits = [
+  const carriers = [
     {
-      nom: 'Robe Fleurie Élégante',
-      slug: 'robe-fleurie-elegante',
-      description:
-        'Une robe fleurie légère et élégante, parfaite pour les sorties estivales. Tissu respirant et coupe flatteuse.',
-      prix: 150000,
-      images: [
-        'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=600&q=80',
-        'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&q=80',
-      ],
-      featured: true,
-      categorieId: categories[0].id,
-      variantes: [
-        { taille: 'XS', couleur: 'Bleu fleuri', stock: 5, sku: 'RFE-XS-BF' },
-        { taille: 'S', couleur: 'Bleu fleuri', stock: 8, sku: 'RFE-S-BF' },
-        { taille: 'M', couleur: 'Bleu fleuri', stock: 10, sku: 'RFE-M-BF' },
-        { taille: 'L', couleur: 'Bleu fleuri', stock: 6, sku: 'RFE-L-BF' },
-        { taille: 'XL', couleur: 'Bleu fleuri', stock: 3, sku: 'RFE-XL-BF' },
-        { taille: 'S', couleur: 'Rouge fleuri', stock: 4, sku: 'RFE-S-RF' },
-        { taille: 'M', couleur: 'Rouge fleuri', stock: 7, sku: 'RFE-M-RF' },
-      ],
+      slug: 'kabishop-express',
+      nom: 'KabiShop Express',
+      telephone: '+224 620 00 00 00',
+      delaiMinHeures: 24,
+      delaiMaxHeures: 48,
+      description: 'Livraison interne à Conakry',
     },
     {
-      nom: 'Top Brodé Traditionnel',
-      slug: 'top-brode-traditionnel',
-      description:
-        'Top à broderies traditionnelles guinéennes, associant modernité et héritage culturel. Tissage artisanal de qualité.',
-      prix: 85000,
-      images: [
-        'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&q=80',
-        'https://images.unsplash.com/photo-1485462537746-965f33f7f6a7?w=600&q=80',
-      ],
-      featured: true,
-      categorieId: categories[1].id,
-      variantes: [
-        { taille: 'S', couleur: 'Blanc', stock: 12, sku: 'TBT-S-W' },
-        { taille: 'M', couleur: 'Blanc', stock: 15, sku: 'TBT-M-W' },
-        { taille: 'L', couleur: 'Blanc', stock: 8, sku: 'TBT-L-W' },
-        { taille: 'S', couleur: 'Beige', stock: 6, sku: 'TBT-S-B' },
-        { taille: 'M', couleur: 'Beige', stock: 9, sku: 'TBT-M-B' },
-      ],
+      slug: 'moto-coursier',
+      nom: 'Moto-Coursier Conakry',
+      telephone: '+224 621 00 00 00',
+      delaiMinHeures: 12,
+      delaiMaxHeures: 24,
+      description: 'Livraison rapide en moto',
     },
     {
-      nom: 'Pantalon Taille Haute Tendance',
-      slug: 'pantalon-taille-haute-tendance',
-      description:
-        'Pantalon taille haute tendance, coupe droite et confortable. Idéal pour un look professionnel ou casual chic.',
-      prix: 120000,
-      images: [
-        'https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?w=600&q=80',
-        'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&q=80',
-      ],
-      featured: false,
-      categorieId: categories[2].id,
-      variantes: [
-        { taille: '36', couleur: 'Noir', stock: 7, sku: 'PTH-36-N' },
-        { taille: '38', couleur: 'Noir', stock: 10, sku: 'PTH-38-N' },
-        { taille: '40', couleur: 'Noir', stock: 8, sku: 'PTH-40-N' },
-        { taille: '42', couleur: 'Noir', stock: 5, sku: 'PTH-42-N' },
-        { taille: '38', couleur: 'Beige', stock: 6, sku: 'PTH-38-B' },
-        { taille: '40', couleur: 'Beige', stock: 4, sku: 'PTH-40-B' },
-      ],
-    },
-    {
-      nom: 'Robe Soirée Glamour',
-      slug: 'robe-soiree-glamour',
-      description:
-        'Robe longue de soirée au style glamour. Tissu satiné, coupe sirène. Pour des occasions exceptionnelles.',
-      prix: 350000,
-      images: [
-        'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=600&q=80',
-        'https://images.unsplash.com/photo-1572804013309-59a88b7e92f1?w=600&q=80',
-      ],
-      featured: true,
-      categorieId: categories[4].id,
-      variantes: [
-        { taille: 'XS', couleur: 'Bordeaux', stock: 2, sku: 'RSG-XS-BO' },
-        { taille: 'S', couleur: 'Bordeaux', stock: 3, sku: 'RSG-S-BO' },
-        { taille: 'M', couleur: 'Bordeaux', stock: 4, sku: 'RSG-M-BO' },
-        { taille: 'L', couleur: 'Bordeaux', stock: 2, sku: 'RSG-L-BO' },
-        { taille: 'S', couleur: 'Noir', stock: 5, sku: 'RSG-S-N' },
-        { taille: 'M', couleur: 'Noir', stock: 4, sku: 'RSG-M-N' },
-      ],
-    },
-    {
-      nom: 'Ensemble Wax Moderne',
-      slug: 'ensemble-wax-moderne',
-      description:
-        'Ensemble deux pièces en tissu wax aux motifs africains contemporains. Haut et pantalon coordonnés.',
-      prix: 220000,
-      images: [
-        'https://images.unsplash.com/photo-1485462537746-965f33f7f6a7?w=600&q=80',
-        'https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&q=80',
-      ],
-      featured: true,
-      categorieId: categories[0].id,
-      variantes: [
-        { taille: 'S', couleur: 'Orange & Noir', stock: 4, sku: 'EWM-S-ON' },
-        { taille: 'M', couleur: 'Orange & Noir', stock: 6, sku: 'EWM-M-ON' },
-        { taille: 'L', couleur: 'Orange & Noir', stock: 4, sku: 'EWM-L-ON' },
-        { taille: 'XL', couleur: 'Orange & Noir', stock: 2, sku: 'EWM-XL-ON' },
-        { taille: 'M', couleur: 'Bleu & Or', stock: 3, sku: 'EWM-M-BO' },
-        { taille: 'L', couleur: 'Bleu & Or', stock: 3, sku: 'EWM-L-BO' },
-      ],
-    },
-    {
-      nom: 'Sac à Main Cuir Premium',
-      slug: 'sac-main-cuir-premium',
-      description:
-        'Sac à main en cuir synthétique haut de gamme. Grande capacité, bandoulière réglable. Parfait pour le quotidien.',
-      prix: 95000,
-      images: [
-        'https://images.unsplash.com/photo-1566150905458-1bf1fc113f0d?w=600&q=80',
-      ],
-      featured: false,
-      categorieId: categories[3].id,
-      variantes: [
-        { taille: 'Unique', couleur: 'Noir', stock: 15, sku: 'SMC-U-N' },
-        { taille: 'Unique', couleur: 'Camel', stock: 8, sku: 'SMC-U-C' },
-        { taille: 'Unique', couleur: 'Bordeaux', stock: 5, sku: 'SMC-U-B' },
-      ],
-    },
-    {
-      nom: 'Jupe Midi Bohème',
-      slug: 'jupe-midi-boheme',
-      description:
-        'Jupe midi style bohème avec imprimé floral. Légère et fluide, parfaite pour la chaleur guinéenne.',
-      prix: 75000,
-      images: [
-        'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&q=80',
-      ],
-      featured: false,
-      categorieId: categories[2].id,
-      variantes: [
-        { taille: 'XS', couleur: 'Multicolore', stock: 5, sku: 'JMB-XS-M' },
-        { taille: 'S', couleur: 'Multicolore', stock: 8, sku: 'JMB-S-M' },
-        { taille: 'M', couleur: 'Multicolore', stock: 10, sku: 'JMB-M-M' },
-        { taille: 'L', couleur: 'Multicolore', stock: 6, sku: 'JMB-L-M' },
-      ],
-    },
-    {
-      nom: 'Blouse Dentelle Romantique',
-      slug: 'blouse-dentelle-romantique',
-      description:
-        'Blouse en dentelle délicate avec manches longues. Un classique indémodable pour toutes occasions.',
-      prix: 65000,
-      images: [
-        'https://images.unsplash.com/photo-1485462537746-965f33f7f6a7?w=600&q=80',
-      ],
-      featured: false,
-      categorieId: categories[1].id,
-      variantes: [
-        { taille: 'XS', couleur: 'Blanc', stock: 6, sku: 'BDR-XS-W' },
-        { taille: 'S', couleur: 'Blanc', stock: 10, sku: 'BDR-S-W' },
-        { taille: 'M', couleur: 'Blanc', stock: 8, sku: 'BDR-M-W' },
-        { taille: 'L', couleur: 'Blanc', stock: 5, sku: 'BDR-L-W' },
-        { taille: 'S', couleur: 'Crème', stock: 7, sku: 'BDR-S-C' },
-        { taille: 'M', couleur: 'Crème', stock: 6, sku: 'BDR-M-C' },
-      ],
+      slug: 'partenaire-interieur',
+      nom: 'Livraison Intérieur',
+      telephone: '+224 622 00 00 00',
+      delaiMinHeures: 48,
+      delaiMaxHeures: 72,
+      description: 'Hors Conakry et environs',
     },
   ];
 
-  let nbProduits = 0;
-  for (const produit of produits) {
-    const { variantes, ...produitData } = produit;
-    await prisma.product.upsert({
-      where: { slug: produit.slug },
-      update: {},
-      create: {
-        ...produitData,
-        variantes: { create: variantes },
-      },
+  for (const carrier of carriers) {
+    await prisma.carrier.upsert({
+      where: { slug: carrier.slug },
+      update: carrier,
+      create: carrier,
     });
-    nbProduits++;
   }
 
-  console.log(`✅ ${nbProduits} produits créés avec leurs variantes`);
+  const categoryDefs = [
+    {
+      slug: 'parfums',
+      nom: 'Parfums',
+      image: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&q=80',
+    },
+    {
+      slug: 'huiles-corps',
+      nom: 'Huiles corporelles',
+      image: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=400&q=80',
+    },
+    {
+      slug: 'huiles-capillaires',
+      nom: 'Huiles capillaires',
+      image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&q=80',
+    },
+    {
+      slug: 'eaux-parfum',
+      nom: 'Eaux de parfum',
+      image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=400&q=80',
+    },
+    {
+      slug: 'huiles-pures',
+      nom: 'Huiles pures',
+      image: 'https://images.unsplash.com/photo-1615634260167-c8cdede054de?w=400&q=80',
+    },
+  ];
+
+  const categories = await Promise.all(
+    categoryDefs.map((cat) =>
+      prisma.category.upsert({
+        where: { slug: cat.slug },
+        update: { nom: cat.nom, image: cat.image },
+        create: cat,
+      }),
+    ),
+  );
+
+  const bySlug = Object.fromEntries(categories.map((c) => [c.slug, c]));
+
+  const subCategoryDefs = [
+    { slug: 'parfums-orientaux', nom: 'Parfums orientaux', parentSlug: 'parfums' },
+    { slug: 'eaux-legere', nom: 'Eaux légères', parentSlug: 'eaux-parfum' },
+    { slug: 'huiles-nourrissantes', nom: 'Huiles nourrissantes', parentSlug: 'huiles-corps' },
+    { slug: 'huiles-cheveux', nom: 'Soins cheveux', parentSlug: 'huiles-capillaires' },
+  ];
+
+  for (const sub of subCategoryDefs) {
+    await prisma.category.upsert({
+      where: { slug: sub.slug },
+      update: { nom: sub.nom, parentId: bySlug[sub.parentSlug].id },
+      create: { slug: sub.slug, nom: sub.nom, parentId: bySlug[sub.parentSlug].id },
+    });
+  }
+
+  const promoFin = new Date();
+  promoFin.setUTCDate(promoFin.getUTCDate() + 30);
+
+  const produits = [
+    {
+      nom: 'Parfum Oud Royal 100ml',
+      slug: 'parfum-oud-royal',
+      marque: 'Oud Collection',
+      description:
+        "Fragrance orientale intense aux notes d'oud, de rose et d'ambre. Tenue longue durée, flacon élégant.",
+      prix: 95000,
+      prixPromo: 76000,
+      promoFin,
+      images: [
+        'https://images.unsplash.com/photo-1541643600914-78b084683601?w=600&q=80',
+        'https://images.unsplash.com/photo-1587017539504-67cfbddac569?w=600&q=80',
+      ],
+      featured: true,
+      categorieId: bySlug['parfums'].id,
+      variantes: [
+        {
+          capacite: '100ml',
+          couleur: 'Oud Royal',
+          stock: 20,
+          sku: 'PRF-OUD-100',
+          codeBarre: '3760001001001',
+        },
+        {
+          capacite: '50ml',
+          couleur: 'Oud Royal',
+          stock: 12,
+          sku: 'PRF-OUD-50',
+          codeBarre: '3760001001002',
+        },
+      ],
+    },
+    {
+      nom: 'Eau de Parfum Rose Ambre 50ml',
+      slug: 'eau-parfum-rose-ambre',
+      marque: 'KabiShop',
+      description:
+        'Notes florales de rose damascena et fond ambré chaud. Fraîcheur élégante pour le quotidien.',
+      prix: 75000,
+      prixPromo: 60000,
+      promoFin,
+      images: [
+        'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=600&q=80',
+        'https://images.unsplash.com/photo-1541643600914-78b084683601?w=600&q=80',
+      ],
+      featured: true,
+      categorieId: bySlug['eaux-parfum'].id,
+      variantes: [
+        {
+          capacite: '50ml',
+          couleur: 'Rose Ambre',
+          stock: 15,
+          sku: 'EDP-RA-50',
+          codeBarre: '3760002001001',
+        },
+      ],
+    },
+    {
+      nom: 'Huile Corporelle Karité & Coco',
+      slug: 'huile-corps-karite-coco',
+      marque: 'KabiShop',
+      description:
+        'Huile hydratante au beurre de karité et huile de coco. Peau douce, satinée et délicatement parfumée.',
+      prix: 65000,
+      prixPromo: 52000,
+      promoFin,
+      images: ['https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=600&q=80'],
+      featured: true,
+      categorieId: bySlug['huiles-corps'].id,
+      variantes: [{ capacite: '200ml', couleur: 'Naturel', stock: 18, sku: 'HUI-KAR', codeBarre: '3760003001001' }],
+    },
+    {
+      nom: 'Huile Capillaire Croissance & Brillance',
+      slug: 'huile-capillaire-croissance',
+      marque: 'Afro Glow',
+      description:
+        'Formule enrichie en huiles nourrissantes pour stimuler la pousse et apporter brillance aux cheveux afro.',
+      prix: 55000,
+      images: ['https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600&q=80'],
+      featured: true,
+      categorieId: bySlug['huiles-capillaires'].id,
+      variantes: [{ capacite: '150ml', couleur: 'Standard', stock: 25, sku: 'HUI-CAP', codeBarre: '3760004001001' }],
+    },
+    {
+      nom: 'Parfum Musk Blanc 100ml',
+      slug: 'parfum-musk-blanc',
+      marque: 'Oud Collection',
+      description:
+        'Musc blanc pur et enveloppant. Sillage discret et raffiné, idéal pour toutes occasions.',
+      prix: 85000,
+      prixPromo: 68000,
+      promoFin,
+      images: ['https://images.unsplash.com/photo-1541643600914-78b084683601?w=600&q=80'],
+      featured: true,
+      categorieId: bySlug['parfums'].id,
+      variantes: [{ capacite: '100ml', couleur: 'Musk Blanc', stock: 12, sku: 'PRF-MUSK', codeBarre: '3760005001001' }],
+    },
+    {
+      nom: 'Huile de Nigelle Pure 100ml',
+      slug: 'huile-nigelle-pure',
+      marque: 'Pure Nature',
+      description:
+        'Huile de nigelle 100% pure. Traditionnellement utilisée pour la peau et les cheveux.',
+      prix: 48000,
+      images: ['https://images.unsplash.com/photo-1615634260167-c8cdede054de?w=600&q=80'],
+      featured: false,
+      categorieId: bySlug['huiles-pures'].id,
+      variantes: [{ capacite: '100ml', couleur: 'Pure', stock: 30, sku: 'HUI-NIG', codeBarre: '3760006001001' }],
+    },
+    {
+      nom: 'Parfum Vanille Gourmande 50ml',
+      slug: 'parfum-vanille-gourmande',
+      marque: 'KabiShop',
+      description:
+        'Vanille bourbon, caramel doux et notes boisées. Un parfum gourmand et addictif.',
+      prix: 72000,
+      images: ['https://images.unsplash.com/photo-1587017539504-67cfbddac569?w=600&q=80'],
+      featured: false,
+      categorieId: bySlug['eaux-parfum'].id,
+      variantes: [{ capacite: '50ml', couleur: 'Vanille', stock: 14, sku: 'EDP-VAN', codeBarre: '3760007001001' }],
+    },
+    {
+      nom: 'Huile de Massage Ylang-Ylang',
+      slug: 'huile-massage-ylang',
+      marque: 'KabiShop',
+      description:
+        "Huile de massage relaxante aux essences d'ylang-ylang et d'amande douce. Texture soyeuse.",
+      prix: 58000,
+      images: ['https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600&q=80'],
+      featured: false,
+      categorieId: bySlug['huiles-corps'].id,
+      variantes: [{ capacite: '250ml', couleur: 'Ylang-Ylang', stock: 16, sku: 'HUI-YLA', codeBarre: '3760008001001' }],
+    },
+  ];
+
+  for (const produit of produits) {
+    const { variantes, prixPromo, promoFin: finPromo, ...produitData } = produit;
+    const saved = await prisma.product.upsert({
+      where: { slug: produit.slug },
+      update: {
+        nom: produitData.nom,
+        marque: produitData.marque ?? null,
+        description: produitData.description,
+        prix: produitData.prix,
+        prixPromo: prixPromo ?? null,
+        promoFin: finPromo ?? null,
+        images: produitData.images,
+        featured: produitData.featured,
+        categorieId: produitData.categorieId,
+        actif: true,
+      },
+      create: {
+        ...produitData,
+        prixPromo: prixPromo ?? null,
+        promoFin: finPromo ?? null,
+        actif: true,
+      },
+    });
+
+    for (const variante of variantes) {
+      if (!variante.sku) continue;
+      await prisma.productVariant.upsert({
+        where: { sku: variante.sku },
+        update: {
+          taille: variante.taille ?? null,
+          couleur: variante.couleur,
+          capacite: variante.capacite ?? null,
+          stock: variante.stock,
+          codeBarre: variante.codeBarre ?? null,
+        },
+        create: {
+          taille: variante.taille ?? null,
+          couleur: variante.couleur,
+          capacite: variante.capacite ?? null,
+          stock: variante.stock,
+          sku: variante.sku,
+          codeBarre: variante.codeBarre ?? null,
+          productId: saved.id,
+        },
+      });
+    }
+  }
+
+  const flashProducts = await prisma.product.findMany({
+    where: { featured: true, actif: true },
+    take: 3,
+    select: { id: true },
+  });
+
+  await prisma.coupon.upsert({
+    where: { code: 'BIENVENUE10' },
+    update: { actif: true, type: 'POURCENT', valeur: 10, minCommande: 50000 },
+    create: {
+      code: 'BIENVENUE10',
+      type: 'POURCENT',
+      valeur: 10,
+      minCommande: 50000,
+      actif: true,
+    },
+  });
+
+  await prisma.coupon.upsert({
+    where: { code: 'KABI5000' },
+    update: { actif: true, type: 'MONTANT_FIXE', valeur: 5000, minCommande: 100000 },
+    create: {
+      code: 'KABI5000',
+      type: 'MONTANT_FIXE',
+      valeur: 5000,
+      minCommande: 100000,
+      maxUtilisations: 100,
+      actif: true,
+    },
+  });
+
+  const flashDebut = new Date();
+  const flashFin = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  await prisma.flashSale.upsert({
+    where: { slug: 'flash-semaine' },
+    update: {
+      titre: 'Flash Semaine — Parfums & Huiles',
+      debut: flashDebut,
+      fin: flashFin,
+      actif: true,
+      productIds: flashProducts.map((p) => p.id),
+    },
+    create: {
+      titre: 'Flash Semaine — Parfums & Huiles',
+      slug: 'flash-semaine',
+      description: 'Sélection limitée à prix réduits',
+      debut: flashDebut,
+      fin: flashFin,
+      actif: true,
+      productIds: flashProducts.map((p) => p.id),
+    },
+  });
+
+  const clientsSansCode = await prisma.customer.findMany({
+    where: { codeParrainage: null },
+    select: { id: true },
+  });
+  for (const client of clientsSansCode) {
+    const suffix = Math.random().toString(36).slice(2, 8).toUpperCase();
+    await prisma.customer.update({
+      where: { id: client.id },
+      data: { codeParrainage: `KABI${suffix}` },
+    });
+  }
+
+  console.log(`✅ ${categories.length} catégories, ${produits.length} produits`);
   console.log('🎉 Seeding terminé !');
 }
 

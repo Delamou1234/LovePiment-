@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { after } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/shared/lib/prisma';
-import { mockDb } from '@/shared/lib/mock-db';
 
 const trackSchema = z.object({
   type: z.enum(['PAGE_VIEW', 'PRODUCT_VIEW', 'ADD_TO_CART', 'CHECKOUT_START', 'ORDER_PLACED']),
@@ -10,11 +10,8 @@ const trackSchema = z.object({
   sessionId: z.string().optional(),
 });
 
-const isMock = process.env.MOCK_DATABASE === 'true';
-
 /**
- * POST /api/track
- * Enregistre un événement analytics (mock en mémoire ou Prisma).
+ * POST /api/track — réponse immédiate, écriture DB en arrière-plan.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -28,19 +25,15 @@ export async function POST(request: NextRequest) {
     const userAgent = request.headers.get('user-agent') ?? undefined;
     const { type, path, productId, sessionId } = validation.data;
 
-    if (isMock) {
-      mockDb.saveAnalyticsEvent({ type, path, productId, sessionId, userAgent });
-    } else {
-      await prisma.analyticsEvent.create({
-        data: {
-          type,
-          path,
-          productId,
-          sessionId,
-          userAgent,
-        },
-      });
-    }
+    after(async () => {
+      try {
+        await prisma.analyticsEvent.create({
+          data: { type, path, productId, sessionId, userAgent },
+        });
+      } catch (error) {
+        console.error('[Track]', error);
+      }
+    });
 
     return NextResponse.json({ message: 'OK' });
   } catch (error) {

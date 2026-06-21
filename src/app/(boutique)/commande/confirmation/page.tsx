@@ -13,7 +13,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { mockDb } from '@/shared/lib/mock-db';
+import { orderService } from '@/modules/commandes/services/order.service';
 
 // ─── CONFIRMATION PAGE (SERVER COMPONENT) ────────────────────────────────────
 
@@ -33,8 +33,12 @@ export default async function ConfirmationPage({
     notFound();
   }
 
-  // Récupérer la commande dans notre base de données (mockDb ou Prisma)
-  const order = mockDb.getOrderById(orderId);
+  let order = null;
+  try {
+    order = await orderService.obtenirCommande(orderId);
+  } catch {
+    order = null;
+  }
 
   if (!order) {
     return (
@@ -115,6 +119,14 @@ export default async function ConfirmationPage({
           <p className="text-[10px] text-zinc-400 font-semibold mt-2.5">
             💡 Recommandé : partagez ce reçu sur WhatsApp pour accélérer la confirmation et la livraison !
           </p>
+          {order.suiviToken && (
+            <Link
+              href={`/suivi/${order.suiviToken}`}
+              className="mt-4 inline-flex w-full items-center justify-center rounded-full border border-[#ebe4d8] bg-[#faf7f2] py-3 text-sm font-semibold text-zinc-800 hover:bg-[#f5f0e8] transition"
+            >
+              Suivre ma commande en temps réel
+            </Link>
+          )}
         </div>
       </div>
 

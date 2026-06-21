@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -8,6 +8,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { usePanier } from '@/store/panier';
+import { calculerTotauxCommande, formaterPrixGN, LIVRAISON_CONFIG } from '@/shared/lib/shipping';
+import { CheckoutMarketingPanel } from '@/modules/marketing/components/CheckoutMarketingPanel';
+import type { TotauxMarketing } from '@/modules/marketing/types';
 import { 
   ChevronRight, 
   CreditCard, 
@@ -43,6 +46,13 @@ export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [pointsFidelite, setPointsFidelite] = useState(0);
+  const [totauxMarketing, setTotauxMarketing] = useState<TotauxMarketing | null>(null);
+  const marketingRef = useRef({
+    codeCoupon: null as string | null,
+    pointsUtilises: 0,
+    codeParrainage: null as string | null,
+  });
 
   // Hydration mismatch fix
   useEffect(() => {
@@ -63,7 +73,47 @@ export default function CheckoutPage() {
     },
   });
 
+  // Pré-remplir depuis le compte client en base
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        const user = data?.user;
+        if (!user || user.role !== 'customer') return;
+        if (user.name) setValue('clientNom', user.name);
+        if (user.telephone) setValue('clientTelephone', user.telephone);
+        if (user.derniereAdresse) setValue('clientAdresse', user.derniereAdresse);
+        if (user.derniereVille) setValue('clientVille', user.derniereVille);
+      })
+      .catch(() => {});
+
+    fetch('/api/compte/profil')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.profil?.pointsFidelite != null) {
+          setPointsFidelite(data.profil.pointsFidelite);
+        }
+      })
+      .catch(() => {});
+  }, [setValue]);
+
+  const handleTotauxChange = useCallback((totaux: TotauxMarketing | null) => {
+    setTotauxMarketing(totaux);
+  }, []);
+
+  const handleMarketingChange = useCallback(
+    (data: {
+      codeCoupon: string | null;
+      pointsUtilises: number;
+      codeParrainage: string | null;
+    }) => {
+      marketingRef.current = data;
+    },
+    [],
+  );
+
   const selectedPaymentMethod = watch('modePaiement');
+  const selectedVille = watch('clientVille') || 'Conakry';
 
   if (!mounted) {
     return (
@@ -75,13 +125,30 @@ export default function CheckoutPage() {
   }
 
   const items = panier.items;
-  const subtotal = panier.totalPrix;
-  const shippingCost = 15000; // Fictive flat shipping cost for Conakry
-  const total = subtotal + shippingCost;
+  const { sousTotal, fraisLivraison, total, livraisonGratuite } = calculerTotauxCommande(
+    items,
+    selectedVille,
+  );
 
-  const formattedSubtotal = subtotal.toLocaleString('fr-FR') + ' GN';
-  const formattedShipping = shippingCost.toLocaleString('fr-FR') + ' GN';
-  const formattedTotal = total.toLocaleString('fr-FR') + ' GN';
+  const totauxFinaux = totauxMarketing ?? {
+    sousTotal,
+    remiseCoupon: 0,
+    remisePoints: 0,
+    remiseParrainage: 0,
+    fraisLivraison,
+    montantTotal: total,
+    livraisonGratuite,
+    pointsUtilises: 0,
+    pointsGagnes: 0,
+    couponId: null,
+    codeParrainageUtilise: null,
+  };
+
+  const formattedSubtotal = formaterPrixGN(totauxFinaux.sousTotal);
+  const formattedShipping = totauxFinaux.livraisonGratuite
+    ? 'Offerte'
+    : formaterPrixGN(totauxFinaux.fraisLivraison);
+  const formattedTotal = formaterPrixGN(totauxFinaux.montantTotal);
 
   const onSubmit = async (values: CheckoutFormValues) => {
     if (items.length === 0) {
@@ -104,6 +171,9 @@ export default function CheckoutPage() {
           clientAdresse: values.clientAdresse,
           clientVille: values.clientVille,
           modePaiement: values.modePaiement,
+          codeCoupon: marketingRef.current.codeCoupon,
+          pointsUtilises: marketingRef.current.pointsUtilises,
+          codeParrainage: marketingRef.current.codeParrainage,
           items: items.map((i) => ({
             variantId: i.variantId,
             quantite: i.quantite,
@@ -112,9 +182,16 @@ export default function CheckoutPage() {
         }),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') ?? '';
+      const data = contentType.includes('application/json')
+        ? await response.json()
+        : { message: 'Erreur serveur. Réessayez ou choisissez le paiement à la livraison.' };
 
       if (!response.ok) {
+        if (response.status === 401) {
+          router.push('/connexion?redirect=/commande');
+          return;
+        }
         throw new Error(data.message || 'Une erreur est survenue lors de la commande.');
       }
 
@@ -213,9 +290,9 @@ export default function CheckoutPage() {
                   <input
                     id="clientVille"
                     type="text"
-                    className="input-kabishop bg-zinc-50"
+                    placeholder="Conakry"
+                    className="input-kabishop"
                     {...register('clientVille')}
-                    readOnly
                   />
                   {errors.clientVille && (
                     <p className="text-xs font-bold text-red-500">{errors.clientVille.message}</p>
@@ -271,11 +348,19 @@ export default function CheckoutPage() {
                     />
                   </div>
                   <p className="text-xs text-zinc-500 leading-relaxed">
-                    Payez en espèces (GNF) directement au livreur lors de la réception de vos vêtements à votre domicile ou bureau.
+                    Payez en espèces (GNF) directement au livreur lors de la réception de votre commande.
                   </p>
                 </label>
               </div>
             </div>
+
+            <CheckoutMarketingPanel
+              sousTotal={sousTotal}
+              clientVille={selectedVille}
+              pointsDisponibles={pointsFidelite}
+              onTotauxChange={handleTotauxChange}
+              onMarketingChange={handleMarketingChange}
+            />
 
           </div>
 
@@ -320,10 +405,35 @@ export default function CheckoutPage() {
                   <span>Sous-total</span>
                   <span>{formattedSubtotal}</span>
                 </div>
+                {totauxFinaux.remiseCoupon > 0 && (
+                  <div className="flex justify-between text-emerald-600">
+                    <span>Coupon</span>
+                    <span>−{formaterPrixGN(totauxFinaux.remiseCoupon)}</span>
+                  </div>
+                )}
+                {totauxFinaux.remisePoints > 0 && (
+                  <div className="flex justify-between text-emerald-600">
+                    <span>Points fidélité</span>
+                    <span>−{formaterPrixGN(totauxFinaux.remisePoints)}</span>
+                  </div>
+                )}
+                {totauxFinaux.remiseParrainage > 0 && (
+                  <div className="flex justify-between text-emerald-600">
+                    <span>Parrainage</span>
+                    <span>−{formaterPrixGN(totauxFinaux.remiseParrainage)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between">
-                  <span>Frais de livraison</span>
-                  <span>{formattedShipping}</span>
+                  <span>Frais de livraison ({selectedVille})</span>
+                  <span className={totauxFinaux.livraisonGratuite ? 'text-emerald-600 font-bold' : ''}>
+                    {formattedShipping}
+                  </span>
                 </div>
+                {!totauxFinaux.livraisonGratuite && (
+                  <p className="text-[10px] text-zinc-400">
+                    Livraison offerte dès {formaterPrixGN(LIVRAISON_CONFIG.seuilGratuit)} à Conakry
+                  </p>
+                )}
                 
                 <div className="border-t border-zinc-200 pt-3 flex justify-between items-end">
                   <span className="font-bold text-zinc-950 text-sm">Total final</span>

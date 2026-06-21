@@ -2,43 +2,102 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter, usePathname } from 'next/navigation';
-import { usePanier } from '@/store/panier';
+import { usePathname, useRouter } from 'next/navigation';
+import { usePanier, selectTotalItems } from '@/store/panier';
+import { ProductSearchBar } from '@/shared/components/ProductSearchBar';
 import {
-  Search,
   Menu,
   X,
   ShoppingBag,
   ChevronDown,
   User,
+  LogOut,
 } from 'lucide-react';
+
+type AuthUser = {
+  name: string;
+  email: string;
+  role: 'admin' | 'customer';
+};
+
+const AUTH_ME_CACHE = 'kabishop_auth_me_v1';
+const AUTH_ME_TTL_MS = 5 * 60 * 1000;
 
 const NAV_AFTER_BOUTIQUE = [
   { name: 'Nouveautés', href: '/produits?tri=nouveautes' },
-  { name: 'Promotions', href: '/produits?promo=1' },
-  { name: 'À propos', href: '/#apropos' },
-  { name: 'Contact', href: '/#contact' },
+  { name: 'Promotions', href: '/promos' },
+  { name: 'À propos', href: '/apropos' },
+  { name: 'Contact', href: '/contact' },
 ];
 
 const BOUTIQUE_LINKS = [
   { name: 'Toute la boutique', href: '/produits' },
-  { name: 'Mode', href: '/produits?univers=mode' },
-  { name: 'Beauté', href: '/produits?univers=beaute' },
-  { name: 'Robes', href: '/produits?categorie=robes' },
   { name: 'Parfums', href: '/produits?categorie=parfums' },
+  { name: 'Huiles corporelles', href: '/produits?categorie=huiles-corps' },
+  { name: 'Huiles capillaires', href: '/produits?categorie=huiles-capillaires' },
+  { name: 'Eaux de parfum', href: '/produits?categorie=eaux-parfum' },
 ];
 
 export function ShopHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const panier = usePanier();
+  const totalItems = usePanier(selectTotalItems);
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [boutiqueOpen, setBoutiqueOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    try {
+      const raw = sessionStorage.getItem(AUTH_ME_CACHE);
+      if (raw) {
+        const { user, ts } = JSON.parse(raw) as { user: AuthUser | null; ts: number };
+        if (Date.now() - ts < AUTH_ME_TTL_MS && user?.role === 'customer') {
+          setAuthUser(user);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+
+    fetch('/api/auth/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        const user = data?.user?.role === 'customer' ? (data.user as AuthUser) : null;
+        setAuthUser(user);
+        try {
+          sessionStorage.setItem(
+            AUTH_ME_CACHE,
+            JSON.stringify({ user, ts: Date.now() }),
+          );
+        } catch {
+          /* ignore */
+        }
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    try {
+      sessionStorage.removeItem(AUTH_ME_CACHE);
+    } catch {
+      /* ignore */
+    }
+    setAuthUser(null);
+    router.refresh();
+  };
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -50,15 +109,14 @@ export function ShopHeader() {
     return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
-  const totalItems = mounted ? panier.totalItems : 0;
+  const totalItemsDisplay = mounted ? totalItems : 0;
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    const q = searchQuery.trim();
-    if (q) router.push(`/produits?search=${encodeURIComponent(q)}`);
-    else router.push('/produits');
-    setMenuOpen(false);
-  };
+  const loginHref =
+    pathname === '/connexion' || pathname === '/inscription'
+      ? '/connexion'
+      : `/connexion?redirect=${encodeURIComponent(pathname)}`;
+
+  const closeMenu = () => setMenuOpen(false);
 
   const navLinkClass = (href: string) => {
     const active = href === '/' ? pathname === '/' : pathname.startsWith(href.split('?')[0]) && href !== '/';
@@ -69,9 +127,9 @@ export function ShopHeader() {
 
   return (
     <>
-      {/* Barre annonce — noire, comme le mock */}
-      <div className="bg-zinc-900 py-2 text-center">
-        <p className="text-xs text-white font-medium tracking-wide">
+      {/* Barre annonce */}
+      <div className="bg-zinc-900 py-1.5 text-center">
+        <p className="text-[11px] text-white font-medium tracking-wide">
           Livraison offerte dès 500&nbsp;000 GN à Conakry&nbsp;!
         </p>
       </div>
@@ -79,14 +137,14 @@ export function ShopHeader() {
       <header className="sticky top-0 z-40 border-b border-[#ebe4d8] bg-white">
         <div className="container-kabishop">
           {/* Desktop : logo | nav centrée | actions */}
-          <div className="hidden lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:h-[76px] lg:gap-4">
+          <div className="hidden lg:grid lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:h-14 lg:gap-3">
             <Link href="/" className="justify-self-start">
-              <span className="font-serif text-[1.65rem] font-bold tracking-tight text-zinc-900">
+              <span className="font-serif text-xl font-bold tracking-tight text-zinc-900">
                 KabiShop<span className="text-zinc-900">.</span>
               </span>
             </Link>
 
-            <nav className="flex items-center gap-8 justify-self-center">
+            <nav className="flex items-center gap-6 justify-self-center">
               <Link href="/" className={navLinkClass('/')}>
                 Accueil
               </Link>
@@ -123,49 +181,49 @@ export function ShopHeader() {
               ))}
             </nav>
 
-            <div className="flex items-center gap-3 justify-self-end">
-              <form onSubmit={handleSearch} className="relative">
-                <input
-                  type="search"
-                  placeholder="Rechercher un produit..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-52 xl:w-60 rounded-full border border-[#e8e0d4] bg-[#faf7f2] py-2 pl-4 pr-10 text-sm text-zinc-700 outline-none placeholder:text-zinc-400 focus:border-zinc-300 focus:bg-white"
-                />
-                <button
-                  type="submit"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-700"
-                >
-                  <Search className="h-4 w-4" />
-                </button>
-              </form>
+            <div className="flex items-center gap-2 justify-self-end">
+              <ProductSearchBar compact />
 
-              <a
-                href={`https://wa.me/${process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '224620000000'}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-9 w-9 items-center justify-center text-zinc-600 hover:text-zinc-900 transition"
-                aria-label="Mon compte / Contact"
-              >
-                <User className="h-5 w-5" strokeWidth={1.5} />
-              </a>
+              {authUser ? (
+                <div className="flex items-center gap-1">
+                  <Link
+                    href="/compte"
+                    className="flex h-8 w-8 items-center justify-center text-zinc-600 hover:text-zinc-900 transition"
+                    aria-label="Mon compte"
+                    title={authUser.name}
+                  >
+                    <User className="h-4 w-4" strokeWidth={1.5} />
+                  </Link>
+                </div>
+              ) : (
+                <Link
+                  href={loginHref}
+                  className="flex h-8 w-8 items-center justify-center text-zinc-600 hover:text-zinc-900 transition"
+                  aria-label="Connexion"
+                  title="Connexion"
+                >
+                  <User className="h-4 w-4" strokeWidth={1.5} />
+                </Link>
+              )}
 
               <button
                 type="button"
                 onClick={() => panier.ouvrirPanier()}
-                className="relative flex h-9 w-9 items-center justify-center text-zinc-700 hover:text-zinc-900 transition"
-                aria-label="Panier"
+                className="relative flex h-8 w-8 items-center justify-center text-zinc-700 hover:text-zinc-900 transition"
+                aria-label={`Panier${totalItemsDisplay > 0 ? ` (${totalItemsDisplay} articles)` : ''}`}
               >
-                <ShoppingBag className="h-5 w-5" strokeWidth={1.5} />
-                <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-zinc-900 text-[9px] font-bold text-white">
-                  {totalItems}
-                </span>
+                <ShoppingBag className="h-4 w-4" strokeWidth={1.5} />
+                {totalItemsDisplay > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-zinc-900 px-0.5 text-[9px] font-bold text-white">
+                    {totalItemsDisplay > 99 ? '99+' : totalItemsDisplay}
+                  </span>
+                )}
               </button>
             </div>
           </div>
 
           {/* Mobile / tablette */}
-          <div className="flex lg:hidden h-[64px] items-center justify-between gap-3">
+          <div className="flex lg:hidden h-12 items-center justify-between gap-3">
             <button
               type="button"
               className="p-2 text-zinc-700"
@@ -176,19 +234,41 @@ export function ShopHeader() {
             </button>
 
             <Link href="/">
-              <span className="font-serif text-xl font-bold text-zinc-900">KabiShop.</span>
+              <span className="font-serif text-lg font-bold text-zinc-900">KabiShop.</span>
             </Link>
 
             <div className="flex items-center gap-1">
+              {authUser ? (
+                <Link
+                  href="/compte"
+                  className="p-2 text-zinc-700"
+                  aria-label="Mon compte"
+                  title={authUser.name}
+                >
+                  <User className="h-5 w-5" strokeWidth={1.5} />
+                </Link>
+              ) : (
+                <Link
+                  href={loginHref}
+                  className="p-2 text-zinc-700"
+                  aria-label="Connexion"
+                  title="Connexion"
+                >
+                  <User className="h-5 w-5" strokeWidth={1.5} />
+                </Link>
+              )}
               <button
                 type="button"
                 onClick={() => panier.ouvrirPanier()}
                 className="relative p-2 text-zinc-700"
+                aria-label={`Panier${totalItemsDisplay > 0 ? ` (${totalItemsDisplay} articles)` : ''}`}
               >
                 <ShoppingBag className="h-5 w-5" />
-                <span className="absolute top-0.5 right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-zinc-900 text-[9px] font-bold text-white">
-                  {totalItems}
-                </span>
+                {totalItemsDisplay > 0 && (
+                  <span className="absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-zinc-900 px-0.5 text-[9px] font-bold text-white">
+                    {totalItemsDisplay > 99 ? '99+' : totalItemsDisplay}
+                  </span>
+                )}
               </button>
             </div>
           </div>
@@ -197,18 +277,7 @@ export function ShopHeader() {
         {menuOpen && (
           <div className="border-t border-[#ebe4d8] bg-white lg:hidden animate-fadeIn">
             <div className="container-kabishop py-4 space-y-1">
-              <form onSubmit={handleSearch} className="relative mb-4">
-                <input
-                  type="search"
-                  placeholder="Rechercher un produit..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-full border border-[#ebe4d8] bg-[#faf7f2] py-2.5 pl-4 pr-10 text-sm"
-                />
-                <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <Search className="h-4 w-4 text-zinc-400" />
-                </button>
-              </form>
+              <ProductSearchBar fullWidth className="mb-4" onNavigate={closeMenu} />
               <Link href="/" onClick={() => setMenuOpen(false)} className="block py-2.5 text-sm font-medium">
                 Accueil
               </Link>
@@ -223,6 +292,38 @@ export function ShopHeader() {
                   {link.name}
                 </Link>
               ))}
+              {authUser ? (
+                <>
+                  <Link
+                    href="/compte"
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-2 py-2.5 text-sm font-medium border-t border-[#ebe4d8] mt-2 pt-4"
+                  >
+                    <User className="h-4 w-4" strokeWidth={1.5} />
+                    Mon compte ({authUser.name})
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeMenu();
+                      handleLogout();
+                    }}
+                    className="flex items-center gap-2 py-2.5 text-sm font-medium text-zinc-500 w-full text-left"
+                  >
+                    <LogOut className="h-4 w-4" strokeWidth={1.5} />
+                    Déconnexion
+                  </button>
+                </>
+              ) : (
+                <Link
+                  href={loginHref}
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 py-2.5 text-sm font-medium border-t border-[#ebe4d8] mt-2 pt-4"
+                >
+                  <User className="h-4 w-4" strokeWidth={1.5} />
+                  Connexion
+                </Link>
+              )}
             </div>
           </div>
         )}

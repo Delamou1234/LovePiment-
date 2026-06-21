@@ -10,10 +10,12 @@ const filtresSchema = z.object({
   categorieSlug: z.string().optional(),
   taille: z.string().optional(),
   couleur: z.string().optional(),
+  marque: z.string().optional(),
+  enStock: z.enum(['0', '1']).optional(),
   prixMin: z.coerce.number().optional(),
   prixMax: z.coerce.number().optional(),
   search: z.string().optional(),
-  tri: z.enum(['prix_asc', 'prix_desc', 'nouveautes', 'popularite']).optional(),
+  tri: z.enum(['prix_asc', 'prix_desc', 'nouveautes', 'nom_asc', 'popularite']).optional(),
 });
 
 // ─── GET /api/produits ────────────────────────────────────────────────────────
@@ -31,14 +33,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { page, limit, categorieSlug, taille, couleur, prixMin, prixMax, search, tri } =
+    const { page, limit, categorieSlug, taille, couleur, marque, enStock, prixMin, prixMax, search, tri } =
       validation.data;
 
     const triMap = {
       prix_asc: { champ: 'prix' as const, ordre: 'asc' as const },
       prix_desc: { champ: 'prix' as const, ordre: 'desc' as const },
       nouveautes: { champ: 'createdAt' as const, ordre: 'desc' as const },
-      popularite: { champ: 'createdAt' as const, ordre: 'desc' as const }, // TODO: par ventes
+      nom_asc: { champ: 'nom' as const, ordre: 'asc' as const },
+      popularite: { champ: 'featured' as const, ordre: 'desc' as const },
     };
 
     const result = await productService.listerProduits(
@@ -46,6 +49,8 @@ export async function GET(request: NextRequest) {
         categorieSlug,
         taille,
         couleur,
+        marque,
+        enStock: enStock === '1' ? true : undefined,
         prix: prixMin !== undefined || prixMax !== undefined
           ? { min: prixMin, max: prixMax }
           : undefined,

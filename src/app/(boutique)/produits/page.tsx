@@ -1,380 +1,237 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import Link from 'next/link';
-import { 
-  SlidersHorizontal, 
-  Search, 
-  ChevronRight, 
-  X,
-  Filter
-} from 'lucide-react';
+import { ChevronRight, Filter, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { mockDb, getUniversForCategory } from '@/shared/lib/mock-db';
 import { ProductCard } from '@/shared/components/ProductCard';
+import { variantePourCarte } from '@/shared/lib/product-card';
+import { productService } from '@/modules/produits/services/product.service';
+import { avisService } from '@/modules/avis/services/review.service';
+import { notesPourProduit, chargerNotesProduits } from '@/modules/produits/lib/product-ratings';
+import { CatalogFilters } from '@/modules/produits/components/catalog/CatalogFilters';
+import { CatalogSearchBar } from '@/modules/produits/components/catalog/CatalogSearchBar';
+import {
+  buildCatalogUrl,
+  catalogTriToRepository,
+  CATALOG_TRI_OPTIONS,
+  type CatalogSearchParams,
+} from '@/modules/produits/lib/catalog-url';
 
-// ─── CATALOG PAGE (SERVER COMPONENT) ─────────────────────────────────────────
+export const revalidate = 60;
 
-type SearchParams = Promise<{
-  categorie?: string;
-  univers?: string;
-  taille?: string;
-  couleur?: string;
-  search?: string;
-  tri?: string;
-  prixMin?: string;
-  prixMax?: string;
-  promo?: string;
-}>;
+type SearchParams = Promise<CatalogSearchParams>;
 
 export default async function CatalogPage({
   searchParams,
 }: {
   searchParams: SearchParams;
 }) {
-  // Await searchParams in Next.js 15+
-  const resolvedParams = await searchParams;
-  const activeCategorie = resolvedParams.categorie || '';
-  const activeUnivers = resolvedParams.univers || '';
-  const activeTaille = resolvedParams.taille || '';
-  const activeCouleur = resolvedParams.couleur || '';
-  const activeSearch = resolvedParams.search || '';
-  const activeTri = resolvedParams.tri || 'nouveautes';
-  const activePrixMin = resolvedParams.prixMin || '';
-  const activePrixMax = resolvedParams.prixMax || '';
+  const params = await searchParams;
+  const activeTri = params.tri || 'nouveautes';
 
-  // Récupérer les catégories pour les filtres
-  const categories = mockDb.getCategories();
-
-  // Filtrer les produits
-  let products = [...mockDb.getProducts()];
-
-  if (activeUnivers === 'mode' || activeUnivers === 'beaute') {
-    products = products.filter(
-      (p) => getUniversForCategory(p.categorie.slug) === activeUnivers,
-    );
-  }
-
-  if (activeCategorie) {
-    products = products.filter(p => p.categorie.slug === activeCategorie);
-  }
-
-  if (activeTaille) {
-    products = products.filter(p => p.variantes.some(v => v.taille === activeTaille));
-  }
-
-  if (activeCouleur) {
-    products = products.filter(p => p.variantes.some(v => v.couleur === activeCouleur));
-  }
-
-  if (activeSearch) {
-    const cleanSearch = activeSearch.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-    products = products.filter(p => {
-      const cleanNom = p.nom.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      const cleanDesc = (p.description || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-      return cleanNom.includes(cleanSearch) || cleanDesc.includes(cleanSearch);
-    });
-  }
-
-  if (activePrixMin) {
-    products = products.filter(p => Number(p.prix) >= Number(activePrixMin));
-  }
-
-  if (activePrixMax) {
-    products = products.filter(p => Number(p.prix) <= Number(activePrixMax));
-  }
-
-  // Tri
-  products.sort((a, b) => {
-    if (activeTri === 'prix_asc') {
-      return Number(a.prix) - Number(b.prix);
-    }
-    if (activeTri === 'prix_desc') {
-      return Number(b.prix) - Number(a.prix);
-    }
-    // Par défaut (nouveautés)
-    return b.createdAt.getTime() - a.createdAt.getTime();
-  });
-
-  // Liste des filtres de tailles et couleurs statiques pour affichage
-  const taillesDisponibles = ['XS', 'S', 'M', 'L', 'XL', '36', '38', '40', '42', 'Unique'];
-  const couleursDisponibles = ['Blanc', 'Noir', 'Beige', 'Bordeaux', 'Bleu fleuri', 'Rouge fleuri', 'Orange & Noir', 'Camel', 'Crème', 'Multicolore'];
-
-  // Fonction utilitaire pour générer le lien avec les nouveaux filtres
-  const buildUrl = (updates: Record<string, string | null>) => {
-    const params = new URLSearchParams();
-    
-    // Conserver les paramètres actuels
-    if (activeCategorie) params.set('categorie', activeCategorie);
-    if (activeUnivers) params.set('univers', activeUnivers);
-    if (activeTaille) params.set('taille', activeTaille);
-    if (activeCouleur) params.set('couleur', activeCouleur);
-    if (activeSearch) params.set('search', activeSearch);
-    if (activeTri) params.set('tri', activeTri);
-    if (activePrixMin) params.set('prixMin', activePrixMin);
-    if (activePrixMax) params.set('prixMax', activePrixMax);
-
-    // Appliquer les mises à jour
-    Object.entries(updates).forEach(([key, val]) => {
-      if (val === null) {
-        params.delete(key);
-      } else {
-        params.set(key, val);
-      }
-    });
-
-    return `/produits?${params.toString()}`;
+  const filtres = {
+    categorieSlug: params.categorie || undefined,
+    taille: params.taille || undefined,
+    couleur: params.couleur || undefined,
+    marque: params.marque || undefined,
+    search: params.search || undefined,
+    enStock: params.enStock === '1' ? true : undefined,
+    enPromo: params.promo === '1' ? true : undefined,
+    prix: {
+      min: params.prixMin ? Number(params.prixMin) : undefined,
+      max: params.prixMax ? Number(params.prixMax) : undefined,
+    },
   };
 
-  const cleanFiltres = () => {
-    return '/produits';
+  const [categories, facettes, { produits: products }] = await Promise.all([
+    productService.listerCategoriesArbre(),
+    productService.obtenirFacettesCatalogue(filtres),
+    productService.listerProduits(filtres, catalogTriToRepository(activeTri), { page: 1, limit: 100 }),
+  ]);
+
+  const notesMap = await chargerNotesProduits(
+    products.map((p) => p.id),
+    (ids: string[]) => avisService.statsPlusieursProduits(ids),
+  );
+
+  const hasActiveFilters = Boolean(
+    params.categorie ||
+      params.taille ||
+      params.couleur ||
+      params.marque ||
+      params.search ||
+      params.prixMin ||
+      params.prixMax ||
+      params.enStock ||
+      params.promo,
+  );
+
+  const findCategoryName = (slug: string) => {
+    for (const root of categories) {
+      if (root.slug === slug) return root.nom;
+      const child = root.children.find((c) => c.slug === slug);
+      if (child) return child.nom;
+    }
+    return slug;
   };
 
-  const hasActiveFilters = activeCategorie || activeUnivers || activeTaille || activeCouleur || activeSearch || activePrixMin || activePrixMax;
-
-  const pageTitle = activeUnivers === 'beaute'
-    ? 'Beauté — Parfums & Soins'
-    : activeUnivers === 'mode'
-      ? 'Mode — Vêtements'
-      : 'Catalogue';
+  const pageTitle = params.categorie
+    ? findCategoryName(params.categorie)
+    : params.search
+      ? `Résultats : « ${params.search} »`
+      : 'Parfums & Huiles';
 
   return (
-    <div className="container-kabishop py-8 animate-fadeIn">
-      <div className="flex items-center gap-1.5 text-xs text-zinc-500 mb-6">
-        <Link href="/" className="hover:text-accent transition font-medium">Accueil</Link>
+    <div className="container-kabishop animate-fadeIn py-8">
+      <div className="mb-6 flex items-center gap-1.5 text-xs text-zinc-500">
+        <Link href="/" className="font-medium transition hover:text-accent">
+          Accueil
+        </Link>
         <ChevronRight className="h-3 w-3" />
-        <span className="text-zinc-800 font-bold">{pageTitle}</span>
+        <span className="font-bold text-zinc-800">{pageTitle}</span>
       </div>
 
-      {/* Onglets univers */}
-      <div className="flex flex-wrap gap-2 mb-8">
-        {[
-          { label: 'Tout', value: '' },
-          { label: 'Mode', value: 'mode' },
-          { label: 'Beauté', value: 'beaute' },
-        ].map((tab) => (
-          <Link
-            key={tab.value}
-            href={tab.value ? `/produits?univers=${tab.value}` : '/produits'}
-            className={`rounded-full px-5 py-2 text-sm font-semibold transition ${
-              activeUnivers === tab.value
-                ? 'bg-primary text-white'
-                : 'bg-white border border-[#ebe4d8] text-zinc-600 hover:border-accent hover:text-accent'
-            }`}
-          >
-            {tab.label}
-          </Link>
-        ))}
+      <div className="mb-8">
+        <h1 className="font-serif text-2xl font-bold text-zinc-900 md:text-3xl">{pageTitle}</h1>
+        <p className="mt-1 text-sm text-zinc-500">
+          {products.length} produit{products.length !== 1 ? 's' : ''} — parfums et huiles
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
-        
-        {/* ─── COLONNE FILTRES (DESKTOP) ──────────────────────────────────── */}
-        <aside className="hidden lg:block space-y-6">
-          <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
-            <h3 className="font-extrabold text-zinc-900 text-lg flex items-center gap-2">
-              <SlidersHorizontal className="h-5 w-5 text-primary" /> Filtres
-            </h3>
-            {hasActiveFilters && (
-              <Link href={cleanFiltres()} className="text-xs font-bold text-primary hover:underline">
-                Effacer tout
-              </Link>
-            )}
-          </div>
+        <div className="hidden lg:block">
+          <CatalogFilters categories={categories} facettes={facettes} params={params} />
+        </div>
 
-          {/* Catégories */}
-          <div className="space-y-3">
-            <h4 className="font-bold text-zinc-800 text-sm uppercase tracking-wider">Catégorie</h4>
-            <div className="flex flex-col gap-2">
-              <Link 
-                href={buildUrl({ categorie: null })}
-                className={`text-sm py-1.5 px-3 rounded-lg transition-all font-medium ${
-                  !activeCategorie ? 'bg-primary-50 text-primary font-bold' : 'text-zinc-600 hover:bg-zinc-50'
-                }`}
-              >
-                Tous les vêtements
-              </Link>
-              {categories.map((cat) => (
-                <Link
-                  key={cat.id}
-                  href={buildUrl({ categorie: cat.slug })}
-                  className={`text-sm py-1.5 px-3 rounded-lg transition-all font-medium ${
-                    activeCategorie === cat.slug ? 'bg-primary-50 text-primary font-bold' : 'text-zinc-600 hover:bg-zinc-50'
-                  }`}
-                >
-                  {cat.nom}
-                </Link>
-              ))}
-            </div>
-          </div>
+        <div className="space-y-6 lg:col-span-3">
+          <div className="flex flex-col gap-4 border-b border-zinc-100 pb-4 sm:flex-row sm:items-center sm:justify-between">
+            <Suspense fallback={null}>
+              <CatalogSearchBar currentParams={params} defaultQuery={params.search ?? ''} />
+            </Suspense>
 
-          {/* Tailles */}
-          <div className="space-y-3 pt-4 border-t border-zinc-100">
-            <h4 className="font-bold text-zinc-800 text-sm uppercase tracking-wider">Taille</h4>
-            <div className="flex flex-wrap gap-2">
-              {taillesDisponibles.map((t) => {
-                const isSelected = activeTaille === t;
-                return (
-                  <Link
-                    key={t}
-                    href={buildUrl({ taille: isSelected ? null : t })}
-                    className={`flex h-10 min-w-10 items-center justify-center rounded-lg border text-sm font-bold transition-all px-2 ${
-                      isSelected
-                        ? 'border-primary bg-primary text-white'
-                        : 'border-zinc-200 text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50'
-                    }`}
-                  >
-                    {t}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Couleurs */}
-          <div className="space-y-3 pt-4 border-t border-zinc-100">
-            <h4 className="font-bold text-zinc-800 text-sm uppercase tracking-wider">Couleur</h4>
-            <div className="flex flex-wrap gap-2">
-              {couleursDisponibles.map((c) => {
-                const isSelected = activeCouleur === c;
-                return (
-                  <Link
-                    key={c}
-                    href={buildUrl({ couleur: isSelected ? null : c })}
-                    className={`text-xs font-semibold py-1.5 px-3 rounded-full border transition-all ${
-                      isSelected
-                        ? 'border-primary bg-primary-50 text-primary font-bold'
-                        : 'border-zinc-200 text-zinc-600 hover:border-zinc-400 hover:bg-zinc-50'
-                    }`}
-                  >
-                    {c}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </aside>
-
-        {/* ─── LISTE PRODUITS & RECHERCHE ─────────────────────────────────── */}
-        <div className="lg:col-span-3 space-y-6">
-          
-          {/* Header de liste: Filtre tri, barre recherche */}
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-zinc-100 pb-4">
-            
-            {/* Barre de recherche mobile/desktop intégrée */}
-            <div className="relative flex-grow max-w-md">
-              <form action="" method="GET">
-                {activeUnivers && <input type="hidden" name="univers" value={activeUnivers} />}
-                {activeCategorie && <input type="hidden" name="categorie" value={activeCategorie} />}
-                {activeTaille && <input type="hidden" name="taille" value={activeTaille} />}
-                {activeCouleur && <input type="hidden" name="couleur" value={activeCouleur} />}
-                {activeTri && <input type="hidden" name="tri" value={activeTri} />}
-                <input
-                  type="text"
-                  name="search"
-                  placeholder="Rechercher dans le catalogue..."
-                  defaultValue={activeSearch}
-                  className="w-full rounded-full border border-zinc-200 bg-zinc-50 py-2 pl-4 pr-10 text-sm outline-none transition focus:border-primary focus:bg-white"
-                />
-                <button type="submit" className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-primary">
-                  <Search className="h-4 w-4" />
-                </button>
-              </form>
-            </div>
-
-            {/* Tri et Nombre d'articles */}
-            <div className="flex items-center justify-between sm:justify-end gap-4">
+            <div className="flex items-center justify-between gap-4 sm:justify-end">
               <span className="text-sm font-medium text-zinc-500">
-                <span className="font-bold text-zinc-800">{products.length}</span> article(s) trouvé(s)
+                <span className="font-bold text-zinc-800">{products.length}</span> article(s)
               </span>
-
-              <div className="flex items-center gap-1.5 bg-zinc-100/80 p-1 rounded-lg">
-                <Link
-                  href={buildUrl({ tri: 'nouveautes' })}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition duration-200 ${
-                    activeTri === 'nouveautes' ? 'bg-white text-primary shadow-sm' : 'text-zinc-600 hover:text-zinc-900'
-                  }`}
-                >
-                  Nouveautés
-                </Link>
-                <Link
-                  href={buildUrl({ tri: 'prix_asc' })}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition duration-200 ${
-                    activeTri === 'prix_asc' ? 'bg-white text-primary shadow-sm' : 'text-zinc-600 hover:text-zinc-900'
-                  }`}
-                >
-                  Prix ↗
-                </Link>
-                <Link
-                  href={buildUrl({ tri: 'prix_desc' })}
-                  className={`px-3 py-1.5 text-xs font-bold rounded-md transition duration-200 ${
-                    activeTri === 'prix_desc' ? 'bg-white text-primary shadow-sm' : 'text-zinc-600 hover:text-zinc-900'
-                  }`}
-                >
-                  Prix ↘
-                </Link>
+              <div className="flex flex-wrap items-center gap-1 rounded-lg bg-zinc-100/80 p-1">
+                {CATALOG_TRI_OPTIONS.map((opt) => (
+                  <Link
+                    key={opt.value}
+                    href={buildCatalogUrl(params, { tri: opt.value })}
+                    className={`rounded-md px-2.5 py-1.5 text-xs font-bold transition duration-200 ${
+                      activeTri === opt.value
+                        ? 'bg-white text-primary shadow-sm'
+                        : 'text-zinc-600 hover:text-zinc-900'
+                    }`}
+                  >
+                    {opt.label}
+                  </Link>
+                ))}
               </div>
             </div>
           </div>
 
-          {/* Badges filtres actifs */}
+          {/* Filtres mobile */}
+          <details className="rounded-xl border border-zinc-200 bg-zinc-50 lg:hidden">
+            <summary className="cursor-pointer px-4 py-3 text-sm font-bold text-zinc-800">
+              Filtres & catégories
+            </summary>
+            <div className="border-t border-zinc-200 p-4">
+              <CatalogFilters categories={categories} facettes={facettes} params={params} />
+            </div>
+          </details>
+
           {hasActiveFilters && (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold text-zinc-500 uppercase tracking-widest mr-1">Filtres actifs :</span>
-              {activeCategorie && (
-                <Link href={buildUrl({ categorie: null })} className="inline-flex items-center gap-1 rounded-full bg-zinc-100 hover:bg-zinc-200 py-1 px-3 text-xs font-bold text-zinc-700 transition">
-                  Catégorie: {categories.find(c => c.slug === activeCategorie)?.nom} <X className="h-3.5 w-3.5 text-zinc-400" />
+              <span className="mr-1 text-xs font-semibold uppercase tracking-widest text-zinc-500">
+                Filtres actifs :
+              </span>
+              {params.categorie && (
+                <Link
+                  href={buildCatalogUrl(params, { categorie: null })}
+                  className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700 transition hover:bg-zinc-200"
+                >
+                  {findCategoryName(params.categorie)} <X className="h-3.5 w-3.5 text-zinc-400" />
                 </Link>
               )}
-              {activeTaille && (
-                <Link href={buildUrl({ taille: null })} className="inline-flex items-center gap-1 rounded-full bg-zinc-100 hover:bg-zinc-200 py-1 px-3 text-xs font-bold text-zinc-700 transition">
-                  Taille: {activeTaille} <X className="h-3.5 w-3.5 text-zinc-400" />
+              {params.marque && (
+                <Link
+                  href={buildCatalogUrl(params, { marque: null })}
+                  className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700 transition hover:bg-zinc-200"
+                >
+                  {params.marque} <X className="h-3.5 w-3.5 text-zinc-400" />
                 </Link>
               )}
-              {activeCouleur && (
-                <Link href={buildUrl({ couleur: null })} className="inline-flex items-center gap-1 rounded-full bg-zinc-100 hover:bg-zinc-200 py-1 px-3 text-xs font-bold text-zinc-700 transition">
-                  Couleur: {activeCouleur} <X className="h-3.5 w-3.5 text-zinc-400" />
+              {params.taille && (
+                <Link
+                  href={buildCatalogUrl(params, { taille: null })}
+                  className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700 transition hover:bg-zinc-200"
+                >
+                  {params.taille} <X className="h-3.5 w-3.5 text-zinc-400" />
                 </Link>
               )}
-              {activeSearch && (
-                <Link href={buildUrl({ search: null })} className="inline-flex items-center gap-1 rounded-full bg-zinc-100 hover:bg-zinc-200 py-1 px-3 text-xs font-bold text-zinc-700 transition">
-                  Recherche: "{activeSearch}" <X className="h-3.5 w-3.5 text-zinc-400" />
+              {params.couleur && (
+                <Link
+                  href={buildCatalogUrl(params, { couleur: null })}
+                  className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700 transition hover:bg-zinc-200"
+                >
+                  {params.couleur} <X className="h-3.5 w-3.5 text-zinc-400" />
+                </Link>
+              )}
+              {params.enStock === '1' && (
+                <Link
+                  href={buildCatalogUrl(params, { enStock: null })}
+                  className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700 transition hover:bg-zinc-200"
+                >
+                  En stock <X className="h-3.5 w-3.5 text-zinc-400" />
+                </Link>
+              )}
+              {params.search && (
+                <Link
+                  href={buildCatalogUrl(params, { search: null })}
+                  className="inline-flex items-center gap-1 rounded-full bg-zinc-100 px-3 py-1 text-xs font-bold text-zinc-700 transition hover:bg-zinc-200"
+                >
+                  « {params.search} » <X className="h-3.5 w-3.5 text-zinc-400" />
                 </Link>
               )}
             </div>
           )}
 
-          {/* Grille de produits */}
           {products.length > 0 ? (
             <div className="products-grid">
-              {products.map((p) => (
+              {products.map((p) => {
+                const notes = notesPourProduit(notesMap, p.id);
+                return (
                 <ProductCard
                   key={p.id}
+                  id={p.id}
                   slug={p.slug}
                   nom={p.nom}
                   categorie={p.categorie.nom}
                   prix={Number(p.prix)}
                   image={p.images[0]}
                   featured={p.featured}
+                  rating={notes.rating}
+                  reviews={notes.reviews}
+                  variante={variantePourCarte(p.id, Number(p.prix), p.variantes?.[0])}
                 />
-              ))}
+              );})}
             </div>
           ) : (
-            /* Aucun produit */
-            <div className="flex flex-col items-center justify-center py-16 text-center border-2 border-dashed border-zinc-100 rounded-2xl">
-              <Filter className="h-12 w-12 text-zinc-300 mb-4" />
-              <h3 className="text-lg font-bold text-zinc-950 mb-2">Aucun article ne correspond à votre recherche</h3>
-              <p className="text-sm text-zinc-500 max-w-sm leading-relaxed mb-6">
-                Essayez d'élargir vos critères de recherche ou de retirer certains filtres actifs.
+            <div className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-zinc-100 py-16 text-center">
+              <Filter className="mb-4 h-12 w-12 text-zinc-300" />
+              <h3 className="mb-2 text-lg font-bold text-zinc-950">
+                Aucun article ne correspond à votre recherche
+              </h3>
+              <p className="mb-6 max-w-sm text-sm leading-relaxed text-zinc-500">
+                Essayez d&apos;élargir vos critères ou retirez certains filtres.
               </p>
-              <Link href={cleanFiltres()}>
+              <Link href="/produits">
                 <Button className="btn-primary rounded-full px-6">Voir tous les articles</Button>
               </Link>
             </div>
           )}
-
         </div>
-
       </div>
-
     </div>
   );
 }

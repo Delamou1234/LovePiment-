@@ -11,6 +11,7 @@ export type CommandeAvecItems = Order & {
 };
 
 export type CreerCommandeDto = {
+  customerId?: string;
   clientNom: string;
   clientTelephone: string;
   clientAdresse: string;
@@ -21,6 +22,9 @@ export type CreerCommandeDto = {
     quantite: number;
     prixUnitaire: number;
   }[];
+  codeCoupon?: string | null;
+  pointsUtilises?: number;
+  codeParrainage?: string | null;
 };
 
 export type FiltresCommandes = {

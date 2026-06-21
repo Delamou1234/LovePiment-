@@ -1,58 +1,100 @@
 import { prisma } from '@/shared/lib/prisma';
-import { mockDb } from '@/shared/lib/mock-db';
+import { marketingService } from '@/modules/marketing/services/marketing.service';
 import type { CommandeAvecItems, CreerCommandeDto, FiltresCommandes } from '../types';
 import type { Pagination } from '@/types';
 
-// ─── OrderRepository — accès aux données (Prisma ou Mock) ─────────────────────
-
 export class OrderRepository {
-  private isMock = process.env.MOCK_DATABASE === 'true';
-
   async creer(dto: CreerCommandeDto): Promise<CommandeAvecItems> {
-    if (this.isMock) {
-      return mockDb.createOrder(dto) as any;
-    }
-
-    const montantTotal = dto.items.reduce(
+    const sousTotalBrut = dto.items.reduce(
       (acc, item) => acc + item.prixUnitaire * item.quantite,
       0,
     );
 
-    return prisma.order.create({
-      data: {
-        clientNom: dto.clientNom,
-        clientTelephone: dto.clientTelephone,
-        clientAdresse: dto.clientAdresse,
-        clientVille: dto.clientVille,
-        modePaiement: dto.modePaiement,
-        montantTotal,
-        items: {
-          create: dto.items.map((item) => ({
-            variantId: item.variantId,
-            quantite: item.quantite,
-            prixUnitaire: item.prixUnitaire,
-          })),
+    const totaux = await marketingService.calculerTotaux({
+      sousTotal: sousTotalBrut,
+      clientVille: dto.clientVille,
+      customerId: dto.customerId,
+      codeCoupon: dto.codeCoupon,
+      pointsUtilises: dto.pointsUtilises,
+      codeParrainage: dto.codeParrainage,
+    });
+
+    const crediterPoints = dto.modePaiement === 'PAIEMENT_LIVRAISON';
+
+    return prisma.$transaction(async (tx) => {
+      for (const item of dto.items) {
+        const variant = await tx.productVariant.findUnique({
+          where: { id: item.variantId },
+        });
+        if (!variant || variant.stock < item.quantite) {
+          throw new Error('Stock insuffisant pour un ou plusieurs articles');
+        }
+      }
+
+      const order = await tx.order.create({
+        data: {
+          customerId: dto.customerId,
+          clientNom: dto.clientNom,
+          clientTelephone: dto.clientTelephone,
+          clientAdresse: dto.clientAdresse,
+          clientVille: dto.clientVille,
+          modePaiement: dto.modePaiement,
+          sousTotal: totaux.sousTotal,
+          fraisLivraison: totaux.fraisLivraison,
+          remiseCoupon: totaux.remiseCoupon,
+          remisePoints: totaux.remisePoints,
+          remiseParrainage: totaux.remiseParrainage,
+          pointsUtilises: totaux.pointsUtilises,
+          pointsGagnes: totaux.pointsGagnes,
+          pointsCredites: crediterPoints,
+          montantTotal: totaux.montantTotal,
+          couponId: totaux.couponId,
+          codeParrainageUtilise: totaux.codeParrainageUtilise,
+          items: {
+            create: dto.items.map((item) => ({
+              variantId: item.variantId,
+              quantite: item.quantite,
+              prixUnitaire: item.prixUnitaire,
+            })),
+          },
         },
-      },
-      include: {
-        items: {
-          include: {
-            variante: {
-              include: {
-                produit: { select: { nom: true, images: true, slug: true } },
+        include: {
+          items: {
+            include: {
+              variante: {
+                include: {
+                  produit: { select: { nom: true, images: true, slug: true } },
+                },
               },
             },
           },
         },
-      },
-    }) as any;
+      });
+
+      for (const item of dto.items) {
+        await tx.productVariant.update({
+          where: { id: item.variantId },
+          data: { stock: { decrement: item.quantite } },
+        });
+      }
+
+      if (dto.customerId) {
+        await marketingService.appliquerEffetsCommande(tx, {
+          orderId: order.id,
+          customerId: dto.customerId,
+          couponId: totaux.couponId,
+          pointsUtilises: totaux.pointsUtilises,
+          pointsGagnes: totaux.pointsGagnes,
+          codeParrainageUtilise: totaux.codeParrainageUtilise,
+          crediterPoints,
+        });
+      }
+
+      return order as CommandeAvecItems;
+    });
   }
 
   async trouverParId(id: string): Promise<CommandeAvecItems | null> {
-    if (this.isMock) {
-      return (mockDb.getOrderById(id) as any) || null;
-    }
-
     return prisma.order.findUnique({
       where: { id },
       include: {
@@ -73,43 +115,6 @@ export class OrderRepository {
     filtres: FiltresCommandes = {},
     pagination = { page: 1, limit: 20 },
   ): Promise<{ commandes: CommandeAvecItems[]; pagination: Pagination }> {
-    if (this.isMock) {
-      let orders = [...mockDb.getOrders()];
-
-      // Filtre statut
-      if (filtres.statut) {
-        orders = orders.filter((o) => o.statut === filtres.statut);
-      }
-
-      // Filtre modePaiement
-      if (filtres.modePaiement) {
-        orders = orders.filter((o) => o.modePaiement === filtres.modePaiement);
-      }
-
-      // Filtres dates
-      if (filtres.dateDebut) {
-        orders = orders.filter((o) => o.createdAt >= filtres.dateDebut!);
-      }
-      if (filtres.dateFin) {
-        orders = orders.filter((o) => o.createdAt <= filtres.dateFin!);
-      }
-
-      // Pagination
-      const total = orders.length;
-      const skip = (pagination.page - 1) * pagination.limit;
-      const paginated = orders.slice(skip, skip + pagination.limit);
-
-      return {
-        commandes: paginated as any,
-        pagination: {
-          page: pagination.page,
-          limit: pagination.limit,
-          total,
-          totalPages: Math.ceil(total / pagination.limit),
-        },
-      };
-    }
-
     const where = {
       ...(filtres.statut && { statut: filtres.statut as any }),
       ...(filtres.modePaiement && { modePaiement: filtres.modePaiement as any }),
@@ -157,11 +162,6 @@ export class OrderRepository {
   }
 
   async mettreAJourStatut(id: string, statut: string): Promise<void> {
-    if (this.isMock) {
-      mockDb.updateOrderStatus(id, statut);
-      return;
-    }
-
     await prisma.order.update({
       where: { id },
       data: { statut: statut as any },
@@ -172,11 +172,6 @@ export class OrderRepository {
     statutPaiement: string;
     cinetpayTxId?: string;
   }): Promise<void> {
-    if (this.isMock) {
-      mockDb.updateOrderPayment(id, data);
-      return;
-    }
-
     await prisma.order.update({
       where: { id },
       data: {
@@ -185,6 +180,29 @@ export class OrderRepository {
         ...(data.statutPaiement === 'REUSSIE' && { statut: 'PAYEE' as any }),
       },
     });
+
+    if (data.statutPaiement === 'REUSSIE') {
+      await marketingService.confirmerPointsApresPaiement(id);
+    }
+  }
+
+  async listerAvisSatisfaits(limit = 6) {
+    return prisma.order.findMany({
+      where: { satisfactionStatut: 'SATISFAIT' },
+      orderBy: { satisfactionLe: 'desc' },
+      take: limit,
+      select: {
+        id: true,
+        clientNom: true,
+        clientVille: true,
+        satisfactionCommentaire: true,
+        satisfactionLe: true,
+      },
+    });
+  }
+
+  async compterAvisSatisfaits() {
+    return prisma.order.count({ where: { satisfactionStatut: 'SATISFAIT' } });
   }
 }
 

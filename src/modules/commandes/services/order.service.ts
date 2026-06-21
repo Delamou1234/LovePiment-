@@ -1,4 +1,5 @@
 import { orderRepository, type OrderRepository } from '../repository/order.repository';
+import { trackingService } from '@/modules/livraison/services/tracking.service';
 import type { CommandeAvecItems, CreerCommandeDto, FiltresCommandes } from '../types';
 import type { Pagination } from '@/types';
 
@@ -21,7 +22,9 @@ export class OrderService {
       }
     }
 
-    return this.repo.creer(dto);
+    const commande = await this.repo.creer(dto);
+    await trackingService.initialiserSuivi(commande.id, dto.clientVille);
+    return commande;
   }
 
   async obtenirCommande(id: string): Promise<CommandeAvecItems> {
@@ -48,8 +51,18 @@ export class OrderService {
   }
 
   async confirmerPaiement(id: string, cinetpayTxId: string): Promise<void> {
-    return this.repo.mettreAJourPaiement(id, {
+    await this.repo.mettreAJourPaiement(id, {
       statutPaiement: 'REUSSIE',
+      cinetpayTxId,
+    });
+    await trackingService.mettreAJourStatut(id, 'PAYEE', {
+      message: 'Paiement en ligne confirmé.',
+    });
+  }
+
+  async enregistrerTransactionCinetPay(id: string, cinetpayTxId: string): Promise<void> {
+    await this.repo.mettreAJourPaiement(id, {
+      statutPaiement: 'EN_ATTENTE',
       cinetpayTxId,
     });
   }

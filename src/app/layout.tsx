@@ -1,18 +1,23 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
-import { Geist } from "next/font/google";
-import { cn } from "@/lib/utils";
+import { Inter } from 'next/font/google';
+import { cn } from '@/lib/utils';
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+  preload: true,
+});
 
 export const metadata: Metadata = {
   title: {
-    default: 'KabiShop — Mode & Beauté à Conakry, Guinée',
+    default: 'KabiShop — Parfums & Huiles à Conakry, Guinée',
     template: '%s | KabiShop',
   },
   description:
-    'Découvrez la mode tendance chez KabiShop, votre boutique de vêtements à Conakry. Livraison rapide, paiement Mobile Money et carte bancaire.',
-  keywords: ['vêtements', 'mode', 'Conakry', 'Guinée', 'KabiShop', 'boutique en ligne'],
+    'Parfums orientaux et huiles de qualité chez KabiShop à Conakry. Livraison rapide, paiement Mobile Money et carte bancaire.',
+  keywords: ['parfums', 'huiles', 'Conakry', 'Guinée', 'KabiShop', 'boutique en ligne'],
   authors: [{ name: 'KabiShop' }],
   creator: 'KabiShop',
   openGraph: {
@@ -20,14 +25,14 @@ export const metadata: Metadata = {
     locale: 'fr_GN',
     url: process.env.NEXT_PUBLIC_APP_URL,
     siteName: 'KabiShop',
-    title: 'KabiShop — Boutique de Vêtements à Conakry, Guinée',
+    title: 'KabiShop — Parfums & Huiles à Conakry, Guinée',
     description:
-      'Découvrez la mode tendance chez KabiShop, votre boutique de vêtements à Conakry.',
+      'Parfums et huiles de qualité chez KabiShop à Conakry.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'KabiShop — Boutique de Vêtements à Conakry, Guinée',
-    description: 'Découvrez la mode tendance chez KabiShop.',
+    title: 'KabiShop — Parfums & Huiles à Conakry, Guinée',
+    description: 'Parfums orientaux et huiles sélectionnées à Conakry.',
   },
   robots: {
     index: true,
@@ -55,12 +60,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className={cn("font-sans", geist.variable)} data-scroll-behavior="smooth">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      </head>
-      <body>{children}</body>
+    <html lang="fr" className={cn('font-sans', inter.variable)} data-scroll-behavior="smooth">
+      <body className="antialiased">{children}</body>
     </html>
   );
 }

@@ -1,7 +1,8 @@
+'use client';
+
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { calculerTotauxCommande, LIVRAISON_CONFIG } from '@/shared/lib/shipping';
 
 export interface PanierItem {
   variantId: string;
@@ -15,12 +16,15 @@ export interface PanierItem {
   quantite: number;
 }
 
+export type AjouterPanierInput = Omit<PanierItem, 'quantite'> & { quantite?: number };
+
 interface PanierState {
   items: PanierItem[];
   isOpen: boolean;
+  lastSavedAt: number | null;
 
-  // Actions
-  ajouterItem: (item: Omit<PanierItem, 'quantite'> & { quantite?: number }) => void;
+  ajouterItem: (item: AjouterPanierInput) => void;
+  ajouterOuRemplacer: (item: AjouterPanierInput) => void;
   retirerItem: (variantId: string) => void;
   modifierQuantite: (variantId: string, quantite: number) => void;
   viderPanier: () => void;
@@ -28,18 +32,23 @@ interface PanierState {
   fermerPanier: () => void;
   togglePanier: () => void;
 
-  // Computed (recalculés à la volée)
-  get totalItems(): number;
-  get totalPrix(): number;
+  getSousTotal: () => number;
+  getFraisLivraison: (ville?: string) => number;
+  getTotalAvecLivraison: (ville?: string) => number;
 }
 
-// ─── Store ────────────────────────────────────────────────────────────────────
+export const selectTotalItems = (state: PanierState) =>
+  state.items.reduce((acc, item) => acc + item.quantite, 0);
+
+export const selectQuantityForVariant = (variantId: string) => (state: PanierState) =>
+  state.items.find((item) => item.variantId === variantId)?.quantite ?? 0;
 
 export const usePanier = create<PanierState>()(
   persist(
     (set, get) => ({
       items: [],
       isOpen: false,
+      lastSavedAt: null,
 
       ajouterItem: (nouvelItem) => {
         const { quantite = 1, ...itemData } = nouvelItem;
@@ -50,23 +59,35 @@ export const usePanier = create<PanierState>()(
             return {
               items: state.items.map((i) =>
                 i.variantId === itemData.variantId
-                  ? { ...i, quantite: i.quantite + quantite }
+                  ? { ...i, quantite: Math.min(i.quantite + quantite, 99) }
                   : i,
               ),
               isOpen: true,
+              lastSavedAt: Date.now(),
             };
           }
 
           return {
             items: [...state.items, { ...itemData, quantite }],
             isOpen: true,
+            lastSavedAt: Date.now(),
           };
+        });
+      },
+
+      ajouterOuRemplacer: (nouvelItem) => {
+        const { quantite = 1, ...itemData } = nouvelItem;
+        set({
+          items: [{ ...itemData, quantite }],
+          isOpen: false,
+          lastSavedAt: Date.now(),
         });
       },
 
       retirerItem: (variantId) => {
         set((state) => ({
           items: state.items.filter((i) => i.variantId !== variantId),
+          lastSavedAt: Date.now(),
         }));
       },
 
@@ -77,28 +98,60 @@ export const usePanier = create<PanierState>()(
         }
         set((state) => ({
           items: state.items.map((i) =>
-            i.variantId === variantId ? { ...i, quantite } : i,
+            i.variantId === variantId ? { ...i, quantite: Math.min(quantite, 99) } : i,
           ),
+          lastSavedAt: Date.now(),
         }));
       },
 
-      viderPanier: () => set({ items: [] }),
+      viderPanier: () => set({ items: [], lastSavedAt: Date.now() }),
       ouvrirPanier: () => set({ isOpen: true }),
       fermerPanier: () => set({ isOpen: false }),
       togglePanier: () => set((state) => ({ isOpen: !state.isOpen })),
 
-      get totalItems() {
-        return get().items.reduce((acc, i) => acc + i.quantite, 0);
+      getSousTotal: () => get().items.reduce((acc, i) => acc + i.prix * i.quantite, 0),
+
+      getFraisLivraison: (ville = LIVRAISON_CONFIG.villeParDefaut) => {
+        const { fraisLivraison } = calculerTotauxCommande(get().items, ville);
+        return fraisLivraison;
       },
 
-      get totalPrix() {
-        return get().items.reduce((acc, i) => acc + i.prix * i.quantite, 0);
+      getTotalAvecLivraison: (ville = LIVRAISON_CONFIG.villeParDefaut) => {
+        const { total } = calculerTotauxCommande(get().items, ville);
+        return total;
       },
     }),
     {
       name: 'kabishop-panier',
-      // Persiste uniquement les items (pas l'état isOpen)
-      partialize: (state) => ({ items: state.items }),
+      partialize: (state) => ({
+        items: state.items,
+        lastSavedAt: state.lastSavedAt,
+      }),
     },
   ),
 );
+
+export function creerItemPanier(input: {
+  variantId: string;
+  productId: string;
+  nomProduit: string;
+  slug: string;
+  image: string;
+  prixProduit: number;
+  prixVariante?: number | null;
+  taille?: string | null;
+  couleur?: string | null;
+  quantite?: number;
+}): AjouterPanierInput {
+  return {
+    variantId: input.variantId,
+    productId: input.productId,
+    nomProduit: input.nomProduit,
+    slug: input.slug,
+    image: input.image,
+    prix: input.prixVariante != null ? Number(input.prixVariante) : input.prixProduit,
+    taille: input.taille ?? undefined,
+    couleur: input.couleur ?? undefined,
+    quantite: input.quantite ?? 1,
+  };
+}

@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePanier } from '@/store/panier';
+import { usePanier, selectTotalItems } from '@/store/panier';
+import { formaterPrixGN, LIVRAISON_CONFIG } from '@/shared/lib/shipping';
 import { 
   Trash2, 
   ArrowRight, 
@@ -18,6 +19,7 @@ import { Button } from '@/components/ui/button';
 
 export default function CartPage() {
   const panier = usePanier();
+  const totalItems = usePanier(selectTotalItems);
   const [mounted, setMounted] = useState(false);
 
   // Fix hydration mismatch
@@ -35,8 +37,13 @@ export default function CartPage() {
   }
 
   const items = panier.items;
-  const totalPrix = panier.totalPrix;
-  const formattedTotal = totalPrix.toLocaleString('fr-FR') + ' GN';
+  const sousTotal = panier.getSousTotal();
+  const fraisLivraison = panier.getFraisLivraison();
+  const totalAvecLivraison = panier.getTotalAvecLivraison();
+  const livraisonGratuite = fraisLivraison === 0 && items.length > 0;
+  const formattedSubtotal = formaterPrixGN(sousTotal);
+  const formattedShipping = livraisonGratuite ? 'Offerte' : formaterPrixGN(fraisLivraison);
+  const formattedTotal = formaterPrixGN(totalAvecLivraison);
 
   return (
     <div className="container-kabishop py-8 animate-fadeIn">
@@ -185,13 +192,20 @@ export default function CartPage() {
               
               <div className="space-y-3">
                 <div className="flex justify-between text-sm text-zinc-500 font-semibold">
-                  <span>Articles ({panier.totalItems})</span>
-                  <span>{formattedTotal}</span>
+                  <span>Articles ({totalItems})</span>
+                  <span>{formattedSubtotal}</span>
                 </div>
                 <div className="flex justify-between text-sm text-zinc-500 font-semibold">
-                  <span>Livraison</span>
-                  <span className="text-success font-bold">Calculée à l'étape suivante</span>
+                  <span>Livraison (Conakry)</span>
+                  <span className={livraisonGratuite ? 'text-emerald-600 font-bold' : ''}>
+                    {formattedShipping}
+                  </span>
                 </div>
+                {!livraisonGratuite && items.length > 0 && (
+                  <p className="text-[11px] text-zinc-400">
+                    Livraison offerte dès {formaterPrixGN(LIVRAISON_CONFIG.seuilGratuit)}
+                  </p>
+                )}
                 
                 <div className="border-t border-zinc-200 pt-4 flex justify-between items-end">
                   <span className="font-bold text-zinc-950 text-base">Montant total</span>
@@ -199,12 +213,21 @@ export default function CartPage() {
                 </div>
               </div>
 
+              {panier.lastSavedAt && (
+                <p className="text-center text-[11px] text-zinc-400">
+                  Panier sauvegardé automatiquement sur cet appareil
+                </p>
+              )}
+
               {/* Passer commande */}
               <Link href="/commande">
                 <Button className="btn-primary w-full py-6 rounded-full font-bold text-base shadow-lg mt-4">
                   Passer la commande <ArrowRight className="h-5 w-5 ml-1" />
                 </Button>
               </Link>
+              <p className="text-center text-xs text-zinc-400 mt-3">
+                Connexion requise à l&apos;étape suivante pour payer.
+              </p>
             </div>
 
             {/* Assurances */}
@@ -236,7 +259,7 @@ export default function CartPage() {
           </p>
           <Link href="/produits">
             <Button className="btn-primary rounded-full px-8 py-5 text-base font-bold shadow-lg">
-              Découvrir nos vêtements <ArrowRight className="h-5 w-5 ml-1" />
+              Découvrir nos parfums & huiles <ArrowRight className="h-5 w-5 ml-1" />
             </Button>
           </Link>
         </div>

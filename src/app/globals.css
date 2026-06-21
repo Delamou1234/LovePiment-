@@ -206,6 +206,40 @@ body {
   100% { background-position: 200% 0; }
 }
 
+@keyframes heroZoomSlow {
+  from { transform: scale(1); }
+  to { transform: scale(1.06); }
+}
+
+@keyframes heroSlideProgress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes heroContentEnter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-heroZoomSlow {
+  animation: heroZoomSlow 18s ease-out forwards;
+}
+
+.hero-slide-progress {
+  transform-origin: left;
+  animation: heroSlideProgress 6.5s linear forwards;
+}
+
+.hero-content-enter {
+  animation: heroContentEnter 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* ─── UTILITAIRES GLOBAUX ───────────────────────────────────────────────────── */
 .animate-fadeIn {
   animation: fadeIn var(--transition-normal) both;

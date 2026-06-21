@@ -7,7 +7,7 @@ export class PaymentService {
   private readonly provider: PaymentProvider;
 
   constructor(provider?: PaymentProvider) {
-    // Injection de dépendance — facilement mockable dans les tests
+    // Injection de dépendance — implémentation interchangeable (tests, providers)
     this.provider = provider ?? new CinetPayProvider();
   }
 
@@ -31,8 +31,8 @@ export class PaymentService {
       throw new Error(result.error ?? 'Impossible d\'initier le paiement CinetPay');
     }
 
-    // Sauvegarder le transactionId CinetPay
-    await orderService.confirmerPaiement(commandeId, transactionId);
+    // Sauvegarder le transactionId CinetPay (paiement encore en attente)
+    await orderService.enregistrerTransactionCinetPay(commandeId, transactionId);
 
     return { paymentUrl: result.paymentUrl };
   }

@@ -1,326 +1,456 @@
 'use client';
 
-import React, { useState } from 'react';
-import Image from 'next/image';
-import { usePanier } from '@/store/panier';
+import React, { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { usePanier, creerItemPanier } from '@/store/panier';
 import { trackEvent } from '@/shared/hooks/useTracking';
+import { trackViewedProduct } from '@/shared/hooks/useViewedProducts';
+import { CartToast } from '@/shared/components/CartToast';
+import { ProductImageGallery } from './ProductImageGallery';
+import { useProductStock } from '../hooks/useProductStock';
 import {
   ShoppingCart,
-  MessageSquareCode,
-  Check,
+  MessageCircle,
   AlertTriangle,
-  Info,
-  ZoomIn,
-  X,
+  Truck,
+  ShieldCheck,
+  RotateCcw,
+  Zap,
+  Tag,
+  RefreshCw,
+  Barcode,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import type { ProduitAvecVariantes } from '../types';
+import type { ProduitClient } from '../lib/serialize-product';
+import type { StockVarianteClient } from '../types';
+import {
+  calculerRemisePct,
+  estPromoActive,
+  formaterDatePromo,
+} from '../lib/promo';
+import { StarRating } from '@/modules/avis/components/StarRating';
+import type { AvisProduitStats } from '@/modules/avis/types';
 
 interface ProductDetailsSectionProps {
-  product: ProduitAvecVariantes;
+  product: ProduitClient;
+  avisStats?: AvisProduitStats;
 }
 
-export default function ProductDetailsSection({ product }: ProductDetailsSectionProps) {
+function toStockVariantes(product: ProduitClient): StockVarianteClient[] {
+  return product.variantes.map((v) => ({
+    id: v.id,
+    taille: v.taille,
+    couleur: v.couleur,
+    capacite: v.capacite ?? null,
+    stock: v.stock,
+    sku: v.sku,
+    codeBarre: v.codeBarre ?? null,
+    prix: v.prix,
+  }));
+}
+
+function uniq(values: (string | null | undefined)[]) {
+  return Array.from(new Set(values.filter(Boolean))) as string[];
+}
+
+export default function ProductDetailsSection({ product, avisStats }: ProductDetailsSectionProps) {
+  const router = useRouter();
   const panier = usePanier();
-  
-  // Extraction des tailles et couleurs uniques des variantes
-  const tailles = Array.from(new Set(product.variantes.map((v) => v.taille).filter(Boolean))) as string[];
-  const couleurs = Array.from(new Set(product.variantes.map((v) => v.couleur).filter(Boolean))) as string[];
-
-  // États de sélection
-  const [selectedTaille, setSelectedTaille] = useState(tailles[0] || '');
-  const [selectedCouleur, setSelectedCouleur] = useState(couleurs[0] || '');
-  const [quantite, setQuantite] = useState(1);
-  const [activeImage, setActiveImage] = useState(product.images[0]);
-  const [showSuccessToast, setShowSuccessToast] = useState(false);
-  const [zoomOpen, setZoomOpen] = useState(false);
-
-  // Trouver la variante correspondante
-  const selectedVariant = product.variantes.find(
-    (v) => 
-      (!selectedTaille || v.taille === selectedTaille) && 
-      (!selectedCouleur || v.couleur === selectedCouleur)
+  const initialStock = useMemo(() => toStockVariantes(product), [product]);
+  const { variantes: liveVariantes, lastUpdated, loading: stockLoading, refresh } = useProductStock(
+    product.slug,
+    initialStock,
   );
 
-  const stockDisponible = selectedVariant ? selectedVariant.stock : 0;
+  const tailles = uniq(liveVariantes.map((v) => v.taille));
+  const couleurs = uniq(liveVariantes.map((v) => v.couleur));
+  const capacites = uniq(liveVariantes.map((v) => v.capacite));
+
+  const [selectedTaille, setSelectedTaille] = useState(tailles[0] || '');
+  const [selectedCouleur, setSelectedCouleur] = useState(couleurs[0] || '');
+  const [selectedCapacite, setSelectedCapacite] = useState(capacites[0] || '');
+  const [quantite, setQuantite] = useState(1);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+
+  useEffect(() => {
+    trackViewedProduct(product.id);
+  }, [product.id]);
+
+  const findVariant = (t: string, c: string, cap: string) =>
+    liveVariantes.find(
+      (v) =>
+        (!t || v.taille === t) &&
+        (!c || v.couleur === c) &&
+        (!cap || v.capacite === cap),
+    );
+
+  const selectedVariant =
+    findVariant(selectedTaille, selectedCouleur, selectedCapacite) ?? liveVariantes[0];
+
+  useEffect(() => {
+    if (selectedVariant && findVariant(selectedTaille, selectedCouleur, selectedCapacite)) return;
+    if (selectedVariant) {
+      if (selectedVariant.taille) setSelectedTaille(selectedVariant.taille);
+      if (selectedVariant.couleur) setSelectedCouleur(selectedVariant.couleur);
+      if (selectedVariant.capacite) setSelectedCapacite(selectedVariant.capacite);
+    }
+  }, [liveVariantes, selectedTaille, selectedCouleur, selectedCapacite, selectedVariant]);
+
+  const stockDisponible = selectedVariant?.stock ?? 0;
   const aDuStock = stockDisponible > 0;
-  
-  // Prix spécifique à la variante ou prix de base
-  const prixCourant = selectedVariant && selectedVariant.prix 
-    ? Number(selectedVariant.prix) 
-    : Number(product.prix);
 
-  const formattedPrice = prixCourant.toLocaleString('fr-FR') + ' GN';
+  useEffect(() => {
+    if (quantite > stockDisponible && stockDisponible > 0) {
+      setQuantite(stockDisponible);
+    }
+  }, [stockDisponible, quantite]);
 
-  const handleAddToCart = () => {
-    if (!aDuStock || !selectedVariant) return;
+  const enPromo =
+    product.prixPromo != null &&
+    estPromoActive({
+      prixPromo: product.prixPromo,
+      promoDebut: product.promoDebut,
+      promoFin: product.promoFin,
+    });
+  const prixCatalogue =
+    selectedVariant?.prix != null ? selectedVariant.prix : product.prix;
+  const prixAffiche =
+    enPromo && product.prixPromo != null ? product.prixPromo : prixCatalogue;
+  const remisePct =
+    enPromo && product.prixPromo != null
+      ? calculerRemisePct(Number(product.prix), product.prixPromo)
+      : 0;
 
-    panier.ajouterItem({
+  const images = product.images.length > 0 ? product.images : [];
+
+  const buildCartItem = () => {
+    if (!selectedVariant) return null;
+    return creerItemPanier({
       variantId: selectedVariant.id,
       productId: product.id,
       nomProduit: product.nom,
       slug: product.slug,
-      image: product.images[0],
-      taille: selectedTaille || undefined,
-      couleur: selectedCouleur || undefined,
-      prix: prixCourant,
+      image: product.images[0] ?? '',
+      prixProduit: product.prix,
+      prixVariante: enPromo ? product.prixPromo : selectedVariant.prix,
+      taille: selectedTaille || selectedVariant.taille,
+      couleur: selectedCouleur || selectedVariant.couleur,
+      quantite,
     });
+  };
 
+  const handleAddToCart = () => {
+    const item = buildCartItem();
+    if (!aDuStock || !item) return;
+    panier.ajouterItem(item);
     void trackEvent('ADD_TO_CART', { productId: product.id, path: `/produits/${product.slug}` });
-
-    // Afficher un petit toast de succès
     setShowSuccessToast(true);
-    setTimeout(() => setShowSuccessToast(false), 3000);
   };
 
-  // WhatsApp Order Link Generator
-  const getWhatsAppLink = () => {
-    const message = `Bonjour KabiShop ! Je souhaite commander un article de votre boutique en ligne :\n\n` +
-      `- *Article* : ${product.nom}\n` +
-      (selectedTaille ? `- *Taille* : ${selectedTaille}\n` : '') +
-      (selectedCouleur ? `- *Couleur* : ${selectedCouleur}\n` : '') +
-      `- *Quantité* : ${quantite}\n` +
-      `- *Prix unitaire* : ${formattedPrice}\n\n` +
-      `Lien de l'article : ${window.location.origin}/produits/${product.slug}\n` +
-      `Merci de me reconfirmer la disponibilité.`;
-      
-    return `https://wa.me/224620000000?text=${encodeURIComponent(message)}`;
+  const handleBuyNow = () => {
+    const item = buildCartItem();
+    if (!aDuStock || !item) return;
+    panier.ajouterOuRemplacer(item);
+    void trackEvent('CHECKOUT_START', { productId: product.id, path: `/produits/${product.slug}` });
+    router.push('/commande');
   };
+
+  const getWhatsAppLink = () => {
+    const prixLabel = `${prixAffiche.toLocaleString('fr-FR')} GN`;
+    const message =
+      `Bonjour KabiShop ! Je souhaite commander :\n\n` +
+      `• *${product.nom}*\n` +
+      (selectedCapacite ? `• Capacité : ${selectedCapacite}\n` : '') +
+      (selectedTaille ? `• Taille : ${selectedTaille}\n` : '') +
+      (selectedCouleur ? `• Couleur : ${selectedCouleur}\n` : '') +
+      `• Quantité : ${quantite}\n` +
+      `• Prix : ${prixLabel}\n\n` +
+      `${window.location.origin}/produits/${product.slug}`;
+
+    const num = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '224620000000';
+    return `https://wa.me/${num.replace(/[\s+\-()]/g, '')}?text=${encodeURIComponent(message)}`;
+  };
+
+  const promoBadge =
+    enPromo && remisePct > 0 ? (
+      <span className="absolute top-4 left-4 rounded-full bg-red-600 px-3 py-1 text-xs font-bold text-white shadow-md">
+        -{remisePct}%
+      </span>
+    ) : null;
 
   return (
-    <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-      
-      {/* ─── COLONNE GAUCHE : GALERIE IMAGES ────────────────────────────── */}
-      <div className="space-y-4">
-        {/* Grande image active */}
-        <div className="relative aspect-[3/4] w-full rounded-2xl overflow-hidden border border-[#ebe4d8] bg-[#f5f0e8] shadow-sm group cursor-zoom-in">
-          <Image
-            src={activeImage}
-            alt={product.nom}
-            fill
-            sizes="(max-width: 768px) 100vw, 50vw"
-            className="object-cover object-center transition duration-300"
-            priority
-            onClick={() => setZoomOpen(true)}
-          />
-          <button
-            type="button"
-            onClick={() => setZoomOpen(true)}
-            className="absolute bottom-4 right-4 flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium text-zinc-700 opacity-0 group-hover:opacity-100 transition shadow-sm"
-          >
-            <ZoomIn className="h-3.5 w-3.5" /> Zoom
-          </button>
-        </div>
+    <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:items-start lg:gap-14">
+      <ProductImageGallery images={images} alt={product.nom} badge={promoBadge} />
 
-        {zoomOpen && (
-          <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
-            onClick={() => setZoomOpen(false)}
+      <div className="flex flex-col gap-6">
+        <div className="space-y-4">
+          <Link
+            href={`/produits?categorie=${product.categorie.slug}`}
+            className="inline-flex items-center gap-1.5 rounded-full bg-[#eef0eb] px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#4a5240] transition hover:bg-[#e4e8df]"
           >
-            <button
-              type="button"
-              className="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
-              onClick={() => setZoomOpen(false)}
-            >
-              <X className="h-6 w-6" />
-            </button>
-            <div className="relative h-[80vh] w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
-              <Image src={activeImage} alt={product.nom} fill sizes="90vw" className="object-contain" />
-            </div>
-          </div>
-        )}
-        
-        {/* Vignettes / Thumbnails */}
-        {product.images.length > 1 && (
-          <div className="flex gap-3 overflow-x-auto pb-1">
-            {product.images.map((img, idx) => {
-              const isActive = activeImage === img;
-              return (
-                <button
-                  key={idx}
-                  onClick={() => setActiveImage(img)}
-                  className={`relative h-20 w-20 shrink-0 rounded-xl overflow-hidden border-2 transition-all ${
-                    isActive ? 'border-primary ring-2 ring-primary/20' : 'border-zinc-200 opacity-70 hover:opacity-100'
-                  }`}
-                >
-                  <Image
-                    src={img}
-                    alt={`${product.nom} thumbnail ${idx}`}
-                    fill
-                    sizes="80px"
-                    className="object-cover object-center"
-                  />
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* ─── COLONNE DROITE : DESCRIPTION & CHOIX ────────────────────────── */}
-      <div className="space-y-6">
-        
-        {/* En-tête */}
-        <div className="space-y-2 border-b border-zinc-100 pb-4">
-          <span className="text-xs font-bold text-accent uppercase tracking-widest bg-accent-light rounded-full px-3 py-1 border border-[#ebe4d8] inline-block">
             {product.categorie.nom}
-          </span>
-          <h1 className="font-serif text-2xl font-bold text-zinc-900 md:text-3xl leading-tight">
+          </Link>
+
+          <h1 className="font-serif text-2xl font-bold leading-tight tracking-tight text-zinc-900 md:text-[2rem]">
             {product.nom}
           </h1>
-          <div className="flex items-center gap-4 pt-1">
-            <span className="price-display-large">{formattedPrice}</span>
-            {aDuStock ? (
-              <span className="inline-flex items-center gap-1 text-xs font-bold text-success bg-green-50 px-2.5 py-1 rounded-full border border-green-200">
-                <span className="h-2 w-2 rounded-full bg-success"></span> En stock ({stockDisponible} restants)
+          {avisStats && avisStats.total > 0 && (
+            <div className="mt-2 flex items-center gap-2">
+              <StarRating value={avisStats.moyenne} size="sm" showValue />
+              <span className="text-xs text-zinc-500">
+                ({avisStats.total} avis vérifié{avisStats.total > 1 ? 's' : ''})
               </span>
+            </div>
+          )}
+
+          {product.marque && (
+            <p className="text-sm font-semibold text-zinc-500">{product.marque}</p>
+          )}
+
+          <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
+            {enPromo && product.prixPromo != null ? (
+              <>
+                <p className="text-2xl font-bold text-red-600 md:text-3xl">
+                  {prixAffiche.toLocaleString('fr-FR')} GN
+                </p>
+                <p className="pb-0.5 text-base text-zinc-400 line-through">
+                  {prixCatalogue.toLocaleString('fr-FR')} GN
+                </p>
+                {product.promoFin && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-red-100 bg-red-50 px-2.5 py-1 text-[10px] font-semibold text-red-700">
+                    <Tag className="h-3 w-3" />
+                    Jusqu&apos;au {formaterDatePromo(product.promoFin)}
+                  </span>
+                )}
+              </>
             ) : (
-              <span className="inline-flex items-center gap-1 text-xs font-bold text-error bg-red-50 px-2.5 py-1 rounded-full border border-red-200">
-                <span className="h-2 w-2 rounded-full bg-error"></span> En rupture de stock
-              </span>
+              <p className="text-2xl font-bold text-zinc-900 md:text-3xl">
+                {prixAffiche.toLocaleString('fr-FR')} GN
+              </p>
             )}
+
+            <div className="flex flex-wrap items-center gap-2">
+              {aDuStock ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-800">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                  En stock · {stockDisponible} restant{stockDisponible > 1 ? 's' : ''}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-red-200 bg-red-50 px-3 py-1 text-[11px] font-semibold text-red-700">
+                  Rupture de stock
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => refresh()}
+                disabled={stockLoading}
+                className="inline-flex items-center gap-1 rounded-full border border-zinc-200 px-2 py-1 text-[10px] font-medium text-zinc-500 hover:bg-zinc-50"
+                title="Actualiser le stock"
+              >
+                <RefreshCw className={`h-3 w-3 ${stockLoading ? 'animate-spin' : ''}`} />
+                Live
+              </button>
+            </div>
           </div>
+
+          {selectedVariant?.sku && (
+            <p className="flex flex-wrap items-center gap-3 text-xs text-zinc-400">
+              <span>SKU : {selectedVariant.sku}</span>
+              {selectedVariant.codeBarre && (
+                <span className="inline-flex items-center gap-1">
+                  <Barcode className="h-3.5 w-3.5" />
+                  {selectedVariant.codeBarre}
+                </span>
+              )}
+            </p>
+          )}
         </div>
 
-        {/* Sélection des options */}
-        <div className="space-y-4">
-          {/* Tailles */}
+        {product.description && (
+          <p className="border-l-2 border-[#4a5240]/30 pl-4 text-sm leading-relaxed text-zinc-500">
+            {product.description}
+          </p>
+        )}
+
+        <div className="space-y-5 rounded-2xl border border-[#ebe4d8] bg-white p-5 shadow-sm md:p-6">
+          {capacites.length > 0 && (
+            <fieldset className="space-y-2.5">
+              <legend className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                Capacité
+              </legend>
+              <div className="flex flex-wrap gap-2">
+                {capacites.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setSelectedCapacite(c)}
+                    className={`min-w-[3rem] rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
+                      selectedCapacite === c
+                        ? 'border-[#4a5240] bg-[#4a5240] text-white shadow-sm'
+                        : 'border-[#ebe4d8] bg-[#faf7f2] text-zinc-700 hover:border-[#4a5240]/40'
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          )}
+
           {tailles.length > 0 && (
-            <div className="space-y-2">
-              <span className="text-xs font-black uppercase text-zinc-500 tracking-wider">Taille</span>
+            <fieldset className="space-y-2.5">
+              <legend className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                Taille
+              </legend>
               <div className="flex flex-wrap gap-2">
-                {tailles.map((t) => {
-                  const isSelected = selectedTaille === t;
-                  return (
-                    <button
-                      key={t}
-                      onClick={() => setSelectedTaille(t)}
-                      className={`flex h-11 min-w-11 items-center justify-center rounded-xl border text-sm font-bold transition-all px-3 ${
-                        isSelected
-                          ? 'border-accent bg-accent text-white shadow-sm'
-                          : 'border-[#ebe4d8] text-zinc-700 hover:border-zinc-400 hover:bg-[#faf7f2]'
-                      }`}
-                    >
-                      {t}
-                    </button>
-                  );
-                })}
+                {tailles.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setSelectedTaille(t)}
+                    className={`min-w-[3rem] rounded-xl border px-4 py-2.5 text-sm font-semibold transition ${
+                      selectedTaille === t
+                        ? 'border-[#4a5240] bg-[#4a5240] text-white shadow-sm'
+                        : 'border-[#ebe4d8] bg-[#faf7f2] text-zinc-700 hover:border-[#4a5240]/40'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                ))}
               </div>
-            </div>
+            </fieldset>
           )}
 
-          {/* Couleurs */}
           {couleurs.length > 0 && (
-            <div className="space-y-2">
-              <span className="text-xs font-black uppercase text-zinc-500 tracking-wider">Couleur</span>
+            <fieldset className="space-y-2.5">
+              <legend className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                Couleur / fragrance
+              </legend>
               <div className="flex flex-wrap gap-2">
-                {couleurs.map((c) => {
-                  const isSelected = selectedCouleur === c;
-                  return (
-                    <button
-                      key={c}
-                      onClick={() => setSelectedCouleur(c)}
-                      className={`text-xs font-bold py-2 px-4 rounded-full border transition-all ${
-                        isSelected
-                          ? 'border-accent bg-accent-light text-accent'
-                          : 'border-[#ebe4d8] text-zinc-600 hover:border-zinc-400 hover:bg-[#faf7f2]'
-                      }`}
-                    >
-                      {c}
-                    </button>
-                  );
-                })}
+                {couleurs.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setSelectedCouleur(c)}
+                    className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
+                      selectedCouleur === c
+                        ? 'border-[#4a5240] bg-[#eef0eb] text-[#4a5240]'
+                        : 'border-[#ebe4d8] text-zinc-600 hover:border-[#4a5240]/40 hover:bg-[#faf7f2]'
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
               </div>
-            </div>
+            </fieldset>
           )}
 
-          {/* Quantité */}
           {aDuStock && (
-            <div className="space-y-2">
-              <span className="text-xs font-black uppercase text-zinc-500 tracking-wider">Quantité</span>
-              <div className="flex items-center gap-2">
+            <div className="space-y-2.5">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-500">
+                Quantité
+              </span>
+              <div className="inline-flex items-center rounded-xl border border-[#ebe4d8] bg-[#faf7f2] p-1">
                 <button
+                  type="button"
                   onClick={() => setQuantite(Math.max(1, quantite - 1))}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 font-bold text-zinc-600 hover:bg-zinc-50"
                   disabled={quantite <= 1}
+                  className="flex h-10 w-10 items-center justify-center rounded-lg text-lg font-medium text-zinc-600 transition hover:bg-white disabled:opacity-40"
                 >
-                  -
+                  −
                 </button>
-                <span className="w-12 text-center font-bold text-zinc-950 text-base">{quantite}</span>
+                <span className="w-12 text-center text-base font-bold text-zinc-900">{quantite}</span>
                 <button
+                  type="button"
                   onClick={() => setQuantite(Math.min(stockDisponible, quantite + 1))}
-                  className="flex h-10 w-10 items-center justify-center rounded-xl border border-zinc-200 font-bold text-zinc-600 hover:bg-zinc-50"
                   disabled={quantite >= stockDisponible}
+                  className="flex h-10 w-10 items-center justify-center rounded-lg text-lg font-medium text-zinc-600 transition hover:bg-white disabled:opacity-40"
                 >
                   +
                 </button>
               </div>
             </div>
           )}
-        </div>
 
-        {/* Boutons d'achat */}
-        <div className="space-y-3 pt-4 border-t border-zinc-100">
           {aDuStock ? (
-            <div className="flex flex-col sm:flex-row gap-3">
-              {/* Ajouter au panier */}
-              <Button 
+            <div className="space-y-2.5 pt-1">
+              <button
+                type="button"
                 onClick={handleAddToCart}
-                className="btn-primary flex-1 py-6 rounded-full font-bold text-base shadow-lg"
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-[#4a5240] py-3.5 text-sm font-bold text-white shadow-md transition hover:bg-[#3d4534]"
               >
-                <ShoppingCart className="h-5 w-5" /> Ajouter au panier
-              </Button>
-
-              {/* Commander via WhatsApp */}
-              <a 
-                href={getWhatsAppLink()} 
-                target="_blank" 
-                rel="noopener noreferrer" 
-                className="flex-1"
+                <ShoppingCart className="h-4 w-4" />
+                Ajouter au panier
+              </button>
+              <button
+                type="button"
+                onClick={handleBuyNow}
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-zinc-900 py-3.5 text-sm font-bold text-white transition hover:bg-zinc-800"
               >
-                <Button 
-                  variant="outline"
-                  className="w-full py-6 rounded-full border-2 border-green-500 text-green-600 bg-transparent hover:bg-green-50 font-bold text-base hover:text-green-600 flex items-center justify-center gap-2"
-                >
-                  <MessageSquareCode className="h-5 w-5" /> Commander via WhatsApp
-                </Button>
+                <Zap className="h-4 w-4" />
+                Acheter maintenant
+              </button>
+              <a
+                href={getWhatsAppLink()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex w-full items-center justify-center gap-2 rounded-full border-2 border-[#25D366] bg-white py-3 text-sm font-semibold text-[#128C7E] transition hover:bg-[#f0fdf4]"
+              >
+                <MessageCircle className="h-4 w-4" />
+                Commander via WhatsApp
               </a>
             </div>
           ) : (
-            /* Alerte rupture */
-            <div className="flex items-start gap-2.5 rounded-xl bg-amber-50 p-4 border border-amber-200 text-amber-800">
-              <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" />
+            <div className="flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+              <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
               <div>
-                <p className="font-bold text-sm">Actuellement en rupture de stock</p>
-                <p className="text-xs leading-relaxed text-amber-700 mt-1">
-                  Cet article est victime de son succès. Vous pouvez tout de même nous contacter sur WhatsApp pour connaître la date de réapprovisionnement.
+                <p className="text-sm font-bold text-amber-900">Produit indisponible</p>
+                <p className="mt-1 text-xs leading-relaxed text-amber-800">
+                  Contactez-nous sur WhatsApp pour connaître la date de réapprovisionnement.
                 </p>
+                <a
+                  href={getWhatsAppLink()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#128C7E] hover:underline"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  Écrire sur WhatsApp
+                </a>
               </div>
             </div>
           )}
+        </div>
 
-          {/* Toast de succès panier */}
-          {showSuccessToast && (
-            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-xl bg-zinc-900 py-3 px-6 text-sm font-bold text-white shadow-2xl animate-fadeIn">
-              <Check className="h-5 w-5 text-success bg-green-500/20 rounded-full p-0.5" /> Article ajouté au panier !
+        {lastUpdated && (
+          <p className="text-[10px] text-zinc-400">
+            Stock actualisé à {new Date(lastUpdated).toLocaleTimeString('fr-FR')}
+          </p>
+        )}
+
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { icon: Truck, label: 'Livraison 24–48h', sub: 'Conakry' },
+            { icon: ShieldCheck, label: 'Paiement sécurisé', sub: 'Mobile Money' },
+            { icon: RotateCcw, label: 'Produits authentiques', sub: 'Garantie qualité' },
+          ].map(({ icon: Icon, label, sub }) => (
+            <div
+              key={label}
+              className="rounded-xl border border-[#ebe4d8] bg-[#faf7f2]/80 px-3 py-3 text-center"
+            >
+              <Icon className="mx-auto mb-1.5 h-4 w-4 text-[#4a5240]" strokeWidth={1.75} />
+              <p className="text-[10px] font-bold leading-tight text-zinc-800">{label}</p>
+              <p className="mt-0.5 text-[9px] text-zinc-400">{sub}</p>
             </div>
-          )}
+          ))}
         </div>
 
-        {/* Description / Infos */}
-        <div className="space-y-4 pt-6 border-t border-zinc-100">
-          <div className="space-y-2">
-            <h4 className="font-extrabold text-zinc-900 text-sm flex items-center gap-2">
-              <Info className="h-4.5 w-4.5 text-primary" /> Description de l'article
-            </h4>
-            <p className="text-sm text-zinc-500 leading-relaxed">
-              {product.description || "Aucune description fournie pour cet article."}
-            </p>
-          </div>
-        </div>
-
+        <CartToast
+          visible={showSuccessToast}
+          message="Ajouté au panier"
+          onHide={() => setShowSuccessToast(false)}
+        />
       </div>
-
     </div>
   );
 }

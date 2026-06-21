@@ -6,36 +6,56 @@ import { usePathname } from 'next/navigation';
 type EventType = 'PAGE_VIEW' | 'PRODUCT_VIEW' | 'ADD_TO_CART' | 'CHECKOUT_START' | 'ORDER_PLACED';
 
 /**
- * Envoie un événement analytics au serveur (fire and forget).
- * N'attend pas de réponse et ne bloque jamais le rendu.
+ * Envoie un événement analytics sans bloquer le thread principal.
  */
-export async function trackEvent(
+export function trackEvent(
   type: EventType,
   data?: { productId?: string; path?: string; sessionId?: string },
-): Promise<void> {
+): void {
+  if (typeof window === 'undefined') return;
+
+  const payload = JSON.stringify({ type, ...data });
+
   try {
-    await fetch('/api/track', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ type, ...data }),
-    });
+    if (navigator.sendBeacon) {
+      const sent = navigator.sendBeacon(
+        '/api/track',
+        new Blob([payload], { type: 'application/json' }),
+      );
+      if (sent) return;
+    }
   } catch {
-    // Silencieux — le tracking ne doit jamais impacter l'UX
+    /* fallback fetch */
   }
+
+  void fetch('/api/track', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: payload,
+    keepalive: true,
+  }).catch(() => {});
 }
 
 /**
- * Hook qui trackera automatiquement les pages vues.
- * À placer dans le layout de la boutique.
+ * Hook qui track automatiquement les pages vues (debounce navigation rapide).
  */
 export function usePageTracking() {
   const pathname = usePathname();
   const lastTracked = useRef<string>('');
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (pathname && pathname !== lastTracked.current) {
+    if (!pathname || pathname === lastTracked.current) return;
+
+    if (timerRef.current) clearTimeout(timerRef.current);
+
+    timerRef.current = setTimeout(() => {
       lastTracked.current = pathname;
-      void trackEvent('PAGE_VIEW', { path: pathname });
-    }
+      trackEvent('PAGE_VIEW', { path: pathname });
+    }, 400);
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
   }, [pathname]);
 }

@@ -11,30 +11,36 @@ import type {
  * Documentation officielle : https://docs.cinetpay.com/
  */
 export class CinetPayProvider implements PaymentProvider {
-  private readonly apiKey: string;
-  private readonly siteId: string;
   private readonly baseUrl = 'https://api-checkout.cinetpay.com/v2';
 
-  constructor() {
-    const apiKey = process.env.CINETPAY_API_KEY;
-    const siteId = process.env.CINETPAY_SITE_ID;
+  private getConfig(): { apiKey: string; siteId: string } | null {
+    const apiKey = process.env.CINETPAY_API_KEY?.trim();
+    const siteId = process.env.CINETPAY_SITE_ID?.trim();
+    if (!apiKey || !siteId) return null;
+    return { apiKey, siteId };
+  }
 
-    if (!apiKey || !siteId) {
-      throw new Error('[CinetPayProvider] Variables CINETPAY_API_KEY et CINETPAY_SITE_ID manquantes');
-    }
-
-    this.apiKey = apiKey;
-    this.siteId = siteId;
+  isConfigured(): boolean {
+    return this.getConfig() !== null;
   }
 
   async initierPaiement(params: InitierPaiementParams): Promise<InitierPaiementResult> {
+    const config = this.getConfig();
+    if (!config) {
+      return {
+        success: false,
+        error:
+          'Paiement en ligne non configuré (CINETPAY_API_KEY / CINETPAY_SITE_ID manquants). Choisissez « Paiement à la livraison ».',
+      };
+    }
+
     try {
       const response = await fetch(`${this.baseUrl}/payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          apikey: this.apiKey,
-          site_id: this.siteId,
+          apikey: config.apiKey,
+          site_id: config.siteId,
           transaction_id: params.transactionId,
           amount: params.montant,
           currency: 'GNF',
@@ -43,12 +49,12 @@ export class CinetPayProvider implements PaymentProvider {
           customer_phone_number: params.clientTelephone,
           return_url: params.returnUrl,
           notify_url: params.notifyUrl,
-          channels: 'ALL', // Mobile Money + Carte
+          channels: 'ALL',
           lang: 'fr',
         }),
       });
 
-      const data = await response.json() as {
+      const data = (await response.json()) as {
         code: string;
         message: string;
         data?: { payment_url: string };
@@ -72,18 +78,23 @@ export class CinetPayProvider implements PaymentProvider {
   }
 
   async verifierStatut(params: VerifierStatutParams): Promise<VerifierStatutResult> {
+    const config = this.getConfig();
+    if (!config) {
+      return { success: false, statut: 'ECHOUEE', error: 'CinetPay non configuré' };
+    }
+
     try {
       const response = await fetch(`${this.baseUrl}/payment/check`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          apikey: this.apiKey,
-          site_id: this.siteId,
+          apikey: config.apiKey,
+          site_id: config.siteId,
           transaction_id: params.transactionId,
         }),
       });
 
-      const data = await response.json() as {
+      const data = (await response.json()) as {
         code: string;
         message: string;
         data?: { status: string; amount: number };
@@ -115,9 +126,6 @@ export class CinetPayProvider implements PaymentProvider {
   }
 
   validerWebhook(_payload: unknown, _signature: string): boolean {
-    // CinetPay envoie une simple notification POST sans signature cryptographique complexe.
-    // La validation se fait en vérifiant le statut via l'API (verifierStatut).
-    // À implémenter selon la doc spécifique du compte.
     return true;
   }
 }

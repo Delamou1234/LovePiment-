@@ -1,21 +1,17 @@
-'use client';
-
 import { ShopHeader } from '@/shared/ui/ShopHeader';
 import { ShopFooter } from '@/shared/ui/ShopFooter';
-import { CartDrawer } from '@/shared/ui/CartDrawer';
-import { WhatsAppFloatingButton } from '@/shared/ui/WhatsAppFloatingButton';
-import { TrackingProvider } from '@/shared/components/TrackingProvider';
+import { BoutiqueWidgets } from './BoutiqueWidgets';
+import { BoutiqueProviders } from './BoutiqueProviders';
 
 export default function BoutiqueLayout({ children }: { children: React.ReactNode }) {
   return (
-    <TrackingProvider>
+    <BoutiqueProviders>
       <div className="flex min-h-screen flex-col bg-white">
         <ShopHeader />
-        <main className="flex-grow">{children}</main>
+        <main className="flex-grow pb-28">{children}</main>
         <ShopFooter />
-        <CartDrawer />
-        <WhatsAppFloatingButton />
+        <BoutiqueWidgets />
       </div>
-    </TrackingProvider>
+    </BoutiqueProviders>
   );
 }

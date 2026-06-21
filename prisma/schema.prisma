@@ -37,6 +37,60 @@ enum EventType {
   ORDER_PLACED
 }
 
+enum TrackingEventType {
+  STATUT
+  NOTIFICATION
+  TRANSPORTEUR
+  SATISFACTION
+}
+
+enum OrderSatisfaction {
+  SATISFAIT
+  NON_SATISFAIT
+}
+
+enum MessageSenderRole {
+  CLIENT
+  VENDEUR
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  DOCUMENT
+  VOICE
+}
+
+enum ChatParticipantRole {
+  CLIENT
+  VENDEUR
+}
+
+enum ContactSubject {
+  GENERAL
+  COMMANDE
+  PRODUIT
+  PARTENARIAT
+  AUTRE
+}
+
+enum ContactMessageStatus {
+  NOUVEAU
+  LU
+  TRAITE
+}
+
+enum CouponType {
+  POURCENT
+  MONTANT_FIXE
+}
+
+enum ReviewStatus {
+  EN_ATTENTE
+  APPROUVE
+  REFUSE
+}
+
 // ─── CATEGORY ────────────────────────────────────────────────────────────────
 
 model Category {
@@ -45,11 +99,15 @@ model Category {
   slug      String    @unique
   image     String?
   actif     Boolean   @default(true)
+  parentId  String?   @map("parent_id")
+  parent    Category? @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children  Category[] @relation("CategoryTree")
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
 
   produits  Product[]
 
+  @@index([parentId])
   @@map("categories")
 }
 
@@ -59,8 +117,12 @@ model Product {
   id          String    @id @default(cuid())
   nom         String
   slug        String    @unique
+  marque      String?
   description String?
   prix        Decimal   @db.Decimal(10, 0)
+  prixPromo   Decimal?  @db.Decimal(10, 0) @map("prix_promo")
+  promoDebut  DateTime? @map("promo_debut")
+  promoFin    DateTime? @map("promo_fin")
   images      String[]
   actif       Boolean   @default(true)
   featured    Boolean   @default(false)
@@ -72,6 +134,8 @@ model Product {
 
   variantes   ProductVariant[]
   analyticsEvents AnalyticsEvent[]
+  wishlistItems WishlistItem[]
+  avis            ProductReview[]
 
   @@map("products")
 }
@@ -79,12 +143,14 @@ model Product {
 // ─── PRODUCT VARIANT ─────────────────────────────────────────────────────────
 
 model ProductVariant {
-  id        String  @id @default(cuid())
-  taille    String?
-  couleur   String?
-  stock     Int     @default(0)
-  sku       String? @unique
-  prix      Decimal? @db.Decimal(10, 0) // prix spécifique à la variante (optionnel, sinon hérite du produit)
+  id         String  @id @default(cuid())
+  taille     String?
+  couleur    String?
+  capacite   String?
+  stock      Int     @default(0)
+  sku        String? @unique
+  codeBarre  String? @unique @map("code_barre")
+  prix       Decimal? @db.Decimal(10, 0)
 
   productId String  @map("product_id")
   produit   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -94,10 +160,31 @@ model ProductVariant {
   @@map("product_variants")
 }
 
+// ─── CARRIER ─────────────────────────────────────────────────────────────────
+
+model Carrier {
+  id             String   @id @default(cuid())
+  nom            String
+  slug           String   @unique
+  telephone      String?
+  actif          Boolean  @default(true)
+  delaiMinHeures Int      @default(24) @map("delai_min_heures")
+  delaiMaxHeures Int      @default(48) @map("delai_max_heures")
+  description    String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  commandes      Order[]
+
+  @@map("carriers")
+}
+
 // ─── ORDER ───────────────────────────────────────────────────────────────────
 
 model Order {
   id              String        @id @default(cuid())
+  customerId      String?       @map("customer_id")
+  customer        Customer?     @relation(fields: [customerId], references: [id], onDelete: SetNull)
   // Infos client
   clientNom       String        @map("client_nom")
   clientTelephone String        @map("client_telephone")
@@ -107,17 +194,63 @@ model Order {
   statut          OrderStatus   @default(EN_ATTENTE)
   modePaiement    PaymentMethod @map("mode_paiement")
   statutPaiement  PaymentStatus @default(EN_ATTENTE) @map("statut_paiement")
+  sousTotal       Decimal?      @db.Decimal(10, 0) @map("sous_total")
+  fraisLivraison  Decimal?      @db.Decimal(10, 0) @map("frais_livraison")
+  remiseCoupon    Decimal       @default(0) @db.Decimal(10, 0) @map("remise_coupon")
+  remisePoints    Decimal       @default(0) @db.Decimal(10, 0) @map("remise_points")
+  remiseParrainage Decimal      @default(0) @db.Decimal(10, 0) @map("remise_parrainage")
+  pointsUtilises  Int           @default(0) @map("points_utilises")
+  pointsGagnes    Int           @default(0) @map("points_gagnes")
+  pointsCredites  Boolean       @default(false) @map("points_credites")
   montantTotal    Decimal       @db.Decimal(10, 0) @map("montant_total")
+  couponId        String?       @map("coupon_id")
+  coupon          Coupon?       @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  codeParrainageUtilise String? @map("code_parrainage_utilise")
+  // Suivi livraison
+  suiviToken      String        @unique @default(cuid()) @map("suivi_token")
+  numeroSuivi     String?       @map("numero_suivi")
+  livraisonEstimee DateTime?    @map("livraison_estimee")
+  livreeLe        DateTime?     @map("livree_le")
+  carrierId       String?       @map("carrier_id")
+  carrier         Carrier?      @relation(fields: [carrierId], references: [id], onDelete: SetNull)
   // Référence CinetPay (si applicable)
   cinetpayTxId    String?       @unique @map("cinetpay_tx_id")
   // Notes internes
   notes           String?
+  // Avis client après livraison
+  satisfactionStatut       OrderSatisfaction? @map("satisfaction_statut")
+  satisfactionCommentaire  String?            @map("satisfaction_commentaire")
+  satisfactionLe           DateTime?          @map("satisfaction_le")
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
   items           OrderItem[]
+  trackingEvents  OrderTrackingEvent[]
+  avis            ProductReview[]
 
+  @@index([statut])
+  @@index([suiviToken])
+  @@index([satisfactionStatut])
+  @@index([customerId])
   @@map("orders")
+}
+
+// ─── ORDER TRACKING EVENT ────────────────────────────────────────────────────
+
+model OrderTrackingEvent {
+  id        String            @id @default(cuid())
+  type      TrackingEventType @default(STATUT)
+  statut    OrderStatus?
+  message   String
+  notifier  Boolean           @default(false) @map("notifier_client")
+
+  orderId   String            @map("order_id")
+  order     Order             @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  @@index([orderId, createdAt])
+  @@map("order_tracking_events")
 }
 
 // ─── ORDER ITEM ───────────────────────────────────────────────────────────────
@@ -173,4 +306,201 @@ model AnalyticsEvent {
   @@index([createdAt])
   @@index([productId])
   @@map("analytics_events")
+}
+
+// ─── CUSTOMER (auth checkout) ────────────────────────────────────────────────
+
+model Customer {
+  id              String   @id @default(cuid())
+  email           String   @unique
+  passwordHash    String?  @map("password_hash")
+  googleId        String?  @unique @map("google_id")
+  facebookId      String?  @unique @map("facebook_id")
+  appleId         String?  @unique @map("apple_id")
+  avatarUrl       String?  @map("avatar_url")
+  nom             String
+  telephone       String?
+  adressePreferee String?  @map("adresse_preferee")
+  villePreferee   String?  @map("ville_preferee")
+  avatarCouleur   String?  @default("olive") @map("avatar_couleur")
+  pointsFidelite  Int      @default(0) @map("points_fidelite")
+  codeParrainage  String?  @unique @map("code_parrainage")
+  parrainId       String?  @map("parrain_id")
+  parrain         Customer?  @relation("Parrainage", fields: [parrainId], references: [id], onDelete: SetNull)
+  filleuls        Customer[] @relation("Parrainage")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  commandes  Order[]
+  adresses   CustomerAddress[]
+  wishlist   WishlistItem[]
+  avis       ProductReview[]
+
+  @@map("customers")
+}
+
+model CustomerAddress {
+  id         String   @id @default(cuid())
+  label      String?
+  adresse    String
+  ville      String   @default("Conakry")
+  telephone  String?
+  parDefaut  Boolean  @default(false) @map("par_defaut")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@map("customer_addresses")
+}
+
+model WishlistItem {
+  id         String   @id @default(cuid())
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  productId  String   @map("product_id")
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([customerId, productId])
+  @@index([customerId])
+  @@map("wishlist_items")
+}
+
+// ─── MARKETING ───────────────────────────────────────────────────────────────
+
+model Coupon {
+  id              String     @id @default(cuid())
+  code            String     @unique
+  type            CouponType
+  valeur          Decimal    @db.Decimal(10, 0)
+  minCommande     Decimal?   @db.Decimal(10, 0) @map("min_commande")
+  maxUtilisations Int?       @map("max_utilisations")
+  utilisations    Int        @default(0)
+  actif           Boolean    @default(true)
+  debut           DateTime?
+  fin             DateTime?
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  commandes       Order[]
+
+  @@map("coupons")
+}
+
+model FlashSale {
+  id          String   @id @default(cuid())
+  titre       String
+  slug        String   @unique
+  description String?
+  debut       DateTime
+  fin         DateTime
+  actif       Boolean  @default(true)
+  productIds  String[] @map("product_ids")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("flash_sales")
+}
+
+model ProductReview {
+  id           String       @id @default(cuid())
+  note         Int
+  commentaire  String
+  photos       String[]     @default([])
+  achatVerifie Boolean      @default(true) @map("achat_verifie")
+  statut       ReviewStatus @default(APPROUVE)
+  modereLe     DateTime?    @map("modere_le")
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+
+  productId    String       @map("product_id")
+  product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  customerId   String       @map("customer_id")
+  customer     Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  orderId      String       @map("order_id")
+  order        Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, productId])
+  @@index([productId, statut])
+  @@index([customerId])
+  @@map("product_reviews")
+}
+
+// ─── MESSAGERIE ──────────────────────────────────────────────────────────────
+
+model Conversation {
+  id               String    @id @default(cuid())
+  clientSessionId  String    @map("client_session_id")
+  clientUserId     String?   @map("client_user_id")
+  clientNom        String    @map("client_nom")
+  clientTelephone  String?   @map("client_telephone")
+  sujet            String?
+  orderId          String?   @map("order_id")
+  dernierMessage   String?   @map("dernier_message")
+  dernierMessageAt DateTime? @map("dernier_message_at")
+  nonLuVendeur     Int       @default(0) @map("non_lu_vendeur")
+  nonLuClient      Int       @default(0) @map("non_lu_client")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  messages         ChatMessage[]
+
+  @@index([clientSessionId])
+  @@index([dernierMessageAt])
+  @@map("conversations")
+}
+
+model ChatMessage {
+  id             String            @id @default(cuid())
+  conversationId String            @map("conversation_id")
+  conversation   Conversation      @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderRole     MessageSenderRole @map("sender_role")
+  type           MessageType       @default(TEXT)
+  contenu        String?
+  fichierUrl     String?           @map("fichier_url")
+  fichierNom     String?           @map("fichier_nom")
+  fichierTaille  Int?              @map("fichier_taille")
+  dureeMs        Int?              @map("duree_ms")
+  luLe           DateTime?         @map("lu_le")
+  createdAt      DateTime          @default(now()) @map("created_at")
+
+  @@index([conversationId, createdAt])
+  @@map("chat_messages")
+}
+
+model ChatPresence {
+  id             String              @id @default(cuid())
+  conversationId String              @map("conversation_id")
+  role           ChatParticipantRole
+  participantId  String              @map("participant_id")
+  lastSeenAt     DateTime            @default(now()) @map("last_seen_at")
+  isTyping       Boolean             @default(false) @map("is_typing")
+
+  @@unique([conversationId, role, participantId])
+  @@index([conversationId])
+  @@map("chat_presences")
+}
+
+// ─── CONTACT ─────────────────────────────────────────────────────────────────
+
+model ContactMessage {
+  id         String               @id @default(cuid())
+  nom        String
+  email      String
+  telephone  String?
+  sujet      ContactSubject
+  message    String
+  statut     ContactMessageStatus @default(NOUVEAU)
+  customerId String?              @map("customer_id")
+  createdAt  DateTime             @default(now()) @map("created_at")
+  traiteLe   DateTime?            @map("traite_le")
+
+  @@index([statut])
+  @@index([createdAt])
+  @@map("contact_messages")
 }
