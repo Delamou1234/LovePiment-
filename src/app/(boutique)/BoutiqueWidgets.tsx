@@ -22,13 +22,13 @@ export function BoutiqueWidgets() {
   useEffect(() => {
     const enable = () => setDeferSocial(true);
 
-    if ('requestIdleCallback' in window) {
+    if (typeof window.requestIdleCallback === 'function') {
       const id = window.requestIdleCallback(enable, { timeout: 2500 });
       return () => window.cancelIdleCallback(id);
     }
 
-    const t = window.setTimeout(enable, 1800);
-    return () => window.clearTimeout(t);
+    const t = setTimeout(enable, 1800);
+    return () => clearTimeout(t);
   }, []);
 
   return (

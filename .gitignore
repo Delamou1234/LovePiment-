@@ -30,10 +30,18 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files — secrets jamais sur GitHub
+.env
 .env.local
-.env.example
+.env.*.local
+!.env.example
+
+# identifiants admin / notes locales
+admin_connexion.md
+
+# fichiers uploadés par les utilisateurs (pas versionnés)
+public/uploads/**
+!public/uploads/**/.gitkeep
 
 # vercel
 .vercel

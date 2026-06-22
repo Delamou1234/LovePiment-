@@ -38,7 +38,11 @@ function baseUrl(): string {
   return (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '');
 }
 
-function mapProduitRows(
+async function chargerProduitsDb(
+  ids?: string[],
+  query?: string,
+  limit = 12,
+) {
   const include = {
     categorie: true,
     variantes: {

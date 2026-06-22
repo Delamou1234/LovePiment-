@@ -27,6 +27,8 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-tooltip',
     ],
   },
+  // Next.js 16 build (Vercel) uses Turbopack by default; webpack reste pour `npm run dev`.
+  turbopack: {},
   webpack: (config, { dev }) => {
     if (dev) {
       // Limite la pression mémoire du cache webpack en local (Windows / longues sessions dev)

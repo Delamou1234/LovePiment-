@@ -4,7 +4,8 @@ import { defineConfig, env } from 'prisma/config';
 export default defineConfig({
   schema: 'prisma/schema.prisma',
   datasource: {
-    url: env('DATABASE_URL'),
-    directUrl: env('DIRECT_URL'),
+    // Prisma CLI (migrate, db push) : connexion directe Supabase (port 5432).
+    // L'app runtime utilise DATABASE_URL (pooler) via src/shared/lib/prisma.ts.
+    url: env('DIRECT_URL'),
   },
 });
