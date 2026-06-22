@@ -103,41 +103,39 @@ export function ProductCard({
 
   return (
     <>
-      <article className="group flex flex-col bg-transparent transition-transform duration-300 hover:-translate-y-0.5">
-        <div className="relative aspect-[3/4] w-full rounded-xl mb-3.5">
-          <div className="absolute inset-0 overflow-hidden rounded-xl bg-beige shadow-sm ring-1 ring-beige-border/40 group-hover:shadow-md group-hover:ring-beige-border/60 transition-all duration-300">
-            <Link href={`/produits/${slug}`} className="absolute inset-0">
-              <Image
-                src={image}
-                alt={nom}
-                fill
-                priority={priority}
-                loading={priority ? undefined : 'lazy'}
-                className="object-cover object-center group-hover:scale-[1.02] transition duration-500"
-                sizes="(max-width: 640px) 50vw, 20vw"
-              />
-            </Link>
-          </div>
+      <article className="group flex flex-col">
+        <div className="product-card-image mb-3.5">
+          <Link href={`/produits/${slug}`} className="absolute inset-0 z-[1]">
+            <Image
+              src={image}
+              alt={nom}
+              fill
+              priority={priority}
+              loading={priority ? undefined : 'lazy'}
+              className="object-cover object-center transition duration-700 ease-out group-hover:scale-[1.03]"
+              sizes="(max-width: 640px) 50vw, 25vw"
+            />
+          </Link>
 
           {enPromo && (
-            <span className="absolute top-3 left-3 z-10 rounded-full bg-zinc-900/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
+            <span className="absolute top-3 left-3 z-10 rounded-full bg-olive px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.08em] text-white">
               -{remisePct}%
             </span>
           )}
 
           {canQuickAdd && (
-            <div className="absolute bottom-2.5 left-2.5 right-2.5 z-20 flex gap-1.5 overflow-visible opacity-100 sm:opacity-0 sm:translate-y-1 sm:group-hover:opacity-100 sm:group-hover:translate-y-0 transition duration-300">
+            <div className="absolute bottom-3 left-3 right-3 z-20 flex gap-1.5 opacity-100 sm:translate-y-1 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 transition duration-300">
               <button
                 type="button"
                 onClick={handleQuickAdd}
                 disabled={busy}
-                className="relative flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white/95 py-2 text-[11px] font-semibold text-zinc-900 shadow-sm hover:bg-white overflow-visible"
+                className="relative flex flex-1 items-center justify-center gap-1.5 rounded-full bg-white/95 py-2.5 text-[11px] font-semibold text-zinc-900 shadow-md backdrop-blur-sm hover:bg-white"
                 aria-label={`Ajout rapide — ${nom}${qtyInCart > 0 ? ` (${qtyInCart} dans le panier)` : ''}`}
               >
                 <span className="relative shrink-0">
                   <ShoppingBag className="h-3.5 w-3.5" strokeWidth={2} />
                   {qtyInCart > 0 && (
-                    <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-zinc-900 px-0.5 text-[9px] font-bold leading-none text-white ring-2 ring-white">
+                    <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-olive px-0.5 text-[9px] font-bold leading-none text-white ring-2 ring-white">
                       {qtyInCart > 99 ? '99+' : qtyInCart}
                     </span>
                   )}
@@ -148,7 +146,7 @@ export function ProductCard({
                 type="button"
                 onClick={handleBuyNow}
                 disabled={busy}
-                className="flex flex-1 items-center justify-center gap-1 rounded-full bg-olive py-2.5 text-[11px] font-semibold text-white shadow-sm hover:bg-olive-dark transition-colors"
+                className="flex flex-1 items-center justify-center gap-1 rounded-full bg-zinc-900 py-2.5 text-[11px] font-semibold text-white shadow-md hover:bg-olive transition-colors"
                 aria-label={`Achat en un clic — ${nom}`}
               >
                 <Zap className="h-3.5 w-3.5" />
@@ -164,35 +162,35 @@ export function ProductCard({
               e.stopPropagation();
               await toggleProduct();
             }}
-            className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-sm ring-1 ring-black/5 transition hover:scale-105 hover:bg-white"
+            className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm transition hover:scale-105 hover:bg-white"
             aria-label="Favoris"
           >
             <Heart
-              className={`h-3.5 w-3.5 ${wishlisted ? 'fill-red-500 text-red-500' : 'text-zinc-400'}`}
+              className={`h-3.5 w-3.5 transition ${wishlisted ? 'fill-red-500 text-red-500' : 'text-zinc-400 group-hover:text-zinc-600'}`}
             />
           </button>
         </div>
 
-        <Link href={`/produits/${slug}`} className="space-y-1 px-1">
-          <h3 className="text-sm font-semibold text-zinc-900 leading-snug line-clamp-2 group-hover:text-olive transition-colors">
+        <Link href={`/produits/${slug}`} className="space-y-1 px-0.5">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">{categorie}</p>
+          <h3 className="text-[0.9375rem] font-semibold leading-snug text-zinc-900 line-clamp-2 transition group-hover:text-olive">
             {nom}
           </h3>
-          <p className="text-[11px] uppercase tracking-wide text-zinc-400">{categorie}</p>
-          <div className="pt-1">
+          <div className="pt-1.5">
             {enPromo ? (
               <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                <p className="text-sm font-bold text-zinc-900">{formattedPrice}</p>
-                <p className="text-xs text-zinc-400 line-through">{formattedOriginal}</p>
+                <p className="text-sm font-bold tabular-nums text-zinc-900">{formattedPrice}</p>
+                <p className="text-xs tabular-nums text-zinc-400 line-through">{formattedOriginal}</p>
               </div>
             ) : (
-              <p className="text-sm font-bold text-zinc-900">{formattedPrice}</p>
+              <p className="text-sm font-bold tabular-nums text-zinc-900">{formattedPrice}</p>
             )}
             {promoFinLabel && (
-              <p className="text-[10px] text-zinc-400 mt-0.5">Jusqu&apos;au {promoFinLabel}</p>
+              <p className="mt-0.5 text-[10px] text-zinc-400">Jusqu&apos;au {promoFinLabel}</p>
             )}
           </div>
           {afficherNotes && (
-            <div className="flex items-center gap-0.5 pt-1">
+            <div className="flex items-center gap-0.5 pt-1.5">
               {Array.from({ length: 5 }).map((_, i) => (
                 <Star
                   key={i}
@@ -201,7 +199,7 @@ export function ProductCard({
                   }`}
                 />
               ))}
-              <span className="text-[10px] text-zinc-400 ml-1">({reviews})</span>
+              <span className="ml-1 text-[10px] text-zinc-400">({reviews})</span>
             </div>
           )}
         </Link>

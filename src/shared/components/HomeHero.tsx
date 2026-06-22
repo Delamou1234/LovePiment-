@@ -1,49 +1,32 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, ArrowUpRight, Sparkles, Truck } from 'lucide-react';
 
 const SLIDE_DURATION_MS = 6500;
 
-const HERO_SLIDES = [
+const FALLBACK_SLIDES = [
   {
-    id: 'parfums',
+    id: 'boutique',
     src: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=1920&h=1080&fit=crop&crop=center&q=90&auto=format',
-    alt: 'Collection de parfums',
+    alt: 'KabiShop',
     position: 'object-center',
-    tag: 'Parfums',
-    title: 'Parfums d\'exception',
-    subtitle: 'Oriental, floral ou gourmand — trouvez la fragrance qui vous ressemble.',
-    cta: { label: 'Découvrir les parfums', href: '/produits?categorie=parfums' },
-  },
-  {
-    id: 'huiles-corps',
-    src: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=1920&h=1080&fit=crop&crop=center&q=90&auto=format',
-    alt: 'Huiles pour la peau',
-    position: 'object-center',
-    tag: 'Huiles peau',
-    title: 'Huiles pour la peau',
-    subtitle: 'Karité, coco, amande douce — nourrissent, hydratent et parfument votre peau.',
-    cta: { label: 'Voir les huiles', href: '/produits?categorie=huiles-corps' },
-  },
-  {
-    id: 'cremes-corporelles',
-    src: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=1920&h=1080&fit=crop&crop=center&q=90&auto=format',
-    alt: 'Crèmes corporelles',
-    position: 'object-center',
-    tag: 'Soin corps',
-    title: 'Crèmes corporelles',
-    subtitle: 'Textures onctueuses pour une peau douce, hydratée et délicatement parfumée.',
-    cta: { label: 'Découvrir les crèmes', href: '/produits?categorie=cremes-corporelles' },
+    tag: 'KabiShop',
+    title: 'Parfums & soins du corps',
+    subtitle: 'Découvrez notre sélection à Conakry — livraison 24 à 48h.',
+    cta: { label: 'Toute la boutique', href: '/produits' },
   },
 ];
+
+type HeroSlide = (typeof FALLBACK_SLIDES)[number];
 
 export type HeroCategoryLink = {
   nom: string;
   slug: string;
   image: string;
+  desc?: string;
 };
 
 export type HeroFeaturedPeek = {
@@ -59,9 +42,30 @@ type HomeHeroProps = {
   featured?: HeroFeaturedPeek | null;
 };
 
+function buildHeroSlides(categories: HeroCategoryLink[]): HeroSlide[] {
+  if (categories.length === 0) return FALLBACK_SLIDES;
+
+  return categories.map((cat) => ({
+    id: cat.slug,
+    src: cat.image,
+    alt: cat.nom,
+    position: 'object-center',
+    tag: cat.nom,
+    title: cat.nom,
+    subtitle: cat.desc ?? 'Découvrez notre sélection.',
+    cta: { label: `Voir ${cat.nom}`, href: `/produits?categorie=${cat.slug}` },
+  }));
+}
+
 export function HomeHero({ categories = [], featured }: HomeHeroProps) {
+  const slides = useMemo(() => buildHeroSlides(categories), [categories]);
   const [slideIndex, setSlideIndex] = useState(0);
   const [progressKey, setProgressKey] = useState(0);
+
+  useEffect(() => {
+    setSlideIndex(0);
+    setProgressKey((k) => k + 1);
+  }, [slides.length]);
 
   const goToSlide = useCallback((index: number) => {
     setSlideIndex(index);
@@ -69,22 +73,22 @@ export function HomeHero({ categories = [], featured }: HomeHeroProps) {
   }, []);
 
   const nextSlide = useCallback(() => {
-    setSlideIndex((i) => (i + 1) % HERO_SLIDES.length);
+    setSlideIndex((i) => (i + 1) % slides.length);
     setProgressKey((k) => k + 1);
-  }, []);
+  }, [slides.length]);
 
   useEffect(() => {
     const interval = setInterval(nextSlide, SLIDE_DURATION_MS);
     return () => clearInterval(interval);
   }, [nextSlide]);
 
-  const slide = HERO_SLIDES[slideIndex];
+  const slide = slides[slideIndex];
   const quickCategories = categories.slice(0, 3);
 
   return (
     <section className="relative isolate min-h-[420px] h-[min(480px,78vh)] sm:min-h-[500px] sm:h-[min(540px,82vh)] md:min-h-[620px] md:h-[min(680px,88vh)] overflow-hidden bg-[#1a1a18]">
       <div className="absolute inset-0">
-        {HERO_SLIDES.map((s, index) => {
+        {slides.map((s, index) => {
           const active = index === slideIndex;
           return (
             <div
@@ -277,7 +281,7 @@ export function HomeHero({ categories = [], featured }: HomeHeroProps) {
       </div>
 
       <div className="absolute bottom-6 sm:bottom-8 left-1/2 z-[3] flex -translate-x-1/2 items-center gap-2 md:bottom-10">
-        {HERO_SLIDES.map((s, index) => (
+        {slides.map((s, index) => (
           <button
             key={s.id}
             type="button"

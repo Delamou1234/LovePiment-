@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidateTag } from 'next/cache';
 import { z } from 'zod';
 import { productService } from '@/modules/produits/services/product.service';
 import { adminUnauthorized, requireAdmin } from '@/modules/admin/lib/require-admin';
+import { revalidateBoutique } from '@/modules/produits/lib/revalidate-boutique';
 
 type Params = Promise<{ id: string }>;
 
@@ -31,8 +31,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
 
   try {
     const produit = await productService.modifierProduit(id, parsed.data);
-    revalidateTag('products', 'max');
-    revalidateTag('promos', 'max');
+    revalidateBoutique({ productSlug: produit.slug });
     return NextResponse.json({
       produit: {
         ...produit,
@@ -52,9 +51,9 @@ export async function DELETE(_request: NextRequest, { params }: { params: Params
 
   const { id } = await params;
   try {
+    const existant = await productService.obtenirProduitParId(id);
     await productService.supprimerProduit(id);
-    revalidateTag('products', 'max');
-    revalidateTag('promos', 'max');
+    revalidateBoutique({ productSlug: existant.slug });
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ message: 'Produit introuvable' }, { status: 404 });
@@ -68,7 +67,6 @@ export async function POST(_request: NextRequest, { params }: { params: Params }
 
   const { id } = await params;
   const result = await productService.toggleActif(id);
-  revalidateTag('products', 'max');
-  revalidateTag('promos', 'max');
+  revalidateBoutique();
   return NextResponse.json(result);
 }

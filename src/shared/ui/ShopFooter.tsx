@@ -4,14 +4,6 @@ import { MapPin, Mail, MessageCircle } from 'lucide-react';
 const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '224620000000';
 const FACEBOOK = process.env.NEXT_PUBLIC_FACEBOOK_PAGE_URL ?? 'https://facebook.com/kabishop';
 
-const BOUTIQUE_LINKS = [
-  { label: 'Tous les produits', href: '/produits' },
-  { label: 'Parfums', href: '/produits?categorie=parfums' },
-  { label: 'Huiles pour la peau', href: '/produits?categorie=huiles-corps' },
-  { label: 'Crèmes corporelles', href: '/produits?categorie=cremes-corporelles' },
-  { label: 'Promotions', href: '/promos' },
-];
-
 const AIDE_LINKS = [
   { label: 'Suivi de commande', href: '/suivi' },
   { label: 'Messagerie', href: '/messages' },
@@ -84,7 +76,11 @@ function FooterLinks({
   );
 }
 
-export function ShopFooter() {
+export function ShopFooter({
+  boutiqueLinks = [],
+}: {
+  boutiqueLinks?: { label: string; href: string }[];
+}) {
   const year = new Date().getFullYear();
 
   return (
@@ -143,7 +139,7 @@ export function ShopFooter() {
 
           {/* Liens */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-10 sm:gap-x-10 lg:col-span-5">
-            <FooterLinks title="Boutique" links={BOUTIQUE_LINKS} />
+            <FooterLinks title="Boutique" links={boutiqueLinks} />
             <FooterLinks title="Aide" links={AIDE_LINKS} />
             <FooterLinks title="Mon compte" links={COMPTE_LINKS} />
           </div>

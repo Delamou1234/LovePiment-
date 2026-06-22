@@ -89,14 +89,15 @@ export function ProductReviewsSection({
   const eligible = eligibles[0];
 
   return (
-    <section className="rounded-2xl border border-[#ebe4d8] bg-white p-6 md:p-8 shadow-sm space-y-8">
+    <section className="rounded-2xl border border-beige-border/80 bg-white/80 p-6 md:p-8 space-y-8 backdrop-blur-sm">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-bold text-zinc-900 flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-[#4a5240]" />
+          <p className="product-section-eyebrow">Communauté</p>
+          <h2 className="product-section-title flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-olive" />
             Avis clients
           </h2>
-          <p className="text-sm text-zinc-500 mt-1">
+          <p className="mt-2 text-sm text-zinc-500">
             Notes et commentaires vérifiés — achat confirmé après livraison.
           </p>
         </div>
@@ -118,9 +119,9 @@ export function ProductReviewsSection({
             return (
               <div key={n} className="col-span-5 flex items-center gap-2 text-xs">
                 <span className="w-3 text-zinc-500">{n}</span>
-                <div className="flex-1 h-2 rounded-full bg-[#faf7f2] overflow-hidden">
+                <div className="flex-1 h-2 rounded-full bg-cream overflow-hidden">
                   <div
-                    className="h-full bg-amber-400 rounded-full transition-all"
+                    className="h-full bg-amber-400/90 rounded-full transition-all"
                     style={{ width: `${pct}%` }}
                   />
                 </div>
@@ -149,7 +150,7 @@ export function ProductReviewsSection({
           Aucun avis pour ce produit. Soyez le premier à partager votre expérience après livraison !
         </p>
       ) : (
-        <ul className="divide-y divide-[#ebe4d8] space-y-0">
+        <ul className="divide-y divide-beige-border/80 space-y-0">
           {avis.map((a) => (
             <li key={a.id} className="py-6 first:pt-0">
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
@@ -206,7 +207,7 @@ export function ProductReviewsSection({
             type="button"
             disabled={page <= 1}
             onClick={() => setPage((p) => p - 1)}
-            className="text-sm text-[#4a5240] disabled:opacity-40"
+            className="text-sm font-semibold text-olive disabled:opacity-40"
           >
             ← Précédent
           </button>
@@ -217,7 +218,7 @@ export function ProductReviewsSection({
             type="button"
             disabled={page >= totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="text-sm text-[#4a5240] disabled:opacity-40"
+            className="text-sm font-semibold text-olive disabled:opacity-40"
           >
             Suivant →
           </button>

@@ -57,6 +57,21 @@ export async function POST(request: NextRequest) {
 
     const customer = await customerAuthRepository.verifierConnexion(email, password);
     if (!customer) {
+      // Compte admin saisi sur la page client (URL sans redirect=/admin)
+      const admin = await adminAuthRepository.verifierConnexion(email, password);
+      if (admin) {
+        const token = createSessionToken({
+          id: admin.id,
+          email: admin.email,
+          name: admin.nom,
+          role: 'admin',
+        });
+        const safeRedirect = getSafeRedirect(redirect, '/admin');
+        const response = NextResponse.json({ ok: true, redirect: safeRedirect, role: 'admin' });
+        setSessionCookie(response, token);
+        return response;
+      }
+
       const existing = await customerAuthRepository.trouverParEmail(email);
       if (existing?.googleId && !existing.passwordHash) {
         return NextResponse.json(

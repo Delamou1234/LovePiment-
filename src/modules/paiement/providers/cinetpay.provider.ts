@@ -10,6 +10,20 @@ import type {
  * CinetPayProvider — implémentation pour le marché Afrique de l'Ouest.
  * Documentation officielle : https://docs.cinetpay.com/
  */
+function normaliserTelephoneCinetPay(telephone: string): string {
+  const chiffres = telephone.replace(/\D/g, '');
+  if (chiffres.startsWith('224')) return chiffres;
+  if (chiffres.startsWith('0')) return `224${chiffres.slice(1)}`;
+  return chiffres.length >= 9 ? `224${chiffres}` : chiffres;
+}
+
+function decouperNomComplet(nomComplet: string): { prenom: string; nom: string } {
+  const parties = nomComplet.trim().split(/\s+/).filter(Boolean);
+  if (parties.length === 0) return { prenom: 'Client', nom: 'KabiShop' };
+  if (parties.length === 1) return { prenom: parties[0], nom: parties[0] };
+  return { prenom: parties[0], nom: parties.slice(1).join(' ') };
+}
+
 export class CinetPayProvider implements PaymentProvider {
   private readonly baseUrl = 'https://api-checkout.cinetpay.com/v2';
 
@@ -35,6 +49,9 @@ export class CinetPayProvider implements PaymentProvider {
     }
 
     try {
+      const { prenom, nom } = decouperNomComplet(params.clientNom);
+      const montant = Math.max(100, Math.round(params.montant));
+
       const response = await fetch(`${this.baseUrl}/payment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -42,14 +59,20 @@ export class CinetPayProvider implements PaymentProvider {
           apikey: config.apiKey,
           site_id: config.siteId,
           transaction_id: params.transactionId,
-          amount: params.montant,
+          amount: montant,
           currency: 'GNF',
           description: params.description,
-          customer_name: params.clientNom,
-          customer_phone_number: params.clientTelephone,
+          customer_name: nom,
+          customer_surname: prenom,
+          customer_email: params.clientEmail,
+          customer_phone_number: normaliserTelephoneCinetPay(params.clientTelephone),
+          customer_address: params.clientAdresse,
+          customer_city: params.clientVille,
+          customer_country: 'GN',
+          customer_zip_code: '00000',
           return_url: params.returnUrl,
           notify_url: params.notifyUrl,
-          channels: 'ALL',
+          channels: 'MOBILE_MONEY',
           lang: 'fr',
         }),
       });
@@ -57,6 +80,7 @@ export class CinetPayProvider implements PaymentProvider {
       const data = (await response.json()) as {
         code: string;
         message: string;
+        description?: string;
         data?: { payment_url: string };
       };
 
@@ -68,7 +92,9 @@ export class CinetPayProvider implements PaymentProvider {
         };
       }
 
-      return { success: false, error: data.message };
+      const detail = data.description?.trim();
+      const error = detail ? `${data.message}: ${detail}` : data.message;
+      return { success: false, error };
     } catch (error) {
       return {
         success: false,

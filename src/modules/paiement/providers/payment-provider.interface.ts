@@ -7,6 +7,9 @@ export interface InitierPaiementParams {
   description: string;
   clientNom: string;
   clientTelephone: string;
+  clientEmail: string;
+  clientAdresse: string;
+  clientVille: string;
   returnUrl: string;
   notifyUrl: string;
 }

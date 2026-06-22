@@ -40,8 +40,6 @@ const TRUST_ROW = [
 
 const PAYMENT_METHODS = ['Orange Money', 'MTN MoMo', 'CinetPay', 'Paiement à la livraison'];
 
-export const revalidate = 120;
-
 export default async function HomePage() {
   const [{ featured, latest, statsPromos, flash, notesProduits, promoBanniere }, categoriesVitrine, { avisClients, totalAvis }] =
     await Promise.all([
@@ -61,12 +59,6 @@ export default async function HomePage() {
     categoriesVitrine[0]?.image ??
     CATEGORIE_IMAGE_DEFAUT;
 
-  const heroCategories = categoriesVitrine.slice(0, 3).map((c) => ({
-    nom: c.nom,
-    slug: c.slug,
-    image: c.image,
-  }));
-
   const heroFeatured = displayFeatured[0]
     ? {
         nom: displayFeatured[0].nom,
@@ -79,7 +71,7 @@ export default async function HomePage() {
 
   return (
     <div className="animate-fadeIn bg-cream">
-      <HomeHero categories={heroCategories} featured={heroFeatured} />
+      <HomeHero categories={categoriesVitrine} featured={heroFeatured} />
 
       <HomeTrustStrip items={TRUST_ITEMS} />
 

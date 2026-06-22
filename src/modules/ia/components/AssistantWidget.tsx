@@ -25,7 +25,7 @@ export function AssistantWidget({ open: openProp, onOpenChange }: AssistantWidge
     {
       role: 'assistant',
       content:
-        'Bonjour ! Je suis l\'assistant KabiShop. Demandez-moi des conseils produits, des idées cadeaux ou de l\'aide pour votre commande.',
+        'Bonjour ! Je suis l\'assistant KabiShop. Je connais nos produits, prix et stocks en temps réel. Posez-moi vos questions !',
     },
   ]);
   const [input, setInput] = useState('');

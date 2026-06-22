@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type SearchParams = Promise<{ redirect?: string; error?: string }>;
+type SearchParams = Promise<{ redirect?: string; error?: string; admin?: string }>;
 
 const TRUST = [
   { icon: Truck, label: 'Livraison 24–48h' },
@@ -34,8 +34,8 @@ export default async function ConnexionPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const { redirect: redirectParam, error } = await searchParams;
-  const isAdmin = isAdminRedirect(redirectParam);
+  const { redirect: redirectParam, error, admin: adminParam } = await searchParams;
+  const isAdmin = isAdminRedirect(redirectParam) || adminParam === '1';
 
   if (isAdmin) {
     const session = await getSession();

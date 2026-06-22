@@ -1,4 +1,5 @@
 import { geminiGenerateJson, GeminiApiError, isGeminiConfigured } from '@/shared/lib/gemini/client';
+import { formaterInfosBoutiquePourPrompt } from '../lib/boutique-context';
 import {
   formaterCataloguePourPrompt,
   obtenirCatalogueIa,
@@ -6,10 +7,16 @@ import {
 } from '../lib/catalog-context';
 import type { MessageAssistant, ReponseAssistant } from '../types';
 
-const SYSTEM = `Tu es l'assistant shopping KabiShop, boutique e-commerce de parfums, huiles pour la peau et crèmes corporelles en Guinée.
-Tu réponds en français, de façon chaleureuse et concise (max 3 phrases sauf si détails demandés).
-Tu connais le catalogue ci-dessous. Recommande des produits pertinents quand c'est utile.
-Ne invente jamais de produits hors catalogue. Prix en francs guinéens (GN).`;
+const SYSTEM = `Tu es l'assistant shopping KabiShop sur le site e-commerce.
+Tu réponds en français, chaleureusement et clairement.
+Tu t'appuies UNIQUEMENT sur le catalogue et les infos boutique fournis (prix, stock, variantes, promos, livraison).
+Règles :
+- Indique toujours si un produit est disponible ou en rupture quand on te le demande.
+- Donne le prix en francs guinéens (GN) tel qu'indiqué dans le catalogue.
+- Mentionne les variantes en stock si pertinent (taille, capacité, couleur).
+- Recommande 1 à 4 produits via productSlugs quand c'est utile.
+- Ne invente jamais de produit, prix ou stock hors catalogue.
+- Pour une commande complexe ou hors stock : propose WhatsApp.`;
 
 type GeminiAssistantReply = {
   reply: string;
@@ -24,17 +31,18 @@ export class AssistantService {
     if (!isGeminiConfigured()) {
       return {
         reply:
-          'Assistant IA indisponible : vérifiez que GEMINI_API_KEY est bien renseignée dans `.env.local`, enregistrez le fichier (Ctrl+S), puis redémarrez le serveur (`npm run dev`).',
+          'Assistant indisponible. Ajoutez GEMINI_API_KEY dans `.env.local` (https://aistudio.google.com/apikey), puis redémarrez le serveur.',
         productSlugs: [],
         products: [],
       };
     }
 
-    const catalogue = await obtenirCatalogueIa(80);
+    const catalogue = await obtenirCatalogueIa(120);
+    const boutiqueInfo = formaterInfosBoutiquePourPrompt();
     const catalogText = formaterCataloguePourPrompt(catalogue);
 
     const historyText = historique
-      .slice(-6)
+      .slice(-8)
       .map((m) => `${m.role === 'user' ? 'Client' : 'Assistant'}: ${m.content}`)
       .join('\n');
 
@@ -42,13 +50,13 @@ export class AssistantService {
     try {
       parsed = await geminiGenerateJson<GeminiAssistantReply>(
         SYSTEM,
-        `CATALOGUE KABISHOP:\n${catalogText}\n\nHISTORIQUE:\n${historyText || '(nouvelle conversation)'}\n\nMESSAGE CLIENT:\n${message}\n\nRéponds en JSON: {"reply":"...","productSlugs":["slug1"]}`,
+        `${boutiqueInfo}\n\nCATALOGUE PRODUITS:\n${catalogText}\n\nHISTORIQUE:\n${historyText || '(nouvelle conversation)'}\n\nMESSAGE CLIENT:\n${message}\n\nRéponds en JSON strict: {"reply":"...","productSlugs":["slug-optionnel"]}`,
       );
     } catch (error) {
       if (error instanceof GeminiApiError && error.invalidKey) {
         return {
           reply:
-            'Clé API Gemini refusée par Google. Générez une nouvelle clé sur https://aistudio.google.com/apikey (pas Google Cloud Console), mettez-la dans GEMINI_API_KEY, puis redémarrez le serveur.',
+            'Clé API Gemini invalide. Créez-en une sur https://aistudio.google.com/apikey, mettez-la dans GEMINI_API_KEY, puis redémarrez le serveur.',
           productSlugs: [],
           products: [],
         };

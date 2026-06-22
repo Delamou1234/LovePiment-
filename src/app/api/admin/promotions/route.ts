@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { productService } from '@/modules/produits/services/product.service';
 import { adminUnauthorized, requireAdmin } from '@/modules/admin/lib/require-admin';
+import { revalidateBoutique } from '@/modules/produits/lib/revalidate-boutique';
 
 /** GET /api/admin/promotions */
 export async function GET() {
@@ -46,6 +47,7 @@ export async function PATCH(request: NextRequest) {
 
   const { productId, ...data } = parsed.data;
   const produit = await productService.mettreAJourPromo(productId, data);
+  revalidateBoutique();
 
   return NextResponse.json({
     produit: {

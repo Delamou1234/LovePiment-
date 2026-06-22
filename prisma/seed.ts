@@ -30,7 +30,7 @@ async function main() {
       adresse: 'Conakry, Guinée',
       ville: 'Conakry',
       pays: 'Guinée',
-      whatsappNumber: '224620000000',
+      whatsappNumber: '224625617377',
       facebookUrl: 'https://www.facebook.com/kabishop',
       parrainageActif: true,
       appelsActifs: true,
@@ -104,6 +104,18 @@ async function main() {
       slug: 'huiles-pures',
       nom: 'Huiles pures',
       image: 'https://images.unsplash.com/photo-1615634260167-c8cdede054de?w=400&q=80',
+    },
+    {
+      slug: 'pommades-baumes',
+      nom: 'Pommades & baumes',
+      image:
+        'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=900&q=85&auto=format&fit=crop',
+    },
+    {
+      slug: 'gels-douche',
+      nom: 'Gels douche & savons',
+      image:
+        'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=900&q=85&auto=format&fit=crop',
     },
   ];
 

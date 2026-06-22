@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { usePageTracking } from '@/shared/hooks/useTracking';
+import { FloatingContactButtons } from '@/shared/ui/FloatingContactButtons';
 
 const AssistantWidget = dynamic(
   () =>
@@ -12,15 +13,7 @@ const AssistantWidget = dynamic(
   { ssr: false },
 );
 
-const ChatWidget = dynamic(
-  () =>
-    import('@/modules/messagerie/components/ChatWidget').then((m) => ({
-      default: m.ChatWidget,
-    })),
-  { ssr: false },
-);
-
-/** Widgets lourds chargés après le contenu principal (chat, IA, panier). */
+/** Widgets lourds chargés après le contenu principal (IA, WhatsApp, panier). */
 export function BoutiqueWidgets() {
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [deferSocial, setDeferSocial] = useState(false);
@@ -42,8 +35,8 @@ export function BoutiqueWidgets() {
     <>
       {deferSocial && (
         <>
+          <FloatingContactButtons onOpenAssistant={() => setAssistantOpen(true)} />
           <AssistantWidget open={assistantOpen} onOpenChange={setAssistantOpen} />
-          <ChatWidget onOpenAssistant={() => setAssistantOpen(true)} />
         </>
       )}
     </>

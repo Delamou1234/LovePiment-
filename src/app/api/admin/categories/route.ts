@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidateTag } from 'next/cache';
+import { Prisma } from '@prisma/client';
 import { z } from 'zod';
 import { productService } from '@/modules/produits/services/product.service';
 import { adminUnauthorized, requireAdmin } from '@/modules/admin/lib/require-admin';
+import { revalidateBoutique } from '@/modules/produits/lib/revalidate-boutique';
+
+function erreurPrisma(error: unknown): string {
+  if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error.code === 'P2002') return 'Ce slug est déjà utilisé';
+    if (error.code === 'P2025') return 'Catégorie introuvable';
+  }
+  return error instanceof Error ? error.message : 'Erreur';
+}
 
 function mapCategory(c: Awaited<ReturnType<typeof productService.listerCategoriesAdmin>>[number]) {
   return {
@@ -49,11 +58,12 @@ export async function POST(request: NextRequest) {
 
   try {
     const category = await productService.creerCategorie(parsed.data);
-    revalidateTag('products', 'max');
-    revalidateTag('categories', 'max');
+    revalidateBoutique();
     return NextResponse.json({ category: mapCategory(category) }, { status: 201 });
-  } catch {
-    return NextResponse.json({ message: 'Slug déjà utilisé ou données invalides' }, { status: 409 });
+  } catch (error) {
+    const message = erreurPrisma(error);
+    const status = message.includes('slug') || message.includes('Slug') ? 409 : 400;
+    return NextResponse.json({ message }, { status });
   }
 }
 
@@ -74,11 +84,10 @@ export async function PATCH(request: NextRequest) {
 
   try {
     const category = await productService.mettreAJourCategorie(id, data);
-    revalidateTag('products', 'max');
-    revalidateTag('categories', 'max');
+    revalidateBoutique();
     return NextResponse.json({ category: mapCategory(category) });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Erreur';
+    const message = erreurPrisma(error);
     return NextResponse.json({ message }, { status: 400 });
   }
 }
@@ -89,15 +98,14 @@ export async function DELETE(request: NextRequest) {
   if (!user) return adminUnauthorized();
 
   const id = request.nextUrl.searchParams.get('id');
+  const reassignTo = request.nextUrl.searchParams.get('reassignTo') ?? undefined;
   if (!id) return NextResponse.json({ message: 'ID requis' }, { status: 400 });
 
   try {
-    await productService.supprimerCategorie(id);
-    revalidateTag('products', 'max');
-    revalidateTag('categories', 'max');
+    await productService.supprimerCategorie(id, reassignTo);
+    revalidateBoutique();
     return NextResponse.json({ ok: true });
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Suppression impossible';
-    return NextResponse.json({ message }, { status: 400 });
+    return NextResponse.json({ message: erreurPrisma(error) }, { status: 400 });
   }
 }

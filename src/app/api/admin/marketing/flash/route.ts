@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { marketingService } from '@/modules/marketing/services/marketing.service';
 import { adminUnauthorized, requireAdmin } from '@/modules/admin/lib/require-admin';
+import { revalidateBoutique } from '@/modules/produits/lib/revalidate-boutique';
 
 function mapFlash(f: Awaited<ReturnType<typeof marketingService.listerFlashSalesAdmin>>[number]) {
   return {
@@ -52,6 +53,7 @@ export async function POST(request: NextRequest) {
       debut: new Date(parsed.data.debut),
       fin: new Date(parsed.data.fin),
     });
+    revalidateBoutique();
     return NextResponse.json({ flash: mapFlash(flash) }, { status: 201 });
   } catch {
     return NextResponse.json({ message: 'Slug déjà utilisé' }, { status: 409 });
@@ -77,6 +79,7 @@ export async function PATCH(request: NextRequest) {
     ...(data.debut !== undefined && { debut: new Date(data.debut) }),
     ...(data.fin !== undefined && { fin: new Date(data.fin) }),
   });
+  revalidateBoutique();
   return NextResponse.json({ flash: mapFlash(flash) });
 }
 
@@ -89,5 +92,6 @@ export async function DELETE(request: NextRequest) {
   if (!id) return NextResponse.json({ message: 'ID requis' }, { status: 400 });
 
   await marketingService.supprimerFlashSale(id);
+  revalidateBoutique();
   return NextResponse.json({ ok: true });
 }

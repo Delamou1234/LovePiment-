@@ -11,11 +11,23 @@ export class PaymentService {
     this.provider = provider ?? new CinetPayProvider();
   }
 
-  async initierPaiementCommande(commandeId: string): Promise<{ paymentUrl: string }> {
+  async initierPaiementCommande(
+    commandeId: string,
+    clientEmail?: string,
+  ): Promise<{ paymentUrl: string }> {
     const commande = await orderService.obtenirCommande(commandeId);
     const transactionId = randomUUID();
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '');
+    const email =
+      clientEmail?.trim() ||
+      `commande+${commande.id.slice(0, 8)}@kabishop.local`;
+
+    if (/localhost|127\.0\.0\.1/i.test(appUrl)) {
+      throw new Error(
+        'Paiement CinetPay indisponible en local (URL publique requise). Choisissez « Paiement à la livraison » ou configurez NEXT_PUBLIC_APP_URL (ex. ngrok).',
+      );
+    }
 
     const result = await this.provider.initierPaiement({
       transactionId,
@@ -23,6 +35,9 @@ export class PaymentService {
       description: `Commande KabiShop #${commande.id.slice(0, 8)}`,
       clientNom: commande.clientNom,
       clientTelephone: commande.clientTelephone,
+      clientEmail: email,
+      clientAdresse: commande.clientAdresse,
+      clientVille: commande.clientVille,
       returnUrl: `${appUrl}/commande/confirmation?id=${commandeId}`,
       notifyUrl: `${appUrl}/api/webhook-cinetpay`,
     });

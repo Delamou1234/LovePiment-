@@ -8,9 +8,10 @@ type Props = {
   categories: CategorieArbre[];
   facettes: FacettesCatalogue;
   params: CatalogSearchParams;
+  mobile?: boolean;
 };
 
-export function CatalogFilters({ categories, facettes, params }: Props) {
+export function CatalogFilters({ categories, facettes, params, mobile = false }: Props) {
   const {
     categorie: activeCategorie = '',
     taille: activeTaille = '',
@@ -43,28 +44,28 @@ export function CatalogFilters({ categories, facettes, params }: Props) {
     return slug;
   };
 
+  const wrapperClass = mobile ? 'space-y-6' : 'catalog-sidebar space-y-6';
+
   return (
-    <aside className="space-y-6">
-      <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
-        <h3 className="flex items-center gap-2 text-lg font-extrabold text-zinc-900">
-          <SlidersHorizontal className="h-5 w-5 text-primary" /> Filtres
+    <aside className={wrapperClass}>
+      <div className="flex items-center justify-between border-b border-beige-border/70 pb-4">
+        <h3 className="flex items-center gap-2 text-sm font-bold text-zinc-900">
+          <SlidersHorizontal className="h-4 w-4 text-olive" strokeWidth={2} />
+          Affiner
         </h3>
         {hasActiveFilters && (
-          <Link href="/produits" className="text-xs font-bold text-primary hover:underline">
-            Effacer tout
+          <Link href="/produits" className="text-[11px] font-semibold text-olive hover:text-olive-dark">
+            Réinitialiser
           </Link>
         )}
       </div>
 
-      {/* Catégories & sous-catégories */}
       <div className="space-y-3">
-        <h4 className="text-sm font-bold uppercase tracking-wider text-zinc-800">Catégorie</h4>
-        <div className="flex flex-col gap-1">
+        <h4 className="catalog-filter-title">Catégorie</h4>
+        <div className="flex flex-col gap-0.5">
           <Link
             href={buildCatalogUrl(params, { categorie: null })}
-            className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
-              !activeCategorie ? 'bg-primary-50 font-bold text-primary' : 'text-zinc-600 hover:bg-zinc-50'
-            }`}
+            className={`catalog-filter-link ${!activeCategorie ? 'is-active' : ''}`}
           >
             Tous les produits
           </Link>
@@ -72,25 +73,17 @@ export function CatalogFilters({ categories, facettes, params }: Props) {
             <div key={cat.id} className="space-y-0.5">
               <Link
                 href={buildCatalogUrl(params, { categorie: cat.slug })}
-                className={`block rounded-lg px-3 py-1.5 text-sm font-medium transition-all ${
-                  activeCategorie === cat.slug
-                    ? 'bg-primary-50 font-bold text-primary'
-                    : 'text-zinc-700 hover:bg-zinc-50'
-                }`}
+                className={`catalog-filter-link ${activeCategorie === cat.slug ? 'is-active' : ''}`}
               >
                 {cat.nom}
               </Link>
               {cat.children.length > 0 && (
-                <div className="ml-3 border-l border-zinc-100 pl-2">
+                <div className="ml-2 border-l border-beige-border pl-2">
                   {cat.children.map((sub) => (
                     <Link
                       key={sub.id}
                       href={buildCatalogUrl(params, { categorie: sub.slug })}
-                      className={`block rounded-lg px-3 py-1 text-sm transition-all ${
-                        activeCategorie === sub.slug
-                          ? 'font-bold text-primary'
-                          : 'text-zinc-500 hover:text-zinc-800'
-                      }`}
+                      className={`catalog-filter-sublink ${activeCategorie === sub.slug ? 'is-active' : ''}`}
                     >
                       {sub.nom}
                     </Link>
@@ -102,11 +95,10 @@ export function CatalogFilters({ categories, facettes, params }: Props) {
         </div>
       </div>
 
-      {/* Prix */}
       {facettes.prixMax > 0 && (
-        <div className="space-y-3 border-t border-zinc-100 pt-4">
-          <h4 className="text-sm font-bold uppercase tracking-wider text-zinc-800">Prix (GNF)</h4>
-          <form action="/produits" method="GET" className="space-y-2">
+        <div className="space-y-3 border-t border-beige-border/70 pt-5">
+          <h4 className="catalog-filter-title">Budget (GNF)</h4>
+          <form action="/produits" method="GET" className="space-y-2.5">
             {Object.entries(params).map(([key, val]) =>
               key !== 'prixMin' && key !== 'prixMax' && val ? (
                 <input key={key} type="hidden" name={key} value={val} />
@@ -119,7 +111,7 @@ export function CatalogFilters({ categories, facettes, params }: Props) {
                 placeholder="Min"
                 defaultValue={activePrixMin}
                 min={0}
-                className="w-full rounded-lg border border-zinc-200 px-2 py-1.5 text-sm outline-none focus:border-primary"
+                className="input-kabishop !rounded-xl !py-2 !text-xs"
               />
               <input
                 type="number"
@@ -127,36 +119,31 @@ export function CatalogFilters({ categories, facettes, params }: Props) {
                 placeholder="Max"
                 defaultValue={activePrixMax}
                 min={0}
-                className="w-full rounded-lg border border-zinc-200 px-2 py-1.5 text-sm outline-none focus:border-primary"
+                className="input-kabishop !rounded-xl !py-2 !text-xs"
               />
             </div>
             <button
               type="submit"
-              className="w-full rounded-lg bg-zinc-100 py-1.5 text-xs font-bold text-zinc-700 hover:bg-zinc-200"
+              className="w-full rounded-xl bg-olive-light py-2 text-xs font-semibold text-olive transition hover:bg-olive/10"
             >
               Appliquer
             </button>
           </form>
-          <p className="text-xs text-zinc-400">
+          <p className="text-[11px] text-zinc-400">
             {facettes.prixMin.toLocaleString('fr-GN')} – {facettes.prixMax.toLocaleString('fr-GN')} GNF
           </p>
         </div>
       )}
 
-      {/* Marque */}
       {facettes.marques.length > 0 && (
-        <div className="space-y-3 border-t border-zinc-100 pt-4">
-          <h4 className="text-sm font-bold uppercase tracking-wider text-zinc-800">Marque</h4>
-          <div className="flex flex-col gap-1">
+        <div className="space-y-3 border-t border-beige-border/70 pt-5">
+          <h4 className="catalog-filter-title">Marque</h4>
+          <div className="flex flex-col gap-0.5">
             {facettes.marques.map((m) => (
               <Link
                 key={m}
                 href={buildCatalogUrl(params, { marque: activeMarque === m ? null : m })}
-                className={`rounded-lg px-3 py-1.5 text-sm transition-all ${
-                  activeMarque === m
-                    ? 'bg-primary-50 font-bold text-primary'
-                    : 'text-zinc-600 hover:bg-zinc-50'
-                }`}
+                className={`catalog-filter-link ${activeMarque === m ? 'is-active' : ''}`}
               >
                 {m}
               </Link>
@@ -165,26 +152,25 @@ export function CatalogFilters({ categories, facettes, params }: Props) {
         </div>
       )}
 
-      {/* Disponibilité */}
-      <div className="space-y-3 border-t border-zinc-100 pt-4">
-        <h4 className="text-sm font-bold uppercase tracking-wider text-zinc-800">Disponibilité</h4>
+      <div className="space-y-3 border-t border-beige-border/70 pt-5">
+        <h4 className="catalog-filter-title">Offres</h4>
         <div className="flex flex-col gap-2">
           <Link
             href={buildCatalogUrl(params, { enStock: activeEnStock === '1' ? null : '1' })}
-            className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-all ${
+            className={`rounded-xl border px-3 py-2.5 text-xs font-semibold transition ${
               activeEnStock === '1'
-                ? 'border-primary bg-primary-50 text-primary'
-                : 'border-zinc-200 text-zinc-600 hover:border-zinc-400'
+                ? 'border-olive/30 bg-olive-light text-olive'
+                : 'border-beige-border text-zinc-600 hover:border-olive/20 hover:bg-cream'
             }`}
           >
             En stock uniquement
           </Link>
           <Link
             href={buildCatalogUrl(params, { promo: activePromo === '1' ? null : '1' })}
-            className={`rounded-lg border px-3 py-2 text-sm font-semibold transition-all ${
+            className={`rounded-xl border px-3 py-2.5 text-xs font-semibold transition ${
               activePromo === '1'
-                ? 'border-primary bg-primary-50 text-primary'
-                : 'border-zinc-200 text-zinc-600 hover:border-zinc-400'
+                ? 'border-olive/30 bg-olive-light text-olive'
+                : 'border-beige-border text-zinc-600 hover:border-olive/20 hover:bg-cream'
             }`}
           >
             En promotion
@@ -192,21 +178,20 @@ export function CatalogFilters({ categories, facettes, params }: Props) {
         </div>
       </div>
 
-      {/* Tailles */}
       {facettes.tailles.length > 0 && (
-        <div className="space-y-3 border-t border-zinc-100 pt-4">
-          <h4 className="text-sm font-bold uppercase tracking-wider text-zinc-800">Taille</h4>
-          <div className="flex flex-wrap gap-2">
+        <div className="space-y-3 border-t border-beige-border/70 pt-5">
+          <h4 className="catalog-filter-title">Format</h4>
+          <div className="flex flex-wrap gap-1.5">
             {facettes.tailles.map((t) => {
               const isSelected = activeTaille === t;
               return (
                 <Link
                   key={t}
                   href={buildCatalogUrl(params, { taille: isSelected ? null : t })}
-                  className={`flex h-10 min-w-10 items-center justify-center rounded-lg border px-2 text-sm font-bold transition-all ${
+                  className={`flex h-9 min-w-9 items-center justify-center rounded-lg border px-2.5 text-xs font-semibold transition ${
                     isSelected
-                      ? 'border-primary bg-primary text-white'
-                      : 'border-zinc-200 text-zinc-700 hover:border-zinc-400 hover:bg-zinc-50'
+                      ? 'border-olive bg-olive text-white'
+                      : 'border-beige-border text-zinc-600 hover:border-olive/25 hover:bg-cream'
                   }`}
                 >
                   {t}
@@ -217,21 +202,20 @@ export function CatalogFilters({ categories, facettes, params }: Props) {
         </div>
       )}
 
-      {/* Couleurs / fragrances */}
       {facettes.couleurs.length > 0 && (
-        <div className="space-y-3 border-t border-zinc-100 pt-4">
-          <h4 className="text-sm font-bold uppercase tracking-wider text-zinc-800">Couleur / fragrance</h4>
-          <div className="flex flex-wrap gap-2">
+        <div className="space-y-3 border-t border-beige-border/70 pt-5">
+          <h4 className="catalog-filter-title">Fragrance / nuance</h4>
+          <div className="flex flex-wrap gap-1.5">
             {facettes.couleurs.map((c) => {
               const isSelected = activeCouleur === c;
               return (
                 <Link
                   key={c}
                   href={buildCatalogUrl(params, { couleur: isSelected ? null : c })}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-all ${
+                  className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
                     isSelected
-                      ? 'border-primary bg-primary-50 font-bold text-primary'
-                      : 'border-zinc-200 text-zinc-600 hover:border-zinc-400 hover:bg-zinc-50'
+                      ? 'border-olive bg-olive-light text-olive'
+                      : 'border-beige-border text-zinc-600 hover:border-olive/20 hover:bg-cream'
                   }`}
                 >
                   {c}
@@ -243,8 +227,8 @@ export function CatalogFilters({ categories, facettes, params }: Props) {
       )}
 
       {activeCategorie && (
-        <p className="text-xs text-zinc-400">
-          Filtre : {findCategoryName(activeCategorie)}
+        <p className="text-[11px] text-zinc-400">
+          Sélection : {findCategoryName(activeCategorie)}
         </p>
       )}
     </aside>

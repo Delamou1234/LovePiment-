@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidateTag } from 'next/cache';
 import { z } from 'zod';
 import { productService } from '@/modules/produits/services/product.service';
 import { adminUnauthorized, requireAdmin } from '@/modules/admin/lib/require-admin';
+import { revalidateBoutique } from '@/modules/produits/lib/revalidate-boutique';
 
 function serializeProduct(p: Awaited<ReturnType<typeof productService.listerPourAdmin>>[number]) {
   return {
@@ -82,8 +82,7 @@ export async function POST(request: NextRequest) {
     images: parsed.data.images,
   });
 
-  revalidateTag('products', 'max');
-  revalidateTag('promos', 'max');
+  revalidateBoutique({ productSlug: produit.slug });
 
   return NextResponse.json({ produit: serializeProduct(produit as never) }, { status: 201 });
 }

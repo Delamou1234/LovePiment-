@@ -39,8 +39,9 @@ export function LoginForm({
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get('redirect');
+  const adminParam = searchParams.get('admin');
 
-  const isAdmin = variant === 'admin' || isAdminRedirect(redirectParam);
+  const isAdmin = variant === 'admin' || isAdminRedirect(redirectParam) || adminParam === '1';
   const defaultRedirect = isAdmin ? '/admin' : isCheckout ? '/commande' : '/compte';
   const safeRedirect = getSafeRedirect(redirectParam, defaultRedirect);
   const registerHref = `/inscription${redirectParam ? `?redirect=${encodeURIComponent(safeRedirect)}` : ''}`;

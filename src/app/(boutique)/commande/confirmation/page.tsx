@@ -86,7 +86,8 @@ export default async function ConfirmationPage({
     `*Articles commandés* :\n${articlesListText}\n\n` +
     `Pouvez-vous me confirmer la bonne réception et planifier la livraison ? Merci !`;
 
-  const waLink = `https://wa.me/224620000000?text=${encodeURIComponent(waMessage)}`;
+  const whatsappNum = (process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '224625617377').replace(/[\s+\-()]/g, '');
+  const waLink = `https://wa.me/${whatsappNum}?text=${encodeURIComponent(waMessage)}`;
 
   return (
     <div className="container-kabishop py-8 space-y-8 max-w-3xl animate-fadeIn">

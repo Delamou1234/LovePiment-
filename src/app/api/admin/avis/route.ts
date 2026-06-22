@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidateTag } from 'next/cache';
 import { z } from 'zod';
 import { avisService } from '@/modules/avis/services/review.service';
 import { adminUnauthorized, requireAdmin } from '@/modules/admin/lib/require-admin';
+import { revalidateBoutique } from '@/modules/produits/lib/revalidate-boutique';
 
 /** GET /api/admin/avis */
 export async function GET(request: NextRequest) {
@@ -33,6 +33,6 @@ export async function PATCH(request: NextRequest) {
   }
 
   await avisService.moderer(parsed.data.id, parsed.data.statut);
-  revalidateTag('reviews', 'max');
+  revalidateBoutique({ reviews: true });
   return NextResponse.json({ ok: true });
 }

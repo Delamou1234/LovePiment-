@@ -115,6 +115,7 @@ export class ProductService {
   }) {
     const slug = data.slug?.trim() || this.genererSlug(data.nom);
     if (!slug) throw new Error('Slug invalide');
+    await this.validerParentCategorie(data.parentId);
     return this.repo.creerCategorie({ ...data, slug });
   }
 
@@ -131,11 +132,32 @@ export class ProductService {
     if (data.parentId === id) {
       throw new Error('Une catégorie ne peut pas être sa propre parente');
     }
-    return this.repo.mettreAJourCategorie(id, data);
+    await this.validerParentCategorie(data.parentId, id);
+
+    const payload = { ...data };
+    if (payload.slug !== undefined) {
+      const trimmed = payload.slug.trim();
+      payload.slug = trimmed || (payload.nom ? this.genererSlug(payload.nom) : trimmed);
+    }
+
+    return this.repo.mettreAJourCategorie(id, payload);
   }
 
-  async supprimerCategorie(id: string) {
-    return this.repo.supprimerCategorie(id);
+  private async validerParentCategorie(parentId?: string | null, categoryId?: string) {
+    if (!parentId) return;
+
+    const parent = await this.repo.trouverCategorieParId(parentId);
+    if (!parent) throw new Error('Catégorie parente introuvable');
+    if (parent.parentId) {
+      throw new Error('Seules les catégories principales peuvent être parentes');
+    }
+    if (categoryId && parent.id === categoryId) {
+      throw new Error('Une catégorie ne peut pas être sa propre parente');
+    }
+  }
+
+  async supprimerCategorie(id: string, reassignToId?: string) {
+    return this.repo.supprimerCategorie(id, reassignToId);
   }
 
   async obtenirFacettesCatalogue(filtres?: FiltresProduits) {

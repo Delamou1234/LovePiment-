@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import { ProductCard } from '@/shared/components/ProductCard';
 import { variantePourCarte } from '@/shared/lib/product-card';
 import { getCachedSimilarProducts } from '@/modules/produits/lib/cached-queries';
@@ -15,14 +16,19 @@ export async function ProductSimilarSection({ productId, categorieId }: Props) {
   if (similaires.length === 0) return null;
 
   return (
-    <section className="space-y-6">
-      <div className="flex items-end justify-between gap-4">
+    <section className="border-t border-beige-border/70 pt-12 md:pt-16">
+      <div className="product-section-head flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="font-serif text-2xl font-bold text-zinc-900">Produits similaires</h2>
-          <p className="mt-1 text-sm text-zinc-500">Dans la même catégorie</p>
+          <p className="product-section-eyebrow">Vous aimerez aussi</p>
+          <h2 className="product-section-title">Produits similaires</h2>
+          <p className="mt-2 text-sm text-zinc-500">Dans la même collection</p>
         </div>
-        <Link href="/produits" className="text-sm font-bold text-primary hover:underline">
-          Voir tout
+        <Link
+          href="/produits"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold text-olive transition hover:text-olive-dark"
+        >
+          Toute la boutique
+          <ArrowRight className="h-4 w-4" />
         </Link>
       </div>
       <div className="products-grid">

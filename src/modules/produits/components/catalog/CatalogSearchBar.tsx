@@ -108,7 +108,7 @@ export function CatalogSearchBar({ currentParams, defaultQuery = '', className }
   };
 
   return (
-    <div ref={containerRef} className={cn('relative flex-grow max-w-md', className)}>
+    <div ref={containerRef} className={cn('relative w-full min-w-0 sm:max-w-md lg:max-w-lg flex-grow', className)}>
       <form onSubmit={handleSubmit} className="relative">
         <input
           type="text"
@@ -120,7 +120,7 @@ export function CatalogSearchBar({ currentParams, defaultQuery = '', className }
           onFocus={() => suggestions.length > 0 && setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="Rechercher un parfum, une huile, une crème..."
-          className="w-full rounded-full border border-zinc-200 bg-zinc-50 py-2.5 pl-4 pr-10 text-sm outline-none transition focus:border-primary focus:bg-white"
+          className="catalog-search"
           autoComplete="off"
         />
         {query && (
@@ -130,21 +130,21 @@ export function CatalogSearchBar({ currentParams, defaultQuery = '', className }
               setQuery('');
               router.push(buildCatalogUrl(currentParams, { search: null }));
             }}
-            className="absolute right-9 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600"
+            className="absolute right-9 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition"
           >
             <X className="h-3.5 w-3.5" />
           </button>
         )}
         <button
           type="submit"
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-primary"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-olive transition"
         >
           {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
         </button>
       </form>
 
       {isOpen && suggestions.length > 0 && (
-        <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-zinc-100 bg-white shadow-lg">
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-beige-border bg-white shadow-lg shadow-black/5">
           <ul className="max-h-72 overflow-y-auto py-1">
             {suggestions.map((s, i) => (
               <li key={`${s.type}-${s.slug ?? s.nom}-${i}`}>
@@ -154,7 +154,7 @@ export function CatalogSearchBar({ currentParams, defaultQuery = '', className }
                     onClick={() => setIsOpen(false)}
                     className={cn(
                       'flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-zinc-50',
-                      activeIndex === i && 'bg-primary-50',
+                      activeIndex === i && 'bg-olive-light',
                     )}
                   >
                     {s.image ? (
@@ -169,7 +169,7 @@ export function CatalogSearchBar({ currentParams, defaultQuery = '', className }
                       <p className="truncate text-xs text-zinc-500">{s.categorie}</p>
                     </div>
                     {s.prix != null && (
-                      <span className="text-xs font-bold text-primary">
+                      <span className="text-xs font-bold text-olive">
                         {s.prix.toLocaleString('fr-GN')} GNF
                       </span>
                     )}
@@ -180,10 +180,10 @@ export function CatalogSearchBar({ currentParams, defaultQuery = '', className }
                     onClick={() => setIsOpen(false)}
                     className={cn(
                       'flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-zinc-50',
-                      activeIndex === i && 'bg-primary-50',
+                      activeIndex === i && 'bg-olive-light',
                     )}
                   >
-                    <Tag className="h-4 w-4 text-primary" />
+                    <Tag className="h-4 w-4 text-olive" />
                     <span className="font-medium text-zinc-800">{s.nom}</span>
                     <span className="text-xs text-zinc-400">Catégorie</span>
                   </Link>

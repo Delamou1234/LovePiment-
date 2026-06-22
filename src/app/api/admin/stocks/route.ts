@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { revalidateTag } from 'next/cache';
 import { z } from 'zod';
 import { productService } from '@/modules/produits/services/product.service';
 import { adminUnauthorized, requireAdmin } from '@/modules/admin/lib/require-admin';
+import { revalidateBoutique } from '@/modules/produits/lib/revalidate-boutique';
 
 /** GET /api/admin/stocks */
 export async function GET() {
@@ -59,7 +59,7 @@ export async function PATCH(request: NextRequest) {
           ...(stock !== undefined && { stock }),
         });
 
-  revalidateTag('products', 'max');
+  revalidateBoutique();
 
   return NextResponse.json({ variant: { id: variant.id, stock: variant.stock } });
 }

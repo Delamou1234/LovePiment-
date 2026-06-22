@@ -74,7 +74,10 @@ export async function POST(request: NextRequest) {
     // 3. Si paiement CinetPay → initier le paiement
     if (validation.data.modePaiement === 'CINETPAY') {
       try {
-        const { paymentUrl } = await paymentService.initierPaiementCommande(commande.id);
+        const { paymentUrl } = await paymentService.initierPaiementCommande(
+          commande.id,
+          customer.email,
+        );
         return NextResponse.json(
           { commandeId: commande.id, paymentUrl, redirect: true },
           { status: 201 },

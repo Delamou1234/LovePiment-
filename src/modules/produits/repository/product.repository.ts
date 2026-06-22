@@ -240,6 +240,10 @@ export class ProductRepository {
     });
   }
 
+  async trouverCategorieParId(id: string) {
+    return prisma.category.findUnique({ where: { id } });
+  }
+
   async listerCategoriesVitrine() {
     const roots = await prisma.category.findMany({
       where: { actif: true, parentId: null },
@@ -317,17 +321,28 @@ export class ProductRepository {
     });
   }
 
-  async supprimerCategorie(id: string) {
+  async supprimerCategorie(id: string, reassignToId?: string) {
     const cat = await prisma.category.findUnique({
       where: { id },
       include: { _count: { select: { produits: true, children: true } } },
     });
     if (!cat) throw new Error('Catégorie introuvable');
-    if (cat._count.produits > 0) {
-      throw new Error('Des produits sont rattachés à cette catégorie');
-    }
     if (cat._count.children > 0) {
-      throw new Error('Cette catégorie contient des sous-catégories');
+      throw new Error('Supprimez d’abord les sous-catégories');
+    }
+    if (cat._count.produits > 0) {
+      if (!reassignToId) {
+        throw new Error('Choisissez une catégorie pour déplacer les produits');
+      }
+      if (reassignToId === id) {
+        throw new Error('La catégorie de destination doit être différente');
+      }
+      const destination = await prisma.category.findUnique({ where: { id: reassignToId } });
+      if (!destination) throw new Error('Catégorie de destination introuvable');
+      await prisma.product.updateMany({
+        where: { categorieId: id },
+        data: { categorieId: reassignToId },
+      });
     }
     await prisma.category.delete({ where: { id } });
   }

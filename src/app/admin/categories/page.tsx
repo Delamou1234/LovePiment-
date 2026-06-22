@@ -34,6 +34,15 @@ const emptyForm = () => ({
   actif: true,
 });
 
+function genererSlug(nom: string): string {
+  return nom
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<Categorie[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,15 +51,32 @@ export default function AdminCategoriesPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm());
   const [error, setError] = useState('');
+  const [loadError, setLoadError] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState<Categorie | null>(null);
+  const [reassignToId, setReassignToId] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setLoadError('');
     try {
-      const res = await fetch('/api/admin/categories');
-      if (res.ok) {
-        const data = await res.json();
-        setCategories(data.categories ?? []);
+      const res = await fetch('/api/admin/categories', { credentials: 'include' });
+      const data = await res.json();
+      if (!res.ok) {
+        setCategories([]);
+        setLoadError(
+          data.message ??
+            (res.status === 401
+              ? 'Session expirée — reconnectez-vous via /connexion?redirect=/admin/categories'
+              : 'Impossible de charger les catégories'),
+        );
+        return;
       }
+      setCategories(data.categories ?? []);
+    } catch {
+      setCategories([]);
+      setLoadError('Erreur réseau lors du chargement');
     } finally {
       setLoading(false);
     }
@@ -102,6 +128,7 @@ export default function AdminCategoriesPage() {
       const res = await fetch('/api/admin/categories', {
         method: editingId ? 'PATCH' : 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify(payload),
       });
       const data = await res.json();
@@ -116,11 +143,69 @@ export default function AdminCategoriesPage() {
   };
 
   const supprimer = async (c: Categorie) => {
+    if (c.childrenCount > 0) {
+      alert(
+        `Impossible : « ${c.nom} » contient ${c.childrenCount} sous-catégorie(s). Supprimez-les d'abord.`,
+      );
+      return;
+    }
+    if (c.produitsCount > 0) {
+      const autres = categories.filter((cat) => cat.id !== c.id);
+      if (autres.length === 0) {
+        alert('Créez une autre catégorie avant de supprimer celle-ci.');
+        return;
+      }
+      setDeleteTarget(c);
+      setReassignToId(autres[0]?.id ?? '');
+      setDeleteError('');
+      return;
+    }
     if (!confirm(`Supprimer la catégorie « ${c.nom} » ?`)) return;
-    const res = await fetch(`/api/admin/categories?id=${c.id}`, { method: 'DELETE' });
+    await executerSuppression(c.id);
+  };
+
+  const executerSuppression = async (id: string, reassignTo?: string) => {
+    setDeleting(true);
+    setDeleteError('');
+    const params = new URLSearchParams({ id });
+    if (reassignTo) params.set('reassignTo', reassignTo);
+
+    const res = await fetch(`/api/admin/categories?${params.toString()}`, {
+      method: 'DELETE',
+      credentials: 'include',
+    });
+    const data = await res.json();
+    setDeleting(false);
+
+    if (!res.ok) {
+      setDeleteError(data.message ?? 'Suppression impossible');
+      return false;
+    }
+
+    setDeleteTarget(null);
+    setReassignToId('');
+    await load();
+    return true;
+  };
+
+  const confirmerSuppressionAvecReassign = async () => {
+    if (!deleteTarget || !reassignToId) {
+      setDeleteError('Choisissez une catégorie de destination');
+      return;
+    }
+    await executerSuppression(deleteTarget.id, reassignToId);
+  };
+
+  const toggleActif = async (c: Categorie) => {
+    const res = await fetch('/api/admin/categories', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ id: c.id, actif: !c.actif }),
+    });
     const data = await res.json();
     if (!res.ok) {
-      alert(data.message ?? 'Suppression impossible');
+      alert(data.message ?? 'Mise à jour impossible');
       return;
     }
     await load();
@@ -162,6 +247,17 @@ export default function AdminCategoriesPage() {
           création de produits
         </Link>
         .
+      </p>
+
+      {loadError && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {loadError}
+        </div>
+      )}
+
+      <p className="text-xs text-amber-800/80 rounded-lg bg-amber-50 border border-amber-100 px-3 py-2">
+        La corbeille est grisée si la catégorie a des <strong>sous-catégories</strong>. Si elle a des{' '}
+        <strong>produits</strong>, un clic ouvre le choix de la catégorie où les déplacer avant suppression.
       </p>
 
       {loading ? (
@@ -217,13 +313,16 @@ export default function AdminCategoriesPage() {
                   <td className="px-4 py-3 text-zinc-500">{c.parent?.nom ?? '—'}</td>
                   <td className="px-4 py-3">{c.produitsCount}</td>
                   <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                    <button
+                      type="button"
+                      onClick={() => toggleActif(c)}
+                      className={`rounded-full px-2 py-0.5 text-xs font-medium transition hover:opacity-80 ${
                         c.actif ? 'bg-emerald-100 text-emerald-700' : 'bg-zinc-100 text-zinc-500'
                       }`}
+                      title={c.actif ? 'Désactiver' : 'Activer'}
                     >
                       {c.actif ? 'Active' : 'Inactive'}
-                    </span>
+                    </button>
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-1">
@@ -238,9 +337,18 @@ export default function AdminCategoriesPage() {
                       <button
                         type="button"
                         onClick={() => supprimer(c)}
-                        className="rounded-lg p-2 text-red-500 hover:bg-red-50"
-                        title="Supprimer"
-                        disabled={c.produitsCount > 0 || c.childrenCount > 0}
+                        className={`rounded-lg p-2 hover:bg-red-50 ${
+                          c.childrenCount > 0
+                            ? 'cursor-not-allowed text-zinc-300'
+                            : 'text-red-500'
+                        }`}
+                        title={
+                          c.childrenCount > 0
+                            ? `${c.childrenCount} sous-catégorie(s) — supprimez-les d'abord`
+                            : c.produitsCount > 0
+                              ? `${c.produitsCount} produit(s) — cliquer pour déplacer puis supprimer`
+                              : 'Supprimer'
+                        }
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -250,6 +358,60 @@ export default function AdminCategoriesPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
+              <h2 className="font-bold text-zinc-900">Supprimer « {deleteTarget.nom} »</h2>
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                className="rounded-lg p-1 hover:bg-zinc-100"
+              >
+                <X className="h-5 w-5 text-zinc-500" />
+              </button>
+            </div>
+            <div className="space-y-4 px-6 py-5">
+              <p className="text-sm text-zinc-600">
+                Cette catégorie contient{' '}
+                <strong>{deleteTarget.produitsCount} produit{deleteTarget.produitsCount > 1 ? 's' : ''}</strong>.
+                Choisissez où les déplacer avant suppression.
+              </p>
+              <div>
+                <label className="text-xs font-semibold text-zinc-600">Déplacer les produits vers</label>
+                <select
+                  value={reassignToId}
+                  onChange={(e) => setReassignToId(e.target.value)}
+                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                >
+                  {categories
+                    .filter((cat) => cat.id !== deleteTarget.id)
+                    .map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.parentId ? `↳ ${cat.nom}` : cat.nom}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              {deleteError && <p className="text-sm text-red-600">{deleteError}</p>}
+            </div>
+            <div className="flex justify-end gap-2 border-t border-zinc-100 px-6 py-4">
+              <Button variant="outline" onClick={() => setDeleteTarget(null)}>
+                Annuler
+              </Button>
+              <Button
+                onClick={confirmerSuppressionAvecReassign}
+                disabled={deleting}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {deleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Déplacer et supprimer
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -270,7 +432,14 @@ export default function AdminCategoriesPage() {
                 <label className="text-xs font-semibold text-zinc-600">Nom *</label>
                 <input
                   value={form.nom}
-                  onChange={(e) => setForm({ ...form, nom: e.target.value })}
+                  onChange={(e) => {
+                    const nom = e.target.value;
+                    setForm((prev) => ({
+                      ...prev,
+                      nom,
+                      slug: editingId ? prev.slug : genererSlug(nom),
+                    }));
+                  }}
                   placeholder="Ex: Parfums"
                   className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
                 />

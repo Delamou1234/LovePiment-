@@ -74,7 +74,7 @@ export function ChatWidget({ onOpenAssistant }: ChatWidgetProps = {}) {
             <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3 shrink-0">
               <div>
                 <p className="font-serif font-bold text-zinc-900">Support KabiShop</p>
-                <p className="text-[10px] text-zinc-400">Messages et appels sur le site</p>
+                <p className="text-[10px] text-zinc-400">Texte, photos et messages vocaux</p>
               </div>
               <div className="flex items-center gap-2">
                 <Link

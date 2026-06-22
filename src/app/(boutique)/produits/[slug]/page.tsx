@@ -2,17 +2,14 @@ import React from 'react';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import ProductDetailsSection from '@/modules/produits/components/ProductDetailsSection';
-import { ProductSimilarSection } from '@/modules/produits/components/ProductSimilarSection';
 import { serialiserProduitPourClient } from '@/modules/produits/lib/serialize-product';
-import { getCachedProduct } from '@/modules/produits/lib/cached-queries';
+import { getCachedProduct, getCachedSimilarProducts } from '@/modules/produits/lib/cached-queries';
 import { notFound } from 'next/navigation';
 import { ProductReviewsSection } from '@/modules/avis/components/ProductReviewsSection';
 import { avisService } from '@/modules/avis/services/review.service';
 import { getSession } from '@/shared/lib/auth/session';
 
 type Params = Promise<{ slug: string }>;
-
-export const revalidate = 120;
 
 export default async function ProductDetailPage({ params }: { params: Params }) {
   const { slug } = await params;
@@ -26,11 +23,18 @@ export default async function ProductDetailPage({ params }: { params: Params }) 
 
   const productClient = serialiserProduitPourClient(product);
 
-  const [avisStats, avisPage, session] = await Promise.all([
+  const [avisStats, avisPage, session, similairesRaw] = await Promise.all([
     avisService.statsProduit(product.id),
     avisService.listerAvisProduit(product.id, 1, 10),
     getSession(),
+    getCachedSimilarProducts(product.id, product.categorieId),
   ]);
+
+  const similaires = similairesRaw.map((p) => ({
+    slug: p.slug,
+    nom: p.nom,
+    image: p.images[0] ?? '',
+  }));
 
   const eligibles =
     session?.id != null
@@ -38,39 +42,42 @@ export default async function ProductDetailPage({ params }: { params: Params }) 
       : [];
 
   return (
-    <div className="container-kabishop animate-fadeIn py-6 sm:py-8 space-y-12 sm:space-y-16">
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs text-zinc-500 scrollbar-hide whitespace-nowrap">
-        <Link href="/" className="hover:text-primary transition font-medium">
-          Accueil
-        </Link>
-        <ChevronRight className="h-3 w-3" />
-        <Link href="/produits" className="hover:text-primary transition font-medium">
-          Catalogue
-        </Link>
-        <ChevronRight className="h-3 w-3" />
-        <Link
-          href={`/produits?categorie=${productClient.categorie.slug}`}
-          className="hover:text-primary transition font-medium"
-        >
-          {productClient.categorie.nom}
-        </Link>
-        <ChevronRight className="h-3 w-3" />
-        <span className="text-zinc-800 font-bold line-clamp-1">{productClient.nom}</span>
+    <div className="product-detail-page animate-fadeIn">
+      <header className="border-b border-beige-border/60 bg-white/80 backdrop-blur-sm">
+        <div className="container-kabishop py-4 md:py-5">
+          <nav className="catalog-breadcrumb" aria-label="Fil d'Ariane">
+            <Link href="/">Accueil</Link>
+            <ChevronRight className="h-3 w-3 opacity-40" aria-hidden />
+            <Link href="/produits">Boutique</Link>
+            <ChevronRight className="h-3 w-3 opacity-40" aria-hidden />
+            <Link href={`/produits?categorie=${productClient.categorie.slug}`}>
+              {productClient.categorie.nom}
+            </Link>
+            <ChevronRight className="h-3 w-3 opacity-40" aria-hidden />
+            <span className="max-w-[10rem] truncate text-zinc-600 sm:max-w-md">{productClient.nom}</span>
+          </nav>
+        </div>
+      </header>
+
+      <div className="container-kabishop space-y-12 py-6 md:space-y-16 md:py-10 lg:py-12">
+        <ProductDetailsSection
+          product={productClient}
+          avisStats={avisStats}
+          similaires={similaires}
+        />
+
+        <div id="avis-clients">
+          <ProductReviewsSection
+            productId={productClient.id}
+            productSlug={productClient.slug}
+            productNom={productClient.nom}
+            initialStats={avisStats}
+            initialAvis={avisPage.avis}
+            initialTotalPages={avisPage.pagination.totalPages}
+            initialEligibles={eligibles}
+          />
+        </div>
       </div>
-
-      <ProductDetailsSection product={productClient} avisStats={avisStats} />
-
-      <ProductSimilarSection productId={productClient.id} categorieId={productClient.categorieId} />
-
-      <ProductReviewsSection
-        productId={productClient.id}
-        productSlug={productClient.slug}
-        productNom={productClient.nom}
-        initialStats={avisStats}
-        initialAvis={avisPage.avis}
-        initialTotalPages={avisPage.pagination.totalPages}
-        initialEligibles={eligibles}
-      />
     </div>
   );
 }

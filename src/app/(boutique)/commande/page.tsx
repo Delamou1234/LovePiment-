@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
+const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '224625617377';
+
 // ─── VALIDATION SCHEMA (ZOD) ─────────────────────────────────────────────────
 
 const checkoutSchema = z.object({
@@ -37,6 +39,22 @@ const checkoutSchema = z.object({
 });
 
 type CheckoutFormValues = z.infer<typeof checkoutSchema>;
+
+function messageErreurPaiement(message: string): string {
+  if (message.includes('MINIMUM_REQUIRED_FIELDS')) {
+    return 'Paiement en ligne refusé par CinetPay (informations incomplètes). Choisissez « Paiement à la livraison » ou contactez le support.';
+  }
+  if (message.includes('return_url') || message.includes('notify_url')) {
+    return 'Configuration CinetPay : l’URL du site doit être publique (HTTPS). En développement, utilisez « Paiement à la livraison ».';
+  }
+  if (message.includes('indisponible en local') || message.includes('URL publique')) {
+    return message;
+  }
+  if (message.includes('non configuré') || message.includes('CINETPAY_API_KEY')) {
+    return 'Paiement Mobile Money non configuré. Choisissez « Paiement à la livraison ».';
+  }
+  return message;
+}
 
 // ─── CHECKOUT PAGE (CLIENT COMPONENT) ────────────────────────────────────────
 
@@ -192,7 +210,9 @@ export default function CheckoutPage() {
           router.push('/connexion?redirect=/commande');
           return;
         }
-        throw new Error(data.message || 'Une erreur est survenue lors de la commande.');
+        throw new Error(
+          messageErreurPaiement(data.message || 'Une erreur est survenue lors de la commande.'),
+        );
       }
 
       // Vider le panier après commande réussie
@@ -474,7 +494,16 @@ export default function CheckoutPage() {
               <div>
                 <p className="font-bold text-zinc-800">Besoin d'aide pour finaliser ?</p>
                 <p className="mt-1">
-                  Vous pouvez également nous appeler ou nous écrire directement sur WhatsApp au <a href="tel:+224620000000" className="text-primary font-bold hover:underline">+224 620 00 00 00</a>. Nous serons ravis de vous aider !
+                  Vous pouvez également nous écrire sur WhatsApp au{' '}
+                  <a
+                    href={`https://wa.me/${WHATSAPP.replace(/[\s+\-()]/g, '')}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary font-bold hover:underline"
+                  >
+                    +{WHATSAPP.replace(/^224/, '224 ')}
+                  </a>
+                  . Nous serons ravis de vous aider !
                 </p>
               </div>
             </div>
