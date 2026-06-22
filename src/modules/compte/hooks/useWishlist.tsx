@@ -94,15 +94,31 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
   return <WishlistContext.Provider value={value}>{children}</WishlistContext.Provider>;
 }
 
+export function useWishlist(): WishlistContextValue & {
+  wishlisted: boolean;
+  toggleProduct: () => Promise<boolean>;
+};
+export function useWishlist(productId: string): WishlistContextValue & {
+  wishlisted: boolean;
+  toggleProduct: () => Promise<boolean>;
+};
 export function useWishlist(productId?: string) {
   const ctx = useContext(WishlistContext);
   if (!ctx) {
     throw new Error('useWishlist must be used within WishlistProvider');
   }
 
+  if (!productId) {
+    return {
+      ...ctx,
+      wishlisted: false,
+      toggleProduct: () => Promise.resolve(false),
+    };
+  }
+
   return {
     ...ctx,
-    wishlisted: productId ? ctx.isWishlisted(productId) : false,
-    toggleProduct: productId ? () => ctx.toggle(productId) : ctx.toggle,
+    wishlisted: ctx.isWishlisted(productId),
+    toggleProduct: () => ctx.toggle(productId),
   };
 }

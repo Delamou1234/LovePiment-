@@ -34,6 +34,8 @@ import {
 
 } from '@/modules/produits/lib/catalog-url';
 
+import type { ProduitAvecCategorie } from '@/modules/produits/types';
+
 
 
 type SearchParams = Promise<CatalogSearchParams>;
@@ -84,7 +86,7 @@ export default async function CatalogPage({
 
 
 
-  const [categories, facettes, { produits: products }] = await Promise.all([
+  const [categories, facettes, catalog] = await Promise.all([
 
     getCachedCategoriesArbre(),
 
@@ -93,6 +95,8 @@ export default async function CatalogPage({
     productService.listerProduits(filtres, catalogTriToRepository(activeTri), { page: 1, limit: 100 }),
 
   ]);
+
+  const products: ProduitAvecCategorie[] = catalog.produits;
 
 
 

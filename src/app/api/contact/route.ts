@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { contactService } from '@/modules/contact/services/contact.service';
-import { CONTACT_SUJETS } from '@/modules/contact/types';
+import { CONTACT_SUJETS, type ContactSubjectKey } from '@/modules/contact/types';
 import { getSession } from '@/shared/lib/auth/session';
 
 const sujetValues = CONTACT_SUJETS.map((s) => s.value) as [string, ...string[]];
@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
 
     const message = await contactService.envoyerMessage({
       ...parsed.data,
+      sujet: parsed.data.sujet as ContactSubjectKey,
       customerId,
     });
 

@@ -116,7 +116,7 @@ export default function ProductDetailsSection({ product, avisStats, similaires =
   const enPromo =
     product.prixPromo != null &&
     estPromoActive({
-      prixPromo: product.prixPromo,
+      prixPromo: product.prixPromo as unknown as import('@prisma/client').Product['prixPromo'],
       promoDebut: product.promoDebut,
       promoFin: product.promoFin,
     });

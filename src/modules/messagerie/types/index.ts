@@ -37,7 +37,7 @@ export type PresenceDto = {
   enLigne: boolean;
 };
 
-export type ConversationDetailDto = ConversationResume & {
+export type ConversationDetailDto = Omit<ConversationResume, 'updatedAt'> & {
   messages: MessageDto[];
   presence: PresenceDto[];
   updatedAt: string;

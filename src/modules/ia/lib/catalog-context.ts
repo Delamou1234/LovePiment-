@@ -1,4 +1,5 @@
 import { unstable_cache } from 'next/cache';
+import type { Product } from '@prisma/client';
 import { prisma } from '@/shared/lib/prisma';
 import { estPromoActive, prixEffectif } from '@/modules/produits/lib/promo';
 
@@ -53,7 +54,8 @@ function resumerVariantes(variantes: ProduitAvecVariantes['variantes']): string 
 function versProduitCatalogueIa(p: ProduitAvecVariantes): ProduitCatalogueIa {
   const stockTotal = p.variantes.reduce((n, v) => n + v.stock, 0);
   const prixCatalogue = Number(p.prix);
-  const enPromo = estPromoActive(p);
+  const promoFields = p as unknown as Pick<Product, 'prixPromo' | 'promoDebut' | 'promoFin' | 'prix'>;
+  const enPromo = estPromoActive(promoFields);
 
   return {
     id: p.id,
@@ -61,7 +63,7 @@ function versProduitCatalogueIa(p: ProduitAvecVariantes): ProduitCatalogueIa {
     slug: p.slug,
     marque: p.marque,
     categorie: p.categorie.nom,
-    prix: prixEffectif(p),
+    prix: prixEffectif(promoFields),
     prixCatalogue,
     enPromo,
     stockTotal,

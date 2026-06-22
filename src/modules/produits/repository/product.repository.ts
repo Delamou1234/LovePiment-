@@ -9,6 +9,7 @@ import type {
   SuggestionRecherche,
   CategorieArbre,
   StockVarianteClient,
+  FacettesCatalogue,
 } from '../types';
 import type { Pagination } from '@/types';
 import { normaliserRecherche } from '@/shared/lib/search';
@@ -387,8 +388,8 @@ export class ProductRepository {
       }),
     ]);
 
-    const tailles = [...new Set(variantes.map((v) => v.taille).filter(Boolean))].sort();
-    const couleurs = [...new Set(variantes.map((v) => v.couleur).filter(Boolean))].sort();
+    const tailles = [...new Set(variantes.map((v) => v.taille).filter((t): t is string => Boolean(t)))].sort();
+    const couleurs = [...new Set(variantes.map((v) => v.couleur).filter((c): c is string => Boolean(c)))].sort();
     const marques = marquesRows
       .map((m) => m.marque)
       .filter((m): m is string => Boolean(m));

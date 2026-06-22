@@ -73,11 +73,11 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ message: 'Données invalides' }, { status: 400 });
   }
 
-  const { id, ...data } = parsed.data;
+  const { id, debut, fin, ...rest } = parsed.data;
   const flash = await marketingService.mettreAJourFlashSale(id, {
-    ...data,
-    ...(data.debut !== undefined && { debut: new Date(data.debut) }),
-    ...(data.fin !== undefined && { fin: new Date(data.fin) }),
+    ...rest,
+    ...(debut !== undefined && { debut: new Date(debut) }),
+    ...(fin !== undefined && { fin: new Date(fin) }),
   });
   revalidateBoutique();
   return NextResponse.json({ flash: mapFlash(flash) });

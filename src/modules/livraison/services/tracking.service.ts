@@ -96,6 +96,7 @@ export class TrackingService {
 
   async confirmerPaiementLivraison(orderId: string) {
     const order = await this.repo.confirmerPaiementLivraison(orderId);
+    if (!order) return null;
     orderNotificationService.notifyPaymentConfirmed(buildNotificationContext(order));
     return order;
   }

@@ -162,7 +162,9 @@ export function AdminTopBar({ admin, onLogout, conversations, messagerieUnread }
               </div>
 
               <div className="py-1">
-                {MENU_ITEMS.map(({ href, label, icon: Icon, exact }) => {
+                {MENU_ITEMS.map((item) => {
+                  const { href, label, icon: Icon } = item;
+                  const exact = 'exact' in item ? item.exact : undefined;
                   const active = isAdminNavActive(pathname, href, exact);
                   return (
                     <Link

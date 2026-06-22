@@ -58,11 +58,7 @@ export function ChatWidget({ onOpenAssistant }: ChatWidgetProps = {}) {
 
   return (
     <>
-      <FloatingContactButtons
-        onOpenChat={() => setOpen(true)}
-        onOpenAssistant={onOpenAssistant}
-        chatUnread={unread}
-      />
+      <FloatingContactButtons onOpenAssistant={onOpenAssistant} />
 
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-end p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:p-6 pointer-events-none">
