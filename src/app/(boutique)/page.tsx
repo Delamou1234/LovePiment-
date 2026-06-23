@@ -124,7 +124,6 @@ export default async function HomePage() {
                     featured={p.featured}
                     rating={notes.rating}
                     reviews={notes.reviews}
-                    priority={idx < 4}
                     variante={variantePourCarte(p.id, Number(p.prix), p.variantes?.[0])}
                   />
                 );

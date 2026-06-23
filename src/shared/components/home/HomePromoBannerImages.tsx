@@ -38,6 +38,10 @@ export function HomePromoBannerImages({ slides }: Props) {
     <div className="relative h-full min-h-[280px] sm:min-h-[340px] lg:min-h-full w-full overflow-hidden bg-zinc-900">
       {slides.map((slide, i) => {
         const active = i === index;
+        const prev =
+          slides.length > 1 ? (index - 1 + slides.length) % slides.length : index;
+        if (slides.length > 1 && i !== index && i !== prev) return null;
+
         return (
           <Link
             key={`${slide.slug ?? slide.alt}-${i}`}
@@ -56,7 +60,7 @@ export function HomePromoBannerImages({ slides }: Props) {
               className={`object-cover object-center transition-transform duration-[8000ms] ease-out ${
                 active ? 'scale-105' : 'scale-100'
               }`}
-              priority={i === 0}
+              loading="lazy"
               unoptimized={slide.src.startsWith('/')}
             />
           </Link>

@@ -35,6 +35,18 @@ export const STATUT_LABELS: Record<string, string> = {
   ANNULEE: 'Annulée',
 };
 
+export const MODE_PAIEMENT_LABELS: Record<string, string> = {
+  CINETPAY: 'Paiement en ligne',
+  PAIEMENT_LIVRAISON: 'Paiement à la livraison',
+};
+
+export const STATUT_PAIEMENT_LABELS: Record<string, string> = {
+  EN_ATTENTE: 'En attente',
+  REUSSIE: 'Réussi',
+  ECHOUEE: 'Échoué',
+  REMBOURSEE: 'Remboursé',
+};
+
 export type CompteSectionId =
   | 'dashboard'
   | 'commandes'

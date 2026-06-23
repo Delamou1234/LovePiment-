@@ -42,12 +42,19 @@ type HomeHeroProps = {
   featured?: HeroFeaturedPeek | null;
 };
 
+function heroImageSrc(url: string): string {
+  if (url.includes('images.unsplash.com') && /[?&]w=\d+/.test(url)) {
+    return url.replace(/w=\d+/, 'w=1920').replace(/q=\d+/, 'q=85');
+  }
+  return url;
+}
+
 function buildHeroSlides(categories: HeroCategoryLink[]): HeroSlide[] {
   if (categories.length === 0) return FALLBACK_SLIDES;
 
   return categories.map((cat) => ({
     id: cat.slug,
-    src: cat.image,
+    src: heroImageSrc(cat.image),
     alt: cat.nom,
     position: 'object-center',
     tag: cat.nom,
@@ -90,6 +97,14 @@ export function HomeHero({ categories = [], featured }: HomeHeroProps) {
       <div className="absolute inset-0">
         {slides.map((s, index) => {
           const active = index === slideIndex;
+          const prev =
+            slides.length > 1
+              ? (slideIndex - 1 + slides.length) % slides.length
+              : slideIndex;
+          const shouldRender =
+            slides.length <= 1 || index === slideIndex || index === prev;
+          if (!shouldRender) return null;
+
           return (
             <div
               key={s.id}
@@ -98,17 +113,17 @@ export function HomeHero({ categories = [], featured }: HomeHeroProps) {
               }`}
               aria-hidden={!active}
             >
-              {/* Zone élargie = moins de rognage (object-cover moins agressif) */}
               <div className="absolute -inset-[12%] sm:-inset-[10%] md:-inset-[8%]">
                 <Image
                   src={s.src}
                   alt={s.alt}
                   fill
-                  priority={index === 0}
+                  priority={index === 0 && slideIndex === 0}
+                  loading={index === 0 && slideIndex === 0 ? undefined : 'lazy'}
                   quality={90}
                   sizes="100vw"
                   className={`object-cover ${s.position}`}
-                  unoptimized
+                  unoptimized={s.src.startsWith('/')}
                 />
               </div>
             </div>

@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { redirectUrlApresSessionExpiree } from '@/shared/lib/auth/stale-session';
 import { getCustomerSession } from '@/shared/lib/auth/session';
 
 export default async function CommandeLayout({
@@ -8,7 +9,7 @@ export default async function CommandeLayout({
 }) {
   const customer = await getCustomerSession();
   if (!customer) {
-    redirect('/connexion?redirect=/commande');
+    redirect(redirectUrlApresSessionExpiree('/commande'));
   }
   return children;
 }

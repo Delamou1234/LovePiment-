@@ -5,23 +5,26 @@ import { Lock, ShieldCheck, Truck } from 'lucide-react';
 import { LoginForm } from '@/modules/auth/components/LoginForm';
 import { AuthSplitLayout } from '@/modules/auth/components/AuthSplitLayout';
 import {
-  getSafeRedirect,
-  getSafeRedirectForCustomer,
-  isAdminRedirect,
   isCheckoutRedirect,
+  resolveAuthenticatedRedirect,
 } from '@/shared/lib/auth-redirect';
 import { isValidCustomerSession } from '@/shared/lib/auth/customer-session';
 import { getSocialAuthFlags } from '@/shared/lib/auth/social-auth-config';
-import { adminAuthRepository } from '@/modules/auth/repository/admin-auth.repository';
-import { getCustomerSession, getSession } from '@/shared/lib/auth/session';
+import { customerAuthRepository } from '@/modules/auth/repository/customer-auth.repository';
+import {
+  getAdminSession,
+  getCourierSession,
+  getCustomerSession,
+} from '@/shared/lib/auth/session';
+import { redirectUrlApresSessionExpiree } from '@/shared/lib/auth/stale-session';
 
 export const metadata: Metadata = {
   title: 'Connexion',
-  description: 'Connectez-vous pour finaliser votre commande KabiShop.',
+  description: 'Connexion KabiShop — client, administration ou espace livreur.',
   robots: { index: false, follow: false },
 };
 
-type SearchParams = Promise<{ redirect?: string; error?: string; admin?: string }>;
+type SearchParams = Promise<{ redirect?: string; error?: string }>;
 
 const TRUST = [
   { icon: Truck, label: 'Livraison 24–48h' },
@@ -34,25 +37,31 @@ export default async function ConnexionPage({
 }: {
   searchParams: SearchParams;
 }) {
-  const { redirect: redirectParam, error, admin: adminParam } = await searchParams;
-  const isAdmin = isAdminRedirect(redirectParam) || adminParam === '1';
+  const { redirect: redirectParam, error } = await searchParams;
 
-  if (isAdmin) {
-    const session = await getSession();
-    if (session?.role === 'admin') {
-      const admin =
-        (session.id ? await adminAuthRepository.trouverParId(session.id) : null) ??
-        (await adminAuthRepository.trouverParEmail(session.email));
-      if (admin?.actif) {
-        redirect(getSafeRedirect(redirectParam, '/admin'));
-      }
+  const [customerSession, adminSession, courierSession] = await Promise.all([
+    getCustomerSession(),
+    getAdminSession(),
+    getCourierSession(),
+  ]);
+
+  const hasCustomer = isValidCustomerSession(customerSession);
+  const hasAdmin = Boolean(adminSession?.id);
+  const hasCourier = Boolean(courierSession?.id);
+
+  if (hasCustomer) {
+    const row = await customerAuthRepository.trouverParId(customerSession.id);
+    if (!row) {
+      redirect(redirectUrlApresSessionExpiree(redirectParam ?? '/compte'));
     }
   }
 
-  const customer = await getCustomerSession();
-  if (isValidCustomerSession(customer) && !isAdmin) {
-    const fallback = isCheckoutRedirect(redirectParam) ? '/commande' : '/compte';
-    redirect(getSafeRedirectForCustomer(redirectParam, fallback));
+  const target = resolveAuthenticatedRedirect(
+    { customer: hasCustomer, admin: hasAdmin, courier: hasCourier },
+    redirectParam,
+  );
+  if (target) {
+    redirect(target);
   }
 
   const isCheckout = isCheckoutRedirect(redirectParam);
@@ -65,17 +74,22 @@ export default async function ConnexionPage({
           ? 'Plus qu’une étape avant votre commande'
           : 'Bienvenue chez KabiShop'
       }
-      panelSubtitle="Connectez-vous pour payer, suivre votre livraison et profiter de nos offres."
+      panelSubtitle="Une seule connexion pour clients, équipe admin et livreurs."
       trustPoints={TRUST}
     >
       <Suspense fallback={<div className="skeleton h-64 w-full rounded-xl" />}>
         <LoginForm
-          variant={isAdmin ? 'admin' : 'customer'}
-          googleEnabled={social.google && !isAdmin}
-          facebookEnabled={social.facebook && !isAdmin}
-          appleEnabled={social.apple && !isAdmin}
+          googleEnabled={social.google}
+          facebookEnabled={social.facebook}
+          appleEnabled={social.apple}
           isCheckout={isCheckout}
-          initialError={error ? decodeURIComponent(error) : undefined}
+          initialError={
+            error === 'session_expired'
+              ? 'Votre session a expiré ou le compte n\'existe plus. Reconnectez-vous.'
+              : error
+                ? decodeURIComponent(error)
+                : undefined
+          }
         />
       </Suspense>
     </AuthSplitLayout>

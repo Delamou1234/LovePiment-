@@ -59,7 +59,7 @@ export async function PATCH(request: NextRequest) {
       name: profil.nom,
       role: 'customer',
     });
-    setSessionCookie(response, token);
+    setSessionCookie(response, token, 'customer');
   }
 
   return response;

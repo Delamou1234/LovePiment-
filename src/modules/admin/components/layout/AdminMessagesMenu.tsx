@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MessageSquare } from 'lucide-react';
 import type { ConversationResume } from '@/modules/messagerie/types';
-import { isAdminNavActive } from './admin-ui';
+import { isAdminNavActive } from '../admin-ui';
 
 const QUICK_ACTION =
   'relative flex h-9 w-9 items-center justify-center rounded-xl border border-beige-border bg-white text-zinc-500 shadow-sm transition hover:border-olive/30 hover:text-olive hover:shadow-md';

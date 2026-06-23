@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,6 +13,7 @@ import { useFeatureFlags } from '@/shared/hooks/useFeatureFlags';
 import { AuthField } from './AuthField';
 import { authInputClass, authSubmitClass } from './auth-styles';
 import { SocialLoginButtons, SocialLoginDivider } from './SocialLoginButtons';
+import { PasswordInput } from '@/shared/components/PasswordInput';
 
 const registerSchema = z
   .object({
@@ -48,7 +49,6 @@ export function RegisterForm({
   appleEnabled = false,
 }: RegisterFormProps) {
   const { parrainageActif } = useFeatureFlags();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get('redirect');
   const parrainParam = searchParams.get('parrain')?.trim().toUpperCase() ?? '';
@@ -83,6 +83,7 @@ export function RegisterForm({
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           email: values.email,
           password: values.password,
@@ -97,7 +98,9 @@ export function RegisterForm({
         setErrorMsg(data.message ?? 'Inscription impossible.');
         return;
       }
-      router.replace(data.redirect ?? safeRedirect);
+      const target = data.redirect ?? safeRedirect;
+      window.location.assign(target);
+      return;
     } catch {
       setErrorMsg('Erreur réseau. Réessayez.');
     } finally {
@@ -199,9 +202,8 @@ export function RegisterForm({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <AuthField label="Mot de passe" error={errors.password?.message}>
-            <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-            <input
-              type="password"
+            <Lock className="pointer-events-none absolute left-3.5 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <PasswordInput
               autoComplete="new-password"
               placeholder="6+ car."
               className={authInputClass}
@@ -210,9 +212,8 @@ export function RegisterForm({
           </AuthField>
 
           <AuthField label="Confirmation" error={errors.confirmPassword?.message}>
-            <Lock className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-            <input
-              type="password"
+            <Lock className="pointer-events-none absolute left-3.5 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+            <PasswordInput
               autoComplete="new-password"
               placeholder="Répéter"
               className={authInputClass}

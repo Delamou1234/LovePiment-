@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminAuthRepository } from '@/modules/auth/repository/admin-auth.repository';
-import { getSession } from '@/shared/lib/auth/session';
+import { getAdminSession } from '@/shared/lib/auth/session';
 
 export type AdminSessionUser = {
   id: string;
@@ -11,8 +11,8 @@ export type AdminSessionUser = {
 
 /** Vérifie la session admin + compte actif en base. */
 export async function requireAdmin(): Promise<AdminSessionUser | null> {
-  const session = await getSession();
-  if (!session || session.role !== 'admin') return null;
+  const session = await getAdminSession();
+  if (!session) return null;
 
   const admin =
     (session.id ? await adminAuthRepository.trouverParId(session.id) : null) ??

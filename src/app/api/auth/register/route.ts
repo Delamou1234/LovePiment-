@@ -8,7 +8,7 @@ import {
 import { customerAuthRepository } from '@/modules/auth/repository/customer-auth.repository';
 import { marketingService } from '@/modules/marketing/services/marketing.service';
 import { storeSettingsService } from '@/modules/admin/services/store-settings.service';
-import { getSafeRedirect } from '@/shared/lib/auth-redirect';
+import { getSafeRedirectForCustomer } from '@/shared/lib/auth-redirect';
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -75,9 +75,9 @@ export async function POST(request: NextRequest) {
       role: 'customer',
     });
 
-    const safeRedirect = getSafeRedirect(redirect, '/commande');
+    const safeRedirect = getSafeRedirectForCustomer(redirect, '/compte');
     const response = NextResponse.json({ ok: true, redirect: safeRedirect }, { status: 201 });
-    setSessionCookie(response, token);
+    setSessionCookie(response, token, 'customer');
     return response;
   } catch (error) {
     console.error('[POST /api/auth/register]', error);

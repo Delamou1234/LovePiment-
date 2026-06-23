@@ -47,6 +47,13 @@ export class CustomerAuthRepository {
     });
   }
 
+  async mettreAJourProfilBeaute(id: string, beautyProfile: object | null) {
+    return prisma.customer.update({
+      where: { id },
+      data: { beautyProfile: beautyProfile ?? undefined },
+    });
+  }
+
   async changerMotDePasse(id: string, ancien: string, nouveau: string): Promise<'ok' | 'invalid' | 'no_password'> {
     const customer = await this.trouverParId(id);
     if (!customer?.passwordHash) return 'no_password';
@@ -57,6 +64,13 @@ export class CustomerAuthRepository {
       data: { passwordHash: hashPassword(nouveau) },
     });
     return 'ok';
+  }
+
+  async definirMotDePasse(id: string, nouveau: string) {
+    return prisma.customer.update({
+      where: { id },
+      data: { passwordHash: hashPassword(nouveau) },
+    });
   }
 
   async trouverDerniereCommande(customerId: string) {

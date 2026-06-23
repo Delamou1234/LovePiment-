@@ -1,44 +1,62 @@
 import { NextResponse } from 'next/server';
 import { adminAuthRepository } from '@/modules/auth/repository/admin-auth.repository';
-import { getSession } from '@/shared/lib/auth/session';
+import {
+  clearSessionCookie,
+  getAdminSession,
+  getCustomerSessionWithRefresh,
+  setSessionCookie,
+} from '@/shared/lib/auth/session';
 import { customerAuthRepository } from '@/modules/auth/repository/customer-auth.repository';
 
 /** GET /api/auth/me — session + profil client depuis la base */
 export async function GET() {
-  const session = await getSession();
+  const { user: session, refreshedToken, role } = await getCustomerSessionWithRefresh();
+
+  const buildResponse = (body: object, clear = false) => {
+    const response = NextResponse.json(body);
+    if (refreshedToken && session) {
+      setSessionCookie(response, refreshedToken, role);
+    }
+    if (clear) clearSessionCookie(response, 'customer');
+    return response;
+  };
+
   if (!session) {
+    const adminSession = await getAdminSession();
+    if (adminSession) {
+      const admin =
+        (adminSession.id ? await adminAuthRepository.trouverParId(adminSession.id) : null) ??
+        (await adminAuthRepository.trouverParEmail(adminSession.email));
+      if (!admin?.actif) {
+        const response = NextResponse.json({ user: null });
+        clearSessionCookie(response, 'admin');
+        return response;
+      }
+      return NextResponse.json({
+        user: {
+          id: admin.id,
+          email: admin.email,
+          name: admin.nom,
+          role: 'admin' as const,
+        },
+      });
+    }
+
     return NextResponse.json({ user: null });
   }
 
-  if (session.role === 'admin') {
-    const admin =
-      (session.id ? await adminAuthRepository.trouverParId(session.id) : null) ??
-      (await adminAuthRepository.trouverParEmail(session.email));
-    if (!admin?.actif) {
-      return NextResponse.json({ user: null });
-    }
-    return NextResponse.json({
-      user: {
-        id: admin.id,
-        email: admin.email,
-        name: admin.nom,
-        role: 'admin' as const,
-      },
-    });
-  }
-
   if (!session.id) {
-    return NextResponse.json({ user: session });
+    return buildResponse({ user: session });
   }
 
   const customer = await customerAuthRepository.trouverParId(session.id);
   if (!customer) {
-    return NextResponse.json({ user: session });
+    return buildResponse({ user: null }, true);
   }
 
   const derniereCommande = await customerAuthRepository.trouverDerniereCommande(customer.id);
 
-  return NextResponse.json({
+  return buildResponse({
     user: {
       id: customer.id,
       email: customer.email,

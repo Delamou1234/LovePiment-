@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { GoogleAnalytics } from '@/shared/components/GoogleAnalytics';
+import { GlobalPageTracker } from '@/shared/components/GlobalPageTracker';
+import { AppProviders } from '@/shared/providers/AppProviders';
 
 export const metadata: Metadata = {
   title: {
@@ -53,7 +56,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" className="font-sans" data-scroll-behavior="smooth">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <AppProviders>
+          <GoogleAnalytics />
+          <GlobalPageTracker />
+          {children}
+        </AppProviders>
+      </body>
     </html>
   );
 }

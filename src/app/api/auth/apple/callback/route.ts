@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     });
 
     const response = NextResponse.redirect(new URL(oauthState.redirect, appUrl));
-    setSessionCookie(response, token);
+    setSessionCookie(response, token, 'customer');
     return response;
   } catch (err) {
     console.error('[POST /api/auth/apple/callback]', err);

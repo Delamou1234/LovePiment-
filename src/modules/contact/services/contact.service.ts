@@ -6,7 +6,7 @@ import {
   type ContactStatusKey,
   type CreerContactDto,
 } from '../types';
-import { getAdminEmail, getAppBaseUrl } from '@/shared/lib/email/env';
+import { getContactEmail, getAppBaseUrl } from '@/shared/lib/email/env';
 import { sendEmail } from '@/shared/lib/email/mailer';
 
 function serialiser(row: {
@@ -44,8 +44,8 @@ export class ContactService {
       message: dto.message.trim(),
     });
 
-    const adminEmail = getAdminEmail();
-    if (adminEmail) {
+    const contactEmail = getContactEmail();
+    if (contactEmail) {
       try {
         const baseUrl = getAppBaseUrl();
         const { subject, html, text } = buildContactNotificationEmail({
@@ -56,7 +56,13 @@ export class ContactService {
           message: message.message,
           adminUrl: `${baseUrl}/admin/contact`,
         });
-        await sendEmail({ to: adminEmail, subject, html, text });
+        await sendEmail({
+          to: contactEmail,
+          subject,
+          html,
+          text,
+          replyTo: message.email,
+        });
       } catch (err) {
         console.warn('[Contact] Notification e-mail non envoyée:', err);
       }

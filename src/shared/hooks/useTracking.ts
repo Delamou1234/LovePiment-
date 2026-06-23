@@ -2,17 +2,24 @@
 
 import { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
+import { sendGaEvent } from '@/shared/lib/analytics/gtag';
 
 type EventType = 'PAGE_VIEW' | 'PRODUCT_VIEW' | 'ADD_TO_CART' | 'CHECKOUT_START' | 'ORDER_PLACED';
 
 /**
- * Envoie un événement analytics sans bloquer le thread principal.
+ * Envoie un événement analytics (interne + Google Analytics 4 si configuré).
+ * @param skipGa — true pour n'envoyer qu'à la base interne (évite le double page_view initial).
  */
 export function trackEvent(
   type: EventType,
-  data?: { productId?: string; path?: string; sessionId?: string },
+  data?: { productId?: string; path?: string; sessionId?: string; value?: number },
+  options?: { skipGa?: boolean },
 ): void {
   if (typeof window === 'undefined') return;
+
+  if (!options?.skipGa) {
+    sendGaEvent(type, data);
+  }
 
   const payload = JSON.stringify({ type, ...data });
 
@@ -42,6 +49,7 @@ export function trackEvent(
 export function usePageTracking() {
   const pathname = usePathname();
   const lastTracked = useRef<string>('');
+  const isFirstView = useRef(true);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -51,7 +59,9 @@ export function usePageTracking() {
 
     timerRef.current = setTimeout(() => {
       lastTracked.current = pathname;
-      trackEvent('PAGE_VIEW', { path: pathname });
+      const skipGa = isFirstView.current;
+      isFirstView.current = false;
+      trackEvent('PAGE_VIEW', { path: pathname }, { skipGa });
     }, 400);
 
     return () => {

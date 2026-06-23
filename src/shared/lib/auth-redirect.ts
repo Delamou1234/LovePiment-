@@ -1,6 +1,7 @@
 /** Chemins autorisés après connexion (évite les open redirects). */
 const ALLOWED_PREFIXES = [
   '/admin',
+  '/livreur',
   '/commande',
   '/panier',
   '/compte',
@@ -9,12 +10,14 @@ const ALLOWED_PREFIXES = [
   '/suivi',
 ];
 
-/** Redirect post-connexion client : jamais vers /admin sans session admin. */
+/** Redirect post-connexion client : jamais vers /admin ni l'accueil sans intention explicite. */
 export function getSafeRedirectForCustomer(
   redirect: string | null | undefined,
   fallback = '/compte',
 ): string {
-  if (isAdminRedirect(redirect)) return fallback;
+  if (!redirect || redirect.startsWith('//')) return fallback;
+  const path = redirect.split('?')[0];
+  if (path === '/' || isAdminRedirect(redirect) || isCourierRedirect(redirect)) return fallback;
   return getSafeRedirect(redirect, fallback);
 }
 
@@ -49,4 +52,49 @@ export function isCheckoutRedirect(redirect: string | null | undefined): boolean
   if (!redirect) return false;
   const path = redirect.split('?')[0];
   return path === '/commande' || path.startsWith('/commande/');
+}
+
+export function isCourierRedirect(redirect: string | null | undefined): boolean {
+  if (!redirect) return false;
+  const path = redirect.split('?')[0];
+  return path === '/livreur' || path.startsWith('/livreur/');
+}
+
+/** Redirection après connexion si l'utilisateur a déjà une session. */
+export function resolveAuthenticatedRedirect(
+  sessions: { customer: boolean; admin: boolean; courier: boolean },
+  redirectParam?: string | null,
+): string | null {
+  const { customer, admin, courier } = sessions;
+
+  if (isCourierRedirect(redirectParam) && courier) {
+    return getPostLoginRedirect('courier', redirectParam);
+  }
+  if (isAdminRedirect(redirectParam) && admin) {
+    return getPostLoginRedirect('admin', redirectParam);
+  }
+  if (customer && (isCheckoutRedirect(redirectParam) || redirectParam?.startsWith('/compte'))) {
+    return getPostLoginRedirect('customer', redirectParam);
+  }
+  if (courier && !customer && !admin) return '/livreur';
+  if (admin && !customer && !courier) return '/admin';
+  if (customer) return getPostLoginRedirect('customer', redirectParam);
+  if (courier) return '/livreur';
+  if (admin) return '/admin';
+  return null;
+}
+
+/** URL cible après connexion réussie, selon le rôle réellement authentifié. */
+export function getPostLoginRedirect(
+  role: 'admin' | 'customer' | 'courier',
+  redirect: string | null | undefined,
+): string {
+  if (role === 'admin') {
+    return isAdminRedirect(redirect) ? getSafeRedirect(redirect, '/admin') : '/admin';
+  }
+  if (role === 'courier') {
+    return isCourierRedirect(redirect) ? getSafeRedirect(redirect, '/livreur') : '/livreur';
+  }
+  const fallback = isCheckoutRedirect(redirect) ? '/commande' : '/compte';
+  return getSafeRedirectForCustomer(redirect, fallback);
 }

@@ -301,6 +301,60 @@ export class MarketingService {
     }
   }
 
+  async annulerEffetsCommande(
+    tx: Prisma.TransactionClient,
+    order: {
+      customerId: string | null;
+      couponId: string | null;
+      pointsUtilises: number;
+      pointsGagnes: number;
+      pointsCredites: boolean;
+      codeParrainageUtilise: string | null;
+    },
+  ) {
+    if (order.couponId) {
+      const coupon = await tx.coupon.findUnique({ where: { id: order.couponId } });
+      if (coupon && coupon.utilisations > 0) {
+        await tx.coupon.update({
+          where: { id: order.couponId },
+          data: { utilisations: { decrement: 1 } },
+        });
+      }
+    }
+
+    if (order.customerId && order.pointsUtilises > 0) {
+      await tx.customer.update({
+        where: { id: order.customerId },
+        data: { pointsFidelite: { increment: order.pointsUtilises } },
+      });
+    }
+
+    if (order.customerId && order.pointsCredites && order.pointsGagnes > 0) {
+      await tx.customer.update({
+        where: { id: order.customerId },
+        data: { pointsFidelite: { decrement: order.pointsGagnes } },
+      });
+    }
+
+    if (order.pointsCredites && order.codeParrainageUtilise) {
+      const parrain = await tx.customer.findUnique({
+        where: { codeParrainage: order.codeParrainageUtilise },
+      });
+      if (parrain) {
+        const pts = await tx.customer.findUnique({
+          where: { id: parrain.id },
+          select: { pointsFidelite: true },
+        });
+        if (pts && pts.pointsFidelite >= LOYALTY.PARRAIN_POINTS) {
+          await tx.customer.update({
+            where: { id: parrain.id },
+            data: { pointsFidelite: { decrement: LOYALTY.PARRAIN_POINTS } },
+          });
+        }
+      }
+    }
+  }
+
   async confirmerPointsApresPaiement(orderId: string) {
     const order = await prisma.order.findUnique({
       where: { id: orderId },

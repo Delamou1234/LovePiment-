@@ -38,6 +38,8 @@ export class OrderRepository {
           clientTelephone: dto.clientTelephone,
           clientAdresse: dto.clientAdresse,
           clientVille: dto.clientVille,
+          clientLatitude: dto.clientLatitude ?? undefined,
+          clientLongitude: dto.clientLongitude ?? undefined,
           modePaiement: dto.modePaiement,
           sousTotal: totaux.sousTotal,
           fraisLivraison: totaux.fraisLivraison,
@@ -117,6 +119,12 @@ export class OrderRepository {
   ): Promise<{ commandes: CommandeAvecItems[]; pagination: Pagination }> {
     const where = {
       ...(filtres.statut && { statut: filtres.statut as any }),
+      ...(filtres.statutIn?.length && { statut: { in: filtres.statutIn as any } }),
+      ...(filtres.statutNotIn?.length && { statut: { notIn: filtres.statutNotIn as any } }),
+      ...(filtres.statutPaiement && { statutPaiement: filtres.statutPaiement as any }),
+      ...(filtres.statutPaiementNot && {
+        statutPaiement: { not: filtres.statutPaiementNot as any },
+      }),
       ...(filtres.modePaiement && { modePaiement: filtres.modePaiement as any }),
       ...(filtres.dateDebut || filtres.dateFin
         ? {
@@ -133,6 +141,8 @@ export class OrderRepository {
       prisma.order.findMany({
         where,
         include: {
+          courier: { select: { id: true, nom: true } },
+          deliveryRun: { select: { id: true, label: true } },
           items: {
             include: {
               variante: {

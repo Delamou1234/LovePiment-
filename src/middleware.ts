@@ -1,16 +1,11 @@
 import { authMiddleware } from '@/shared/lib/auth/middleware';
 
-export function middleware(request: import('next/server').NextRequest) {
+export async function middleware(request: import('next/server').NextRequest) {
   return authMiddleware(request);
 }
 
 export const config = {
   matcher: [
-    '/commande',
-    '/commande/:path*',
-    '/connexion',
-    '/inscription',
-    '/compte',
-    '/compte/:path*',
+    '/((?!_next/static|_next/image|favicon.ico|icon.svg|manifest.webmanifest|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 };

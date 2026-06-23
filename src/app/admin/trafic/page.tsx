@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { BarChart3, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { AdminGa4Section } from '@/modules/admin/components/dashboard/AdminGa4Section';
 
 type Rapport = {
   periode: string;
@@ -65,7 +66,7 @@ export default function AdminTraficPage() {
             Rapports et statistiques
           </h1>
           <p className="text-sm text-zinc-500 mt-1">
-            Trafic boutique, conversion et performance commerciale.
+            Stats internes boutique + Google Analytics 4 pour le marketing.
           </p>
         </div>
         <div className="flex gap-2 items-center">
@@ -83,6 +84,17 @@ export default function AdminTraficPage() {
             Actualiser
           </Button>
         </div>
+      </div>
+
+      <AdminGa4Section periode={periode} />
+
+      <div className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-3">
+        <p className="text-xs font-bold uppercase tracking-wide text-zinc-500 mb-1">
+          Stats internes (base de données)
+        </p>
+        <p className="text-sm text-zinc-600">
+          Événements enregistrés sur le site — complément immédiat aux données GA4.
+        </p>
       </div>
 
       {loading || !rapport ? (

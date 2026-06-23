@@ -10,6 +10,8 @@ import { z } from 'zod';
 import { usePanier } from '@/store/panier';
 import { calculerTotauxCommande, formaterPrixGN, LIVRAISON_CONFIG } from '@/shared/lib/shipping';
 import { CheckoutMarketingPanel } from '@/modules/marketing/components/CheckoutMarketingPanel';
+import { GeolocationAddressPrompt } from '@/shared/components/GeolocationAddressPrompt';
+import type { GeolocationAddressSuggestion } from '@/shared/lib/geolocation/reverse-geocode';
 import type { TotauxMarketing } from '@/modules/marketing/types';
 import { 
   ChevronRight, 
@@ -66,6 +68,12 @@ export default function CheckoutPage() {
   const [errorMsg, setErrorMsg] = useState('');
   const [pointsFidelite, setPointsFidelite] = useState(0);
   const [totauxMarketing, setTotauxMarketing] = useState<TotauxMarketing | null>(null);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [geoDismissed, setGeoDismissed] = useState(false);
+  const [deliveryCoords, setDeliveryCoords] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   const marketingRef = useRef({
     codeCoupon: null as string | null,
     pointsUtilises: 0,
@@ -97,13 +105,17 @@ export default function CheckoutPage() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         const user = data?.user;
-        if (!user || user.role !== 'customer') return;
+        if (!user || user.role !== 'customer') {
+          setProfileLoaded(true);
+          return;
+        }
         if (user.name) setValue('clientNom', user.name);
         if (user.telephone) setValue('clientTelephone', user.telephone);
         if (user.derniereAdresse) setValue('clientAdresse', user.derniereAdresse);
         if (user.derniereVille) setValue('clientVille', user.derniereVille);
+        setProfileLoaded(true);
       })
-      .catch(() => {});
+      .catch(() => setProfileLoaded(true));
 
     fetch('/api/compte/profil')
       .then((res) => (res.ok ? res.json() : null))
@@ -132,6 +144,16 @@ export default function CheckoutPage() {
 
   const selectedPaymentMethod = watch('modePaiement');
   const selectedVille = watch('clientVille') || 'Conakry';
+  const clientAdresse = watch('clientAdresse');
+
+  const applyCheckoutAddress = (suggestion: GeolocationAddressSuggestion) => {
+    setValue('clientAdresse', suggestion.adresse, { shouldValidate: true });
+    setValue('clientVille', suggestion.ville, { shouldValidate: true });
+    setDeliveryCoords({
+      latitude: suggestion.latitude,
+      longitude: suggestion.longitude,
+    });
+  };
 
   if (!mounted) {
     return (
@@ -188,6 +210,8 @@ export default function CheckoutPage() {
           clientTelephone: values.clientTelephone,
           clientAdresse: values.clientAdresse,
           clientVille: values.clientVille,
+          clientLatitude: deliveryCoords?.latitude ?? null,
+          clientLongitude: deliveryCoords?.longitude ?? null,
           modePaiement: values.modePaiement,
           codeCoupon: marketingRef.current.codeCoupon,
           pointsUtilises: marketingRef.current.pointsUtilises,
@@ -292,6 +316,16 @@ export default function CheckoutPage() {
                 {/* Adresse */}
                 <div className="space-y-1.5 sm:col-span-2">
                   <label htmlFor="clientAdresse" className="text-xs font-black uppercase text-zinc-500 tracking-wider">Adresse précise</label>
+                  {profileLoaded && !clientAdresse?.trim() && !geoDismissed && (
+                    <GeolocationAddressPrompt
+                      autoStart
+                      showManualTrigger={false}
+                      compact
+                      onAccept={applyCheckoutAddress}
+                      onDismiss={() => setGeoDismissed(true)}
+                      className="mb-2"
+                    />
+                  )}
                   <input
                     id="clientAdresse"
                     type="text"

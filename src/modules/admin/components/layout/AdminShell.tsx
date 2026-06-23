@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { AdminMobileNav, AdminSidebar } from './AdminSidebar';
 import { AdminTopBar } from './AdminTopBar';
 import { AdminMessagerieProvider, useAdminMessagerieContext } from './AdminMessagerieProvider';
-import { ADMIN_MAIN, ADMIN_MAIN_SCROLL, ADMIN_SHELL, type AdminSessionUser } from './admin-ui';
+import { ADMIN_MAIN, ADMIN_MAIN_SCROLL, ADMIN_SHELL, type AdminSessionUser } from '../admin-ui';
+import { confirmLogout } from '@/shared/lib/confirm-logout';
 
 type Props = {
   admin: AdminSessionUser;
@@ -18,7 +19,8 @@ function AdminShellInner({ admin, children }: Props) {
   const { conversations, totalUnread } = useAdminMessagerieContext();
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
+    if (!(await confirmLogout('admin'))) return;
+    await fetch('/api/auth/logout?role=admin', { method: 'POST', credentials: 'include' });
     router.replace('/');
   };
 

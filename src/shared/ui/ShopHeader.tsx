@@ -6,7 +6,6 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { usePanier, selectDistinctProductCount } from '@/store/panier';
 import { ProductSearchBar } from '@/shared/components/ProductSearchBar';
 import { CustomerAvatar } from '@/shared/components/CustomerAvatar';
-import { AVATAR_UPDATED_EVENT } from '@/modules/compte/lib/avatar-events';
 import {
   Menu,
   X,
@@ -19,18 +18,10 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import type { BoutiqueNavLink } from '@/modules/produits/lib/boutique-nav';
-
-type AuthUser = {
-  name: string;
-  email: string;
-  role: 'admin' | 'customer';
-  avatarUrl?: string | null;
-};
-
-const AUTH_ME_CACHE = 'kabishop_auth_me_v1';
-const AUTH_ME_TTL_MS = 5 * 60 * 1000;
+import { useAuthSession, type AuthSessionUser } from '@/shared/providers/AuthSessionProvider';
 
 const NAV_AFTER_BOUTIQUE = [
+  { name: 'Profil beauté', href: '/profil-beaute' },
   { name: 'Nouveautés', href: '/produits?tri=nouveautes' },
   { name: 'Promotions', href: '/promos' },
   { name: 'À propos', href: '/apropos' },
@@ -50,6 +41,42 @@ function isNavActive(pathname: string, href: string, tri?: string | null): boole
   return pathname === path || pathname.startsWith(`${path}/`);
 }
 
+function HeaderAccountButton({
+  user,
+  loginHref,
+}: {
+  user: AuthSessionUser | null;
+  loginHref: string;
+}) {
+  if (!user) {
+    return (
+      <Link href={loginHref} className="shop-icon-btn" aria-label="Connexion" title="Connexion">
+        <User className="h-4 w-4" strokeWidth={1.75} />
+      </Link>
+    );
+  }
+
+  if (user.avatarUrl) {
+    return (
+      <Link
+        href="/compte"
+        className="shop-icon-btn overflow-hidden p-0"
+        aria-label="Mon compte"
+        title={user.name}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+      </Link>
+    );
+  }
+
+  return (
+    <Link href="/compte" className="shop-icon-btn" aria-label="Mon compte" title={user.name}>
+      <User className="h-4 w-4" strokeWidth={1.75} />
+    </Link>
+  );
+}
+
 export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -61,7 +88,7 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [boutiqueOpen, setBoutiqueOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
+  const { user: authUser, logout } = useAuthSession();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setMounted(true), []);
@@ -73,81 +100,8 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    try {
-      const raw = sessionStorage.getItem(AUTH_ME_CACHE);
-      if (raw) {
-        const { user, ts } = JSON.parse(raw) as { user: AuthUser | null; ts: number };
-        if (Date.now() - ts < AUTH_ME_TTL_MS && user?.role === 'customer') {
-          setAuthUser(user);
-        }
-      }
-    } catch {
-      /* ignore */
-    }
-
-    fetch('/api/auth/me')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (cancelled) return;
-        const user =
-          data?.user?.role === 'customer'
-            ? ({
-                name: data.user.name,
-                email: data.user.email,
-                role: 'customer' as const,
-                avatarUrl: data.user.avatarUrl ?? null,
-              } satisfies AuthUser)
-            : null;
-        setAuthUser(user);
-        try {
-          sessionStorage.setItem(
-            AUTH_ME_CACHE,
-            JSON.stringify({ user, ts: Date.now() }),
-          );
-        } catch {
-          /* ignore */
-        }
-      })
-      .catch(() => {});
-
-    return () => {
-      cancelled = true;
-    };
-  }, [pathname]);
-
-  useEffect(() => {
-    const onAvatarUpdated = (event: Event) => {
-      const detail = (event as CustomEvent<{ avatarUrl: string | null }>).detail;
-      setAuthUser((prev) => {
-        if (!prev) return prev;
-        const next = { ...prev, avatarUrl: detail.avatarUrl };
-        try {
-          sessionStorage.setItem(
-            AUTH_ME_CACHE,
-            JSON.stringify({ user: next, ts: Date.now() }),
-          );
-        } catch {
-          /* ignore */
-        }
-        return next;
-      });
-    };
-
-    window.addEventListener(AVATAR_UPDATED_EVENT, onAvatarUpdated);
-    return () => window.removeEventListener(AVATAR_UPDATED_EVENT, onAvatarUpdated);
-  }, []);
-
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    try {
-      sessionStorage.removeItem(AUTH_ME_CACHE);
-    } catch {
-      /* ignore */
-    }
-    setAuthUser(null);
+    await logout('customer');
     router.refresh();
   };
 
@@ -276,36 +230,13 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
             <div className="shop-header-actions flex items-center justify-self-end gap-2">
               <ProductSearchBar compact />
 
-              <div className="flex items-center gap-1.5 rounded-full border border-beige-border/80 bg-white/70 p-1 shadow-sm">
-                {authUser ? (
-                  <Link
-                    href="/compte"
-                    className="shop-icon-btn !border-0 !bg-transparent !shadow-none"
-                    aria-label="Mon compte"
-                    title={authUser.name}
-                  >
-                    <CustomerAvatar
-                      name={authUser.name}
-                      avatarUrl={authUser.avatarUrl}
-                      size="xs"
-                      ringClassName="ring-beige-border"
-                    />
-                  </Link>
-                ) : (
-                  <Link
-                    href={loginHref}
-                    className="shop-icon-btn !border-0 !bg-transparent !shadow-none"
-                    aria-label="Connexion"
-                    title="Connexion"
-                  >
-                    <User className="h-4 w-4" strokeWidth={1.75} />
-                  </Link>
-                )}
+              <div className="flex items-center gap-1">
+                <HeaderAccountButton user={authUser} loginHref={loginHref} />
 
                 <button
                   type="button"
                   onClick={() => panier.ouvrirPanier()}
-                  className="shop-icon-btn relative !border-0 !bg-transparent !shadow-none"
+                  className="shop-icon-btn relative"
                   aria-label={`Panier${cartProductCountDisplay > 0 ? ` (${cartProductCountDisplay} produit${cartProductCountDisplay > 1 ? 's' : ''})` : ''}`}
                 >
                   <ShoppingBag className="h-4 w-4" strokeWidth={1.75} />
@@ -338,20 +269,7 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
             </Link>
 
             <div className="flex items-center gap-1">
-              {authUser ? (
-                <Link href="/compte" className="shop-icon-btn" aria-label="Mon compte" title={authUser.name}>
-                  <CustomerAvatar
-                    name={authUser.name}
-                    avatarUrl={authUser.avatarUrl}
-                    size="xs"
-                    ringClassName="ring-beige-border"
-                  />
-                </Link>
-              ) : (
-                <Link href={loginHref} className="shop-icon-btn" aria-label="Connexion" title="Connexion">
-                  <User className="h-4 w-4" strokeWidth={1.75} />
-                </Link>
-              )}
+              <HeaderAccountButton user={authUser} loginHref={loginHref} />
               <button
                 type="button"
                 onClick={() => panier.ouvrirPanier()}

@@ -8,6 +8,7 @@ import { CompteTopBar } from '@/modules/compte/components/CompteTopBar';
 import { SupportChatShell } from '@/modules/messagerie/components/SupportChatShell';
 import { COMPTE_CARD, COMPTE_MAIN, COMPTE_MAIN_FILL, COMPTE_SHELL } from '@/modules/compte/components/compte-ui';
 import { fetchApi } from '@/shared/lib/client-fetch';
+import { confirmLogout } from '@/shared/lib/confirm-logout';
 import type { CustomerProfile } from '@/modules/compte/types';
 import type { CompteSectionId } from '@/modules/compte/components/compte-ui';
 
@@ -52,6 +53,7 @@ export function CompteMessagesPageContent() {
   }, [router]);
 
   const handleLogout = async () => {
+    if (!(await confirmLogout('customer'))) return;
     await fetch('/api/auth/logout', { method: 'POST' });
     router.replace('/');
   };

@@ -5,6 +5,7 @@ import {
   obtenirCatalogueIa,
   produitsParIds,
 } from '../lib/catalog-context';
+import { formaterProfilBeautePourIa, type BeautyProfile } from '../lib/beauty-profile';
 import type { ProduitRecommande } from '../types';
 
 const SYSTEM = `Tu es le moteur de recommandations KabiShop (parfums, huiles pour la peau, crèmes corporelles, Guinée).
@@ -20,16 +21,24 @@ export class RecommendationService {
   async recommanderPersonnalise(input: {
     viewedProductIds?: string[];
     cartProductIds?: string[];
+    beautyProfile?: BeautyProfile | null;
     excludeProductId?: string;
     limit?: number;
   }): Promise<{ products: ProduitRecommande[]; poweredByAi: boolean }> {
     const limit = input.limit ?? 8;
     const viewed = input.viewedProductIds ?? [];
     const cart = input.cartProductIds ?? [];
+    const beautyProfile = input.beautyProfile ?? null;
 
     if (isGeminiConfigured()) {
       try {
-        const ai = await this.recommanderViaGemini(viewed, cart, input.excludeProductId, limit);
+        const ai = await this.recommanderViaGemini(
+          viewed,
+          cart,
+          beautyProfile,
+          input.excludeProductId,
+          limit,
+        );
         if (ai.length > 0) {
           return { products: ai, poweredByAi: true };
         }
@@ -38,7 +47,16 @@ export class RecommendationService {
       }
     }
 
-    return { products: await this.recommanderFallback(viewed, cart, input.excludeProductId, limit), poweredByAi: false };
+    return {
+      products: await this.recommanderFallback(
+        viewed,
+        cart,
+        beautyProfile,
+        input.excludeProductId,
+        limit,
+      ),
+      poweredByAi: false,
+    };
   }
 
   async recommanderSimilairesIa(
@@ -114,6 +132,7 @@ Choisis ${limit} produits complémentaires ou similaires. JSON: {"productIds":["
   private async recommanderViaGemini(
     viewed: string[],
     cart: string[],
+    beautyProfile: BeautyProfile | null,
     excludeId: string | undefined,
     limit: number,
   ): Promise<ProduitRecommande[]> {
@@ -125,12 +144,16 @@ Choisis ${limit} produits complémentaires ou similaires. JSON: {"productIds":["
     const viewedDetails = catalogue.filter((p) => viewed.includes(p.id));
     const cartDetails = catalogue.filter((p) => cart.includes(p.id));
 
+    const profilTexte = beautyProfile
+      ? `\nProfil beauté du client:\n${formaterProfilBeautePourIa(beautyProfile)}`
+      : '';
+
     const parsed = await geminiGenerateJson<GeminiRecs>(
       SYSTEM,
       `CATALOGUE:\n${formaterCataloguePourPrompt(disponible)}
 
 Produits consultés récemment: ${viewedDetails.map((p) => p.nom).join(', ') || 'aucun'}
-Produits dans le panier: ${cartDetails.map((p) => p.nom).join(', ') || 'aucun'}
+Produits dans le panier: ${cartDetails.map((p) => p.nom).join(', ') || 'aucun'}${profilTexte}
 
 Recommande ${limit} produits personnalisés. JSON: {"productIds":["..."],"reasons":{"id":"raison"}}`,
     );
@@ -148,10 +171,52 @@ Recommande ${limit} produits personnalisés. JSON: {"productIds":["..."],"reason
   private async recommanderFallback(
     viewed: string[],
     cart: string[],
+    beautyProfile: BeautyProfile | null,
     excludeId: string | undefined,
     limit: number,
   ): Promise<ProduitRecommande[]> {
     const exclude = new Set([excludeId, ...viewed].filter(Boolean) as string[]);
+
+    if (beautyProfile?.univers?.length) {
+      const universSlugs = beautyProfile.univers.flatMap((u) => {
+        switch (u) {
+          case 'parfums':
+            return ['parfums', 'eaux-parfum'];
+          case 'huiles-corps':
+            return ['huiles-corps', 'huiles-pures'];
+          case 'huiles-cheveux':
+            return ['huiles-capillaires'];
+          case 'cremes':
+            return ['cremes-corporelles'];
+          default:
+            return [];
+        }
+      });
+
+      const parUnivers = await prisma.product.findMany({
+        where: {
+          actif: true,
+          id: { notIn: [...exclude] },
+          categorie: {
+            slug: { in: universSlugs },
+          },
+        },
+        include: { categorie: true },
+        take: limit,
+        orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+      });
+
+      if (parUnivers.length >= 2) {
+        return parUnivers.map((p) => ({
+          id: p.id,
+          nom: p.nom,
+          slug: p.slug,
+          prix: Number(p.prixPromo ?? p.prix),
+          image: p.images[0] ?? null,
+          categorie: p.categorie.nom,
+        }));
+      }
+    }
 
     if (viewed.length > 0) {
       const ref = await prisma.product.findFirst({

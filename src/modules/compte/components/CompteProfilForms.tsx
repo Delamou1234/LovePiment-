@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { CheckCircle2, Loader2, MapPin, Shield, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PasswordInput } from '@/shared/components/PasswordInput';
 import { CompteAvatarUpload } from './CompteAvatarUpload';
 import {
   AVATAR_COULEURS,
@@ -249,19 +250,19 @@ export function CompteProfilForms({ profil, onProfilUpdate }: Props) {
               <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-zinc-500">
                 Mot de passe actuel
               </label>
-              <input type="password" {...passwordForm.register('ancienMotDePasse')} className={COMPTE_INPUT} />
+              <PasswordInput {...passwordForm.register('ancienMotDePasse')} className={COMPTE_INPUT} />
             </div>
             <div>
               <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-zinc-500">
                 Nouveau mot de passe
               </label>
-              <input type="password" {...passwordForm.register('nouveauMotDePasse')} className={COMPTE_INPUT} />
+              <PasswordInput {...passwordForm.register('nouveauMotDePasse')} className={COMPTE_INPUT} />
             </div>
             <div>
               <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-zinc-500">
                 Confirmer le mot de passe
               </label>
-              <input type="password" {...passwordForm.register('confirmation')} className={COMPTE_INPUT} />
+              <PasswordInput {...passwordForm.register('confirmation')} className={COMPTE_INPUT} />
               {passwordForm.formState.errors.confirmation && (
                 <p className="mt-1.5 text-xs text-red-600">
                   {passwordForm.formState.errors.confirmation.message}

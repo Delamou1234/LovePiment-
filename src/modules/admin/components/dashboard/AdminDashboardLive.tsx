@@ -23,9 +23,9 @@ import {
   ADMIN_CARD,
   ADMIN_WIDGET_LINK,
   type AdminSessionUser,
-} from './admin-ui';
+} from '../admin-ui';
 import { STATUT_LABELS, STATUT_STYLES } from '@/modules/compte/components/compte-ui';
-import { useAdminMessagerieContext } from './AdminMessagerieProvider';
+import { useAdminMessagerieContext } from '../layout/AdminMessagerieProvider';
 
 type RecentOrder = {
   id: string;

@@ -10,7 +10,7 @@ import {
   newProduitForm,
   produitToForm,
   type ProduitForm,
-} from '@/modules/admin/components/AdminProductEditor';
+} from '@/modules/admin/components/catalogue/AdminProductEditor';
 
 type Variante = {
   id: string;

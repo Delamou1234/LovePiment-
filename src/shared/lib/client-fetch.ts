@@ -14,7 +14,7 @@ export async function fetchApi(
   let response: Response | null = null;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
-    response = await fetch(input, init);
+    response = await fetch(input, { credentials: 'include', ...init });
     if (!isApiRouteMissing(response)) return response;
     if (attempt < retries) {
       await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));

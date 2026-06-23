@@ -17,7 +17,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { CONTACT_SUJETS } from '@/modules/contact/types';
 
-const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '224620000000';
+const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '224629403019';
+const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? 'samakedelamou858@gmail.com';
+const CONTACT_PHONE = process.env.NEXT_PUBLIC_CONTACT_PHONE ?? '+224 629 40 30 19';
 
 const contactSchema = z.object({
   nom: z.string().min(2, 'Indiquez votre nom'),
@@ -126,7 +128,7 @@ export function ContactForm() {
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block text-sm font-medium text-zinc-700">Téléphone</label>
-          <input {...register('telephone')} className={inputClass} placeholder="+224 6XX XX XX XX" />
+          <input {...register('telephone')} className={inputClass} placeholder="+224 629 40 30 19" />
         </div>
         <div>
           <label className="mb-1.5 block text-sm font-medium text-zinc-700">Sujet *</label>
@@ -199,22 +201,23 @@ export function ContactInfoPanel() {
           <div>
             <p className="text-sm font-medium text-zinc-900">E-mail</p>
             <a
-              href="mailto:contact@kabishop.com"
-              className="text-sm text-[#4a5240] hover:underline"
+              href={`mailto:${CONTACT_EMAIL}`}
+              className="text-sm text-[#4a5240] hover:underline break-all"
             >
-              contact@kabishop.com
+              {CONTACT_EMAIL}
             </a>
           </div>
         </li>
         <li className="flex gap-3">
           <Phone className="h-5 w-5 shrink-0 text-[#4a5240]" />
           <div>
-            <p className="text-sm font-medium text-zinc-900">WhatsApp</p>
+            <p className="text-sm font-medium text-zinc-900">Téléphone / WhatsApp</p>
+            <p className="text-sm text-zinc-600">{CONTACT_PHONE}</p>
             <a
               href={waHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-[#4a5240] hover:underline inline-flex items-center gap-1"
+              className="mt-1 text-sm text-[#4a5240] hover:underline inline-flex items-center gap-1"
             >
               <MessageCircle className="h-3.5 w-3.5" />
               Discuter maintenant

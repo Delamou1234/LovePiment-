@@ -19,6 +19,12 @@ async function main() {
   const { ensureDefaultAdmin } = await import('./ensure-admin');
   await ensureDefaultAdmin(prisma);
 
+  const { ensureDemoCustomer } = await import('./ensure-demo-customer');
+  await ensureDemoCustomer(prisma);
+
+  const { ensureDemoCourier } = await import('./ensure-demo-courier');
+  await ensureDemoCourier(prisma);
+
   await prisma.storeSettings.upsert({
     where: { id: 'kabishop-settings' },
     update: {

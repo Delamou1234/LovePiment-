@@ -1,4 +1,5 @@
 import { trackingRepository, type TrackingRepository } from '../repository/tracking.repository';
+import { courierPenaltyService } from './courier-penalty.service';
 import {
   buildNotificationContext,
   orderNotificationService,
@@ -84,6 +85,10 @@ export class TrackingService {
     },
   ) {
     const order = await this.repo.enregistrerChangementStatut(orderId, statut, options);
+
+    if (statut === 'LIVREE') {
+      await courierPenaltyService.verifierEtAppliquerPenalite(orderId);
+    }
 
     if (options?.notifier !== false) {
       orderNotificationService.notifyStatusChange(

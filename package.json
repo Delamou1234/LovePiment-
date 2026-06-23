@@ -19,10 +19,12 @@
     "db:setup": "npm run db:push && npm run db:seed",
     "db:migrate": "prisma migrate deploy && npm run db:ensure-admin",
     "db:health": "npx tsx scripts/db-health.ts",
+    "db:check-courier": "npx tsx scripts/db-check-courier.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
+    "@google-analytics/data": "^6.1.0",
     "@google/generative-ai": "^0.24.1",
     "@hookform/resolvers": "^5.4.0",
     "@prisma/adapter-pg": "^7.8.0",

@@ -131,11 +131,6 @@ export class TrackingRepository {
 
     const livreeLe = statut === 'LIVREE' ? new Date() : existing.livreeLe;
 
-    const confirmerPaiementLivraison =
-      existing.modePaiement === 'PAIEMENT_LIVRAISON' &&
-      existing.statutPaiement === 'EN_ATTENTE' &&
-      (statut === 'LIVREE' || statut === 'PAYEE');
-
     const message =
       options.message ??
       messageNotification(statut, options.numeroSuivi ?? existing.numeroSuivi, carrier?.nom);
@@ -144,7 +139,6 @@ export class TrackingRepository {
       where: { id: orderId },
       data: {
         statut,
-        ...(confirmerPaiementLivraison ? { statutPaiement: 'REUSSIE' } : {}),
         carrierId,
         numeroSuivi: options.numeroSuivi ?? existing.numeroSuivi,
         livraisonEstimee,
@@ -152,16 +146,6 @@ export class TrackingRepository {
       },
       include: orderInclude,
     });
-
-    if (confirmerPaiementLivraison) {
-      await this.creerEvenement({
-        orderId,
-        type: 'NOTIFICATION',
-        statut: order.statut,
-        message: `Paiement à la livraison confirmé — ${Number(existing.montantTotal).toLocaleString('fr-FR')} GN enregistrés.`,
-        notifier: true,
-      });
-    }
 
     await this.creerEvenement({
       orderId,

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Loader2, MapPin, Plus, Star, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { CustomerAddress } from '@/modules/compte/types';
+import { GeolocationAddressPrompt } from '@/shared/components/GeolocationAddressPrompt';
+import type { GeolocationAddressSuggestion } from '@/shared/lib/geolocation/reverse-geocode';
 import {
   COMPTE_BTN_PRIMARY,
   COMPTE_CARD,
@@ -21,6 +23,45 @@ export function CompteAdressesSection() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [geoPromptKey, setGeoPromptKey] = useState(0);
+
+  const openAddForm = () => {
+    setShowForm(true);
+    setGeoPromptKey((k) => k + 1);
+  };
+
+  const applySuggestion = (suggestion: GeolocationAddressSuggestion) => {
+    setForm({
+      label: suggestion.label,
+      adresse: suggestion.adresse,
+      ville: suggestion.ville,
+      telephone: form.telephone,
+      parDefaut: adresses.length === 0,
+    });
+    setShowForm(true);
+  };
+
+  const saveSuggestion = async (suggestion: GeolocationAddressSuggestion) => {
+    setSaving(true);
+    try {
+      await fetch('/api/compte/adresses', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          label: suggestion.label,
+          adresse: suggestion.adresse,
+          ville: suggestion.ville,
+          parDefaut: adresses.length === 0,
+        }),
+      });
+      setForm(emptyForm);
+      setShowForm(false);
+      await load();
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -92,7 +133,7 @@ export function CompteAdressesSection() {
           <Button
             size="sm"
             variant="outline"
-            onClick={() => setShowForm(true)}
+            onClick={openAddForm}
             className="rounded-full border-beige-border"
           >
             <Plus className="mr-1 h-4 w-4" />
@@ -105,9 +146,26 @@ export function CompteAdressesSection() {
             <Loader2 className="h-6 w-6 animate-spin text-olive" />
           </div>
         ) : adresses.length === 0 && !showForm ? (
-          <div className="rounded-xl border border-dashed border-beige-border bg-cream/50 py-12 text-center">
-            <MapPin className="mx-auto h-8 w-8 text-zinc-300 mb-3" />
+          <div className="rounded-xl border border-dashed border-beige-border bg-cream/50 py-8 px-4 text-center space-y-4">
+            <MapPin className="mx-auto h-8 w-8 text-zinc-300" />
             <p className="text-sm text-zinc-500">Aucune adresse enregistrée pour le moment.</p>
+            <GeolocationAddressPrompt
+              key={geoPromptKey}
+              autoStart
+              showManualTrigger={false}
+              onAccept={saveSuggestion}
+              onDismiss={openAddForm}
+              className="text-left max-w-md mx-auto"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={openAddForm}
+              className="rounded-full border-beige-border"
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              Saisir une adresse manuellement
+            </Button>
           </div>
         ) : (
           <div className="grid gap-4 sm:grid-cols-2">
@@ -166,6 +224,12 @@ export function CompteAdressesSection() {
         {showForm && (
           <div className="mt-6 space-y-4 rounded-xl border border-dashed border-beige-border bg-cream/30 p-5 md:p-6">
             <p className="text-sm font-semibold text-zinc-900">Nouvelle adresse</p>
+            <GeolocationAddressPrompt
+              key={`form-${geoPromptKey}`}
+              autoStart={!form.adresse.trim()}
+              onAccept={applySuggestion}
+              compact
+            />
             <input
               className={COMPTE_INPUT}
               placeholder="Libellé (ex. Maison, Bureau)"

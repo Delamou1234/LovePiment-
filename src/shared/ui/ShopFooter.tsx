@@ -5,6 +5,7 @@ const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '224620000000';
 const FACEBOOK = process.env.NEXT_PUBLIC_FACEBOOK_PAGE_URL ?? 'https://facebook.com/kabishop';
 
 const AIDE_LINKS = [
+  { label: 'Profil beauté', href: '/profil-beaute' },
   { label: 'Suivi de commande', href: '/suivi' },
   { label: 'Messagerie', href: '/messages' },
   { label: 'Livraison Conakry', href: '/apropos' },

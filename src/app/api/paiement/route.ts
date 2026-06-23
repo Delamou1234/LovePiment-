@@ -15,6 +15,8 @@ const creerCommandeSchema = z.object({
     .regex(/^[\d+\s\-()]+$/, 'Numéro de téléphone invalide'),
   clientAdresse: z.string().min(5, 'Adresse requise').max(200),
   clientVille: z.string().min(2, 'Ville requise').max(100),
+  clientLatitude: z.number().min(-90).max(90).optional().nullable(),
+  clientLongitude: z.number().min(-180).max(180).optional().nullable(),
   modePaiement: z.enum(['CINETPAY', 'PAIEMENT_LIVRAISON']),
   codeCoupon: z.string().max(40).optional().nullable(),
   pointsUtilises: z.number().int().min(0).optional(),

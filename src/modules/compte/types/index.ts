@@ -27,6 +27,44 @@ export type CustomerOrderResume = {
   createdAt: string;
   suiviToken: string | null;
   itemsCount: number;
+  peutAnnuler: boolean;
+};
+
+export type CustomerOrderItem = {
+  id: string;
+  quantite: number;
+  prixUnitaire: number;
+  produit: {
+    nom: string;
+    slug: string;
+    image: string | null;
+  };
+  variante: {
+    label: string | null;
+  };
+};
+
+export type CustomerOrderDetail = {
+  id: string;
+  statut: string;
+  statutPaiement: string;
+  modePaiement: string;
+  montantTotal: number;
+  sousTotal: number | null;
+  fraisLivraison: number | null;
+  remiseCoupon: number;
+  remisePoints: number;
+  remiseParrainage: number;
+  pointsUtilises: number;
+  createdAt: string;
+  suiviToken: string;
+  clientNom: string;
+  clientTelephone: string;
+  clientAdresse: string;
+  clientVille: string;
+  items: CustomerOrderItem[];
+  peutAnnuler: boolean;
+  raisonNonAnnulation: string | null;
 };
 
 export type CustomerAddress = {

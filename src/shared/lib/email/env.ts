@@ -33,6 +33,11 @@ export function getAdminEmail(): string | null {
   return clean(process.env.ADMIN_EMAIL)?.toLowerCase() ?? null;
 }
 
+/** Destinataire des messages du formulaire contact (défaut : ADMIN_EMAIL). */
+export function getContactEmail(): string | null {
+  return clean(process.env.CONTACT_EMAIL)?.toLowerCase() ?? getAdminEmail();
+}
+
 export function getCronSecret(): string | null {
   return clean(process.env.CRON_SECRET) ?? null;
 }

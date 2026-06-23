@@ -10,7 +10,7 @@ import {
   resolveAdminNavLabel,
   type AdminNavItem,
   type AdminSessionUser,
-} from './admin-ui';
+} from '../admin-ui';
 
 const NAV_BTN =
   'flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs leading-none transition';

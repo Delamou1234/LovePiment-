@@ -19,7 +19,7 @@ import {
   isAdminNavActive,
   resolveAdminNavLabel,
   type AdminSessionUser,
-} from './admin-ui';
+} from '../admin-ui';
 
 type Props = {
   admin: AdminSessionUser;

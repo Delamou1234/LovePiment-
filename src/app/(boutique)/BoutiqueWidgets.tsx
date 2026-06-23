@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { usePageTracking } from '@/shared/hooks/useTracking';
 import { FloatingContactButtons } from '@/shared/ui/FloatingContactButtons';
 
 const AssistantWidget = dynamic(
@@ -17,7 +16,6 @@ const AssistantWidget = dynamic(
 export function BoutiqueWidgets() {
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [deferSocial, setDeferSocial] = useState(false);
-  usePageTracking();
 
   useEffect(() => {
     const enable = () => setDeferSocial(true);

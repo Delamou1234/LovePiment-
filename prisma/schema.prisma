@@ -198,6 +198,8 @@ model Order {
   clientTelephone String        @map("client_telephone")
   clientAdresse   String        @map("client_adresse")
   clientVille     String        @map("client_ville")
+  clientLatitude  Decimal?      @db.Decimal(10, 7) @map("client_latitude")
+  clientLongitude Decimal?      @db.Decimal(10, 7) @map("client_longitude")
   // Commande
   statut          OrderStatus   @default(EN_ATTENTE)
   modePaiement    PaymentMethod @map("mode_paiement")
@@ -216,11 +218,21 @@ model Order {
   codeParrainageUtilise String? @map("code_parrainage_utilise")
   // Suivi livraison
   suiviToken      String        @unique @default(cuid()) @map("suivi_token")
+  livraisonNavToken String      @unique @default(cuid()) @map("livraison_nav_token")
   numeroSuivi     String?       @map("numero_suivi")
   livraisonEstimee DateTime?    @map("livraison_estimee")
   livreeLe        DateTime?     @map("livree_le")
   carrierId       String?       @map("carrier_id")
   carrier         Carrier?      @relation(fields: [carrierId], references: [id], onDelete: SetNull)
+  courierId       String?       @map("courier_id")
+  courier         Courier?      @relation(fields: [courierId], references: [id], onDelete: SetNull)
+  deliveryRunId   String?       @map("delivery_run_id")
+  deliveryRun     DeliveryRun?  @relation(fields: [deliveryRunId], references: [id], onDelete: SetNull)
+  ordreLivraison  Int?          @map("ordre_livraison")
+  assignedAt      DateTime?     @map("assigned_at")
+  livreurPaiementRecu      Boolean?  @map("livreur_paiement_recu")
+  livreurPaiementDeclareAt DateTime? @map("livreur_paiement_declare_at")
+  penaliteLivreurGn        Decimal?  @db.Decimal(10, 0) @map("penalite_livreur_gn")
   // Référence CinetPay (si applicable)
   cinetpayTxId    String?       @unique @map("cinetpay_tx_id")
   // Notes internes
@@ -238,9 +250,79 @@ model Order {
 
   @@index([statut])
   @@index([suiviToken])
+  @@index([livraisonNavToken])
   @@index([satisfactionStatut])
   @@index([customerId])
+  @@index([courierId])
+  @@index([deliveryRunId])
   @@map("orders")
+}
+
+// ─── TOURNÉE DE LIVRAISON (plusieurs commandes, un livreur) ─────────────────
+
+enum DeliveryRunStatus {
+  PLANIFIEE
+  EN_COURS
+  TERMINEE
+  ANNULEE
+}
+
+model DeliveryRun {
+  id         String            @id @default(cuid())
+  label      String?
+  courierId  String?           @map("courier_id")
+  courier    Courier?          @relation(fields: [courierId], references: [id], onDelete: SetNull)
+  statut     DeliveryRunStatus @default(PLANIFIEE)
+  assignedAt DateTime?         @map("assigned_at")
+  montantTotalGn   Decimal?    @db.Decimal(12, 0) @map("montant_total_gn")
+  montantEspecesGn Decimal?    @db.Decimal(12, 0) @map("montant_especes_gn")
+  notesAdmin String?           @map("notes_admin")
+  createdAt  DateTime          @default(now()) @map("created_at")
+  updatedAt  DateTime          @updatedAt @map("updated_at")
+
+  commandes  Order[]
+
+  @@index([courierId])
+  @@index([statut])
+  @@map("delivery_runs")
+}
+
+// ─── LIVREUR (courier) ───────────────────────────────────────────────────────
+
+enum CourierVehicleType {
+  MOTO
+  VOITURE
+  VELO
+  AUTRE
+}
+
+model Courier {
+  id                String              @id @default(cuid())
+  email             String              @unique
+  passwordHash      String              @map("password_hash")
+  nom               String
+  telephone         String
+  whatsapp          String?
+  typeEngin         CourierVehicleType  @default(MOTO) @map("type_engin")
+  immatriculation   String?
+  numeroCni         String?             @map("numero_cni")
+  quartierBase      String?             @map("quartier_base")
+  commune           String?
+  contactUrgenceNom String?             @map("contact_urgence_nom")
+  contactUrgenceTel String?             @map("contact_urgence_tel")
+  permisConduire    String?             @map("permis_conduire")
+  verifie           Boolean             @default(false)
+  actif             Boolean             @default(true)
+  notesAdmin        String?             @map("notes_admin")
+  penalitesCumuleesGn Decimal           @default(0) @db.Decimal(12, 0) @map("penalites_cumulees_gn")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+
+  commandes         Order[]
+  tournees          DeliveryRun[]
+
+  @@index([actif])
+  @@map("couriers")
 }
 
 // ─── ORDER TRACKING EVENT ────────────────────────────────────────────────────
@@ -347,6 +429,7 @@ model Customer {
   adressePreferee String?  @map("adresse_preferee")
   villePreferee   String?  @map("ville_preferee")
   avatarCouleur   String?  @default("olive") @map("avatar_couleur")
+  beautyProfile   Json?    @map("beauty_profile")
   pointsFidelite  Int      @default(0) @map("points_fidelite")
   codeParrainage  String?  @unique @map("code_parrainage")
   parrainId       String?  @map("parrain_id")
@@ -355,12 +438,29 @@ model Customer {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  commandes  Order[]
-  adresses   CustomerAddress[]
-  wishlist   WishlistItem[]
-  avis       ProductReview[]
+  commandes           Order[]
+  adresses            CustomerAddress[]
+  wishlist            WishlistItem[]
+  avis                ProductReview[]
+  passwordResetTokens PasswordResetToken[]
 
   @@map("customers")
+}
+
+model PasswordResetToken {
+  id         String    @id @default(cuid())
+  codeHash   String    @unique @map("code_hash")
+  expiresAt  DateTime  @map("expires_at")
+  verifiedAt DateTime? @map("verified_at")
+  usedAt     DateTime? @map("used_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  customerId String   @map("customer_id")
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
 }
 
 model CustomerAddress {

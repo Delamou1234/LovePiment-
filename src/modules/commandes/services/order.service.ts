@@ -4,6 +4,7 @@ import {
   buildNotificationContext,
   orderNotificationService,
 } from '@/modules/notifications/services/order-notification.service';
+import { notifierAdminNouvelleCommande } from '@/modules/livraison/services/admin-order-alert.service';
 import type { CommandeAvecItems, CreerCommandeDto, FiltresCommandes } from '../types';
 import type { Pagination } from '@/types';
 
@@ -29,6 +30,7 @@ export class OrderService {
     const commande = await this.repo.creer(dto);
     await trackingService.initialiserSuivi(commande.id, dto.clientVille);
     orderNotificationService.notifyOrderCreated(buildNotificationContext(commande));
+    void notifierAdminNouvelleCommande(commande);
     return commande;
   }
 

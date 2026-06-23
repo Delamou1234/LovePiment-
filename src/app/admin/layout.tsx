@@ -1,11 +1,11 @@
 import { redirect } from 'next/navigation';
-import { AdminShell } from '@/modules/admin/components/AdminShell';
+import { AdminShell } from '@/modules/admin/components/layout/AdminShell';
 import { adminAuthRepository } from '@/modules/auth/repository/admin-auth.repository';
-import { getSession } from '@/shared/lib/auth/session';
+import { getAdminSession } from '@/shared/lib/auth/session';
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession();
-  if (!session || session.role !== 'admin') {
+  const session = await getAdminSession();
+  if (!session) {
     redirect('/connexion?redirect=/admin');
   }
 

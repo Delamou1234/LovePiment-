@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
     });
 
     const response = NextResponse.redirect(new URL(oauthState.redirect, appUrl));
-    setSessionCookie(response, token);
+    setSessionCookie(response, token, 'customer');
     return response;
   } catch (err) {
     console.error('[GET /api/auth/facebook/callback]', err);

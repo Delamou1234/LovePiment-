@@ -5,6 +5,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Loader2, Sparkles } from 'lucide-react';
 import { getCartProductIds, getViewedProductIds } from '@/shared/hooks/useViewedProducts';
+import {
+  BEAUTY_PROFILE_UPDATED_EVENT,
+  encoderProfilBeautePourApi,
+  lireProfilBeauteLocal,
+} from '@/modules/ia/lib/beauty-profile';
 import type { ProduitRecommande } from '@/modules/ia/types';
 
 export function HomeRecommendations() {
@@ -13,6 +18,7 @@ export function HomeRecommendations() {
   const [products, setProducts] = useState<ProduitRecommande[]>([]);
   const [poweredByAi, setPoweredByAi] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     const el = sectionRef.current;
@@ -33,14 +39,23 @@ export function HomeRecommendations() {
   }, []);
 
   useEffect(() => {
+    const onUpdate = () => setRefreshKey((k) => k + 1);
+    window.addEventListener(BEAUTY_PROFILE_UPDATED_EVENT, onUpdate);
+    return () => window.removeEventListener(BEAUTY_PROFILE_UPDATED_EVENT, onUpdate);
+  }, []);
+
+  useEffect(() => {
     if (!visible) return;
 
     setLoading(true);
     const viewed = getViewedProductIds();
     const cart = getCartProductIds();
+    const beautyProfile = lireProfilBeauteLocal();
     const params = new URLSearchParams();
     if (viewed.length) params.set('viewed', viewed.join(','));
     if (cart.length) params.set('cart', cart.join(','));
+    const encodedProfile = encoderProfilBeautePourApi(beautyProfile);
+    if (encodedProfile) params.set('profile', encodedProfile);
     params.set('limit', '8');
 
     fetch(`/api/ia/recommendations?${params}`)
@@ -51,7 +66,7 @@ export function HomeRecommendations() {
       })
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
-  }, [visible]);
+  }, [visible, refreshKey]);
 
   if (!visible) {
     return <section ref={sectionRef} className="min-h-[1px]" aria-hidden />;
@@ -82,12 +97,17 @@ export function HomeRecommendations() {
               Recommandations personnalisées
             </h2>
             <p className="text-sm text-zinc-500 max-w-lg">
-              Sélectionnées selon votre navigation et votre panier.
+              Sélectionnées selon votre navigation, votre panier et votre profil beauté.
             </p>
           </div>
-          <Link href="/produits" className="text-sm font-semibold text-[#4a5240] hover:underline">
-            Explorer la boutique →
-          </Link>
+          <div className="flex flex-wrap items-center gap-4">
+            <Link href="/profil-beaute" className="text-sm font-semibold text-[#4a5240] hover:underline">
+              Personnaliser mon profil →
+            </Link>
+            <Link href="/produits" className="text-sm font-semibold text-[#4a5240] hover:underline">
+              Explorer la boutique →
+            </Link>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">

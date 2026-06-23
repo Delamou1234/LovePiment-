@@ -1,4 +1,5 @@
 import { customerAuthRepository } from '@/modules/auth/repository/customer-auth.repository';
+import { evaluerAnnulationCommande } from '@/modules/commandes/lib/order-cancel-rules';
 import { marketingService } from '@/modules/marketing/services/marketing.service';
 import { unlink } from 'fs/promises';
 import { join } from 'path';
@@ -83,14 +84,18 @@ export class CustomerProfileService {
 
   async listerCommandes(customerId: string): Promise<CustomerOrderResume[]> {
     const rows = await customerAuthRepository.listerCommandesClient(customerId);
-    return rows.map((o) => ({
-      id: o.id,
-      statut: o.statut,
-      montantTotal: Number(o.montantTotal),
-      createdAt: o.createdAt.toISOString(),
-      suiviToken: o.suiviToken,
-      itemsCount: o._count.items,
-    }));
+    return rows.map((o) => {
+      const annulation = evaluerAnnulationCommande(o);
+      return {
+        id: o.id,
+        statut: o.statut,
+        montantTotal: Number(o.montantTotal),
+        createdAt: o.createdAt.toISOString(),
+        suiviToken: o.suiviToken,
+        itemsCount: o._count.items,
+        peutAnnuler: annulation.peutAnnuler,
+      };
+    });
   }
 }
 

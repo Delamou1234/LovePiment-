@@ -15,6 +15,7 @@ import { ParrainagePendingSync } from '@/modules/marketing/components/Parrainage
 import { CompteAvisSection } from '@/modules/avis/components/CompteAvisSection';
 import { COMPTE_MAIN, COMPTE_MAIN_SCROLL, COMPTE_NAV_GROUPS, COMPTE_SHELL, type CompteSectionId } from './compte-ui';
 import { fetchApi } from '@/shared/lib/client-fetch';
+import { confirmLogout } from '@/shared/lib/confirm-logout';
 import type {
   CustomerAddress,
   CustomerOrderResume,
@@ -44,7 +45,7 @@ export function ComptePageContent() {
 
         if (cancelled) return;
 
-        if (res.status === 401 || res.status === 404) {
+        if (res.status === 401) {
           if (!redirectingRef.current) {
             redirectingRef.current = true;
             router.replace('/connexion?redirect=/compte');
@@ -90,11 +91,21 @@ export function ComptePageContent() {
   }, [searchParams]);
 
   const handleLogout = async () => {
+    if (!(await confirmLogout('customer'))) return;
     await fetch('/api/auth/logout', { method: 'POST' });
     router.replace('/');
   };
 
   const goTo = (id: CompteSectionId) => setSection(id);
+
+  const refreshOverview = async () => {
+    const res = await fetchApi('/api/compte/overview');
+    if (res.ok) {
+      const data = await res.json();
+      setCommandes(data.commandes ?? []);
+      if (data.profil) setProfil(data.profil as CustomerProfile);
+    }
+  };
 
   const sectionMeta = COMPTE_NAV_GROUPS.flatMap((g) => g.items).find(
     (i) => i.kind === 'section' && i.id === section,
@@ -158,7 +169,9 @@ export function ComptePageContent() {
             />
           )}
 
-          {section === 'commandes' && <CompteCommandesSection commandes={commandes} />}
+          {section === 'commandes' && (
+            <CompteCommandesSection commandes={commandes} onRefresh={refreshOverview} />
+          )}
           {section === 'adresses' && <CompteAdressesSection />}
           {section === 'favoris' && <CompteWishlistSection initialItems={wishlist} />}
           {section === 'profil' && (

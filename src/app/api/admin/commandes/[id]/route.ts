@@ -9,7 +9,6 @@ const patchSchema = z.object({
     'PAYEE',
     'EN_PREPARATION',
     'EXPEDIEE',
-    'LIVREE',
     'ANNULEE',
   ]),
   carrierId: z.string().nullable().optional(),
