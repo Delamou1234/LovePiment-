@@ -1,5 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
+import { NextResponse } from 'next/server';
 import { requireAdmin } from '@/modules/messagerie/lib/chat-auth';
 import { conversationService } from '@/modules/messagerie/services/conversation.service';
 

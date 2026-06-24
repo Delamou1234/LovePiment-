@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useIsClient } from '@/shared/hooks/useIsClient';
 import Link from 'next/link';
 import { Loader2, RefreshCw, Sparkles } from 'lucide-react';
 import { useAuthSession } from '@/shared/providers/AuthSessionProvider';
@@ -15,8 +16,10 @@ import {
 
 export function BeautyProfilePage() {
   const { user, loading: authLoading } = useAuthSession();
-  const [profile, setProfile] = useState<BeautyProfile | null>(null);
-  const [hydrated, setHydrated] = useState(false);
+  const [profile, setProfile] = useState<BeautyProfile | null>(() =>
+    typeof window === 'undefined' ? null : lireProfilBeauteLocal(),
+  );
+  const hydrated = useIsClient();
   const [editing, setEditing] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [savedMsg, setSavedMsg] = useState('');
@@ -26,9 +29,6 @@ export function BeautyProfilePage() {
   }, []);
 
   useEffect(() => {
-    refreshLocal();
-    setHydrated(true);
-
     const onUpdate = () => refreshLocal();
     window.addEventListener(BEAUTY_PROFILE_UPDATED_EVENT, onUpdate);
     return () => window.removeEventListener(BEAUTY_PROFILE_UPDATED_EVENT, onUpdate);

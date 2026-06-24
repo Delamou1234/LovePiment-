@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePanier, selectTotalQuantity } from '@/store/panier';
+import { useIsClient } from '@/shared/hooks/useIsClient';
 import { formaterPrixGN, calculerTotauxCommande, libelleLivraisonOfferte } from '@/shared/lib/shipping';
 import { useLivraisonConfig } from '@/shared/hooks/useLivraisonConfig';
 import { 
@@ -23,12 +24,7 @@ export default function CartPage() {
   const panier = usePanier();
   const livraisonConfig = useLivraisonConfig();
   const totalItems = usePanier(selectTotalQuantity);
-  const [mounted, setMounted] = useState(false);
-
-  // Fix hydration mismatch
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useIsClient();
 
   if (!mounted) {
     return (
@@ -262,7 +258,7 @@ export default function CartPage() {
           </div>
           <h2 className="text-xl font-bold text-zinc-950 mb-2">Votre panier est vide</h2>
           <p className="text-sm text-zinc-500 max-w-xs leading-relaxed mb-8">
-            Il semblerait que vous n'ayez pas encore ajouté d'articles. Découvrez nos collections pour commencer votre shopping !
+            Il semblerait que vous n&apos;ayez pas encore ajouté d&apos;articles. Découvrez nos collections pour commencer votre shopping !
           </p>
           <Link href="/produits">
             <Button className="btn-primary rounded-full px-8 py-5 text-base font-bold shadow-lg">

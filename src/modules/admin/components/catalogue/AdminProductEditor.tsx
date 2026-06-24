@@ -403,7 +403,6 @@ export function produitToForm(
       prix: number | null;
     }[];
   },
-  defaultCategorieId: string,
 ): ProduitForm {
   return {
     nom: p.nom,

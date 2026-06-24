@@ -7,7 +7,6 @@ import {
   ChevronRight, 
   MessageSquare, 
   ShoppingBag, 
-  Phone, 
   MapPin, 
   CreditCard,
   AlertCircle
@@ -48,7 +47,7 @@ export default async function ConfirmationPage({
         </div>
         <h1 className="text-2xl font-black text-zinc-950">Commande introuvable</h1>
         <p className="text-zinc-500 max-w-sm mx-auto text-sm">
-          Nous n'avons pas pu trouver de commande correspondant à cette référence. Veuillez vérifier votre lien ou contacter le support.
+          Nous n&apos;avons pas pu trouver de commande correspondant à cette référence. Veuillez vérifier votre lien ou contacter le support.
         </p>
         <Link href="/produits">
           <Button className="btn-primary rounded-full px-6">Retourner au catalogue</Button>
@@ -253,7 +252,7 @@ export default async function ConfirmationPage({
         </Link>
         <Link href="/">
           <Button className="btn-primary w-full sm:w-auto rounded-full font-bold px-8 py-5 text-sm shadow-md">
-            Retourner à l'accueil
+            Retourner à l&apos;accueil
           </Button>
         </Link>
       </div>

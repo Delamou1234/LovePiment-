@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
+import { useCallback, useState } from 'react';
 import {
   CheckCircle2,
   Copy,
@@ -55,9 +56,7 @@ export function CompteFideliteSection({ pointsFidelite, codeParrainage }: Props)
     }
   }, []);
 
-  useEffect(() => {
-    void charger();
-  }, [charger]);
+  useRunAfterMount(() => void charger(), [charger]);
 
   const monCode = statut?.monCode ?? codeParrainage;
   const lienPartage =

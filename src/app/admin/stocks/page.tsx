@@ -1,5 +1,6 @@
 'use client';
 
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AlertTriangle, Boxes, Loader2, RefreshCw } from 'lucide-react';
@@ -46,8 +47,9 @@ export default function AdminStocksPage() {
     }
   }, []);
 
+  useRunAfterMount(() => void load(), [load]);
+
   useEffect(() => {
-    load();
     const interval = setInterval(load, AUTO_REFRESH_MS);
     return () => clearInterval(interval);
   }, [load]);

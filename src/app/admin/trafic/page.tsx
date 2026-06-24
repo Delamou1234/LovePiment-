@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
+import { useCallback, useState } from 'react';
 import { BarChart3, Loader2, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AdminGa4Section } from '@/modules/admin/components/dashboard/AdminGa4Section';
@@ -51,9 +52,7 @@ export default function AdminTraficPage() {
     }
   }, [periode]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useRunAfterMount(() => void load(), [load]);
 
   const maxVisites = Math.max(...(rapport?.visitesParJour.map((v) => v.count) ?? [1]), 1);
 

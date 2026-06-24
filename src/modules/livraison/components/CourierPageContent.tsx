@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
+import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Banknote, Loader2, MapPin, Route, Truck } from 'lucide-react';
 import { CourierOrderCard } from '@/modules/livraison/components/CourierOrderCard';
@@ -95,9 +96,7 @@ export function CourierPageContent() {
     }
   }, [router]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useRunAfterMount(() => void load(), [load]);
 
   const handleLogout = async () => {
     if (!(await confirmLogout('courier'))) return;

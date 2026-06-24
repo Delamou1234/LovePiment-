@@ -20,7 +20,6 @@ import {
   Truck, 
   Loader2, 
   ShoppingBag, 
-  PhoneCall, 
   MapPin,
   CheckCircle2
 } from 'lucide-react';
@@ -144,6 +143,7 @@ export default function CheckoutPage() {
     [],
   );
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form watch pour le checkout
   const selectedPaymentMethod = watch('modePaiement');
   const selectedVille = watch('clientVille') || livraisonConfig.villeParDefaut;
   const clientAdresse = watch('clientAdresse');
@@ -253,9 +253,9 @@ export default function CheckoutPage() {
         // Redirection directe vers la page de confirmation
         router.push(`/commande/confirmation?id=${data.commandeId}`);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('[Checkout error]', err);
-      setErrorMsg(err.message || 'Erreur lors de la validation. Veuillez réessayer.');
+      setErrorMsg(err instanceof Error ? err.message : 'Erreur lors de la validation. Veuillez réessayer.');
       setLoading(false);
     }
   };
@@ -529,7 +529,7 @@ export default function CheckoutPage() {
             <div className="border border-zinc-100 rounded-2xl p-4 bg-white shadow-sm flex gap-3 text-xs leading-relaxed text-zinc-500">
               <Truck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
               <div>
-                <p className="font-bold text-zinc-800">Besoin d'aide pour finaliser ?</p>
+                <p className="font-bold text-zinc-800">Besoin d&apos;aide pour finaliser ?</p>
                 <p className="mt-1">
                   Écrivez-nous sur{' '}
                   <a
@@ -560,7 +560,7 @@ export default function CheckoutPage() {
           </div>
           <h2 className="text-xl font-bold text-zinc-950 mb-2">Votre panier est vide</h2>
           <p className="text-sm text-zinc-500 max-w-xs leading-relaxed mb-8">
-            Ajoutez d'abord des articles au panier pour pouvoir valider une commande.
+            Ajoutez d&apos;abord des articles au panier pour pouvoir valider une commande.
           </p>
           <Link href="/produits">
             <Button className="btn-primary rounded-full px-8 py-5 text-base font-bold shadow-lg">

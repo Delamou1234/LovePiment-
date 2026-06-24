@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import type { AdminDashboardStats } from '@/modules/admin/services/admin-stats.service';
 
 type AdminStatsContextValue = {
@@ -30,8 +31,11 @@ export function AdminStatsProvider({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     void refresh();
+  }, [refresh]);
+
+  useEffect(() => {
     const interval = setInterval(refresh, POLL_MS);
     return () => clearInterval(interval);
   }, [refresh]);

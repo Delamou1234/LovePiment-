@@ -1,15 +1,8 @@
 'use client';
 
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
-} from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import { AVATAR_UPDATED_EVENT } from '@/modules/compte/lib/avatar-events';
 import { confirmLogout, type LogoutRole } from '@/shared/lib/confirm-logout';
 
@@ -41,7 +34,19 @@ export function clearAuthMeCache() {
 
 export function AuthSessionProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const [user, setUser] = useState<AuthSessionUser | null>(null);
+  const [user, setUser] = useState<AuthSessionUser | null>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = sessionStorage.getItem(AUTH_ME_CACHE_KEY);
+      if (raw) {
+        const { user: cached } = JSON.parse(raw) as { user: AuthSessionUser | null; ts: number };
+        if (cached?.role === 'customer') return cached;
+      }
+    } catch {
+      /* ignore */
+    }
+    return null;
+  });
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -106,17 +111,7 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  useEffect(() => {
-    try {
-      const raw = sessionStorage.getItem(AUTH_ME_CACHE_KEY);
-      if (raw) {
-        const { user: cached } = JSON.parse(raw) as { user: AuthSessionUser | null; ts: number };
-        if (cached?.role === 'customer') setUser(cached);
-      }
-    } catch {
-      /* ignore */
-    }
-
+  useRunAfterMount(() => {
     void refresh();
   }, [refresh, pathname]);
 

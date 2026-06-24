@@ -3,6 +3,19 @@ import { marketingService } from '@/modules/marketing/services/marketing.service
 import { decrementerStockPourArticles, restaurerStockPourArticles } from '@/modules/produits/lib/order-stock';
 import type { CommandeAvecItems, CreerCommandeDto, FiltresCommandes } from '../types';
 import type { Pagination } from '@/types';
+import type { OrderStatus, PaymentMethod, PaymentStatus, Prisma } from '@prisma/client';
+
+const orderInclude = {
+  items: {
+    include: {
+      variante: {
+        include: {
+          produit: { select: { nom: true, images: true, slug: true } },
+        },
+      },
+    },
+  },
+} as const;
 
 export class OrderRepository {
   async creer(dto: CreerCommandeDto): Promise<CommandeAvecItems> {
@@ -54,17 +67,7 @@ export class OrderRepository {
             })),
           },
         },
-        include: {
-          items: {
-            include: {
-              variante: {
-                include: {
-                  produit: { select: { nom: true, images: true, slug: true } },
-                },
-              },
-            },
-          },
-        },
+        include: orderInclude,
       });
 
       if (dto.customerId) {
@@ -86,33 +89,23 @@ export class OrderRepository {
   async trouverParId(id: string): Promise<CommandeAvecItems | null> {
     return prisma.order.findUnique({
       where: { id },
-      include: {
-        items: {
-          include: {
-            variante: {
-              include: {
-                produit: { select: { nom: true, images: true, slug: true } },
-              },
-            },
-          },
-        },
-      },
-    }) as any;
+      include: orderInclude,
+    }) as Promise<CommandeAvecItems | null>;
   }
 
   async lister(
     filtres: FiltresCommandes = {},
     pagination = { page: 1, limit: 20 },
   ): Promise<{ commandes: CommandeAvecItems[]; pagination: Pagination }> {
-    const where = {
-      ...(filtres.statut && { statut: filtres.statut as any }),
-      ...(filtres.statutIn?.length && { statut: { in: filtres.statutIn as any } }),
-      ...(filtres.statutNotIn?.length && { statut: { notIn: filtres.statutNotIn as any } }),
-      ...(filtres.statutPaiement && { statutPaiement: filtres.statutPaiement as any }),
+    const where: Prisma.OrderWhereInput = {
+      ...(filtres.statut && { statut: filtres.statut as OrderStatus }),
+      ...(filtres.statutIn?.length && { statut: { in: filtres.statutIn as OrderStatus[] } }),
+      ...(filtres.statutNotIn?.length && { statut: { notIn: filtres.statutNotIn as OrderStatus[] } }),
+      ...(filtres.statutPaiement && { statutPaiement: filtres.statutPaiement as PaymentStatus }),
       ...(filtres.statutPaiementNot && {
-        statutPaiement: { not: filtres.statutPaiementNot as any },
+        statutPaiement: { not: filtres.statutPaiementNot as PaymentStatus },
       }),
-      ...(filtres.modePaiement && { modePaiement: filtres.modePaiement as any }),
+      ...(filtres.modePaiement && { modePaiement: filtres.modePaiement as PaymentMethod }),
       ...(filtres.dateDebut || filtres.dateFin
         ? {
             createdAt: {
@@ -131,15 +124,7 @@ export class OrderRepository {
         include: {
           courier: { select: { id: true, nom: true } },
           deliveryRun: { select: { id: true, label: true } },
-          items: {
-            include: {
-              variante: {
-                include: {
-                  produit: { select: { nom: true, images: true, slug: true } },
-                },
-              },
-            },
-          },
+          ...orderInclude,
         },
         orderBy: { createdAt: 'desc' },
         skip,
@@ -149,7 +134,7 @@ export class OrderRepository {
     ]);
 
     return {
-      commandes: commandes as any,
+      commandes: commandes as CommandeAvecItems[],
       pagination: {
         page: pagination.page,
         limit: pagination.limit,
@@ -162,7 +147,7 @@ export class OrderRepository {
   async mettreAJourStatut(id: string, statut: string): Promise<void> {
     await prisma.order.update({
       where: { id },
-      data: { statut: statut as any },
+      data: { statut: statut as OrderStatus },
     });
   }
 
@@ -173,9 +158,9 @@ export class OrderRepository {
     await prisma.order.update({
       where: { id },
       data: {
-        statutPaiement: data.statutPaiement as any,
+        statutPaiement: data.statutPaiement as PaymentStatus,
         ...(data.cinetpayTxId && { cinetpayTxId: data.cinetpayTxId }),
-        ...(data.statutPaiement === 'REUSSIE' && { statut: 'PAYEE' as any }),
+        ...(data.statutPaiement === 'REUSSIE' && { statut: 'PAYEE' as OrderStatus }),
       },
     });
 
@@ -202,7 +187,7 @@ export class OrderRepository {
         data: {
           statut: 'ANNULEE',
           ...(options.statutPaiement && {
-            statutPaiement: options.statutPaiement as any,
+            statutPaiement: options.statutPaiement as PaymentStatus,
           }),
         },
       });

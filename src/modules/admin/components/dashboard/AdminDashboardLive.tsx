@@ -126,13 +126,21 @@ function CategoryDonut({ data }: { data: DashboardOverview['ventesParCategorie']
   }
 
   const total = data.reduce((s, d) => s + d.montant, 0);
-  let angle = 0;
-  const slices = data.map((d) => {
-    const sweep = (d.montant / total) * 360;
-    const start = angle;
-    angle += sweep;
-    return { ...d, start, sweep };
-  });
+  const slices = data
+    .reduce<{
+      angle: number;
+      slices: { nom: string; montant: number; pct: number; color: string; start: number; sweep: number }[];
+    }>(
+      (acc, d) => {
+        const sweep = (d.montant / total) * 360;
+        return {
+          angle: acc.angle + sweep,
+          slices: [...acc.slices, { ...d, start: acc.angle, sweep }],
+        };
+      },
+      { angle: 0, slices: [] },
+    )
+    .slices;
 
   function arc(start: number, sweep: number, r: number, cx: number, cy: number) {
     const rad = (deg: number) => (deg * Math.PI) / 180;

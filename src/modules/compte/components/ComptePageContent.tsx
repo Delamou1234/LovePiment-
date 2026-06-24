@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { CompteAdressesSection } from './CompteAdressesSection';
@@ -17,7 +18,6 @@ import { COMPTE_MAIN, COMPTE_MAIN_SCROLL, COMPTE_NAV_GROUPS, COMPTE_SHELL, type 
 import { fetchApi } from '@/shared/lib/client-fetch';
 import { confirmLogout } from '@/shared/lib/confirm-logout';
 import type {
-  CustomerAddress,
   CustomerDashboardData,
   CustomerOrderResume,
   CustomerProfile,
@@ -32,8 +32,6 @@ export function ComptePageContent() {
   const [profil, setProfil] = useState<CustomerProfile | null>(null);
   const [commandes, setCommandes] = useState<CustomerOrderResume[]>([]);
   const [wishlist, setWishlist] = useState<WishlistItemClient[]>([]);
-  const [adresses, setAdresses] = useState<CustomerAddress[]>([]);
-  const [avisEnAttente, setAvisEnAttente] = useState(0);
   const [dashboard, setDashboard] = useState<CustomerDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const redirectingRef = useRef(false);
@@ -60,8 +58,6 @@ export function ComptePageContent() {
           setProfil(data.profil as CustomerProfile);
           setCommandes(data.commandes ?? []);
           setWishlist(data.wishlist ?? []);
-          setAdresses(data.adresses ?? []);
-          setAvisEnAttente((data.avisEligibles ?? []).length);
           setDashboard(data.dashboard ?? null);
         }
       } finally {
@@ -75,7 +71,7 @@ export function ComptePageContent() {
     };
   }, [router]);
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     const requested = searchParams.get('section');
     if (!requested) return;
 

@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, History, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -80,7 +81,7 @@ export function CourierHistoryPage() {
     [router],
   );
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     void loadProfil().then((result) => {
       if (result) {
         setProfil(result.profil);
@@ -89,7 +90,7 @@ export function CourierHistoryPage() {
     });
   }, [loadProfil]);
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     if (!profil) return;
     void loadHistorique(page, page > 1);
   }, [profil, page, loadHistorique]);

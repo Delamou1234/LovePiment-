@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import Image from 'next/image';
 import { BadgeCheck, Loader2, MessageSquare } from 'lucide-react';
 import { StarRating } from './StarRating';
@@ -81,9 +82,9 @@ export function ProductReviewsSection({
     [productSlug, productId, page, hasInitialPage, initialEligibles],
   );
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     if (page === 1 && hasInitialPage) return;
-    load();
+    void load();
   }, [load, page, hasInitialPage]);
 
   const eligible = eligibles[0];

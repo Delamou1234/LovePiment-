@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useSyncedState } from '@/shared/hooks/useSyncedState';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -77,7 +78,7 @@ export function CompteTopBar({
   const router = useRouter();
   const panier = usePanier();
   const cartProductCount = usePanier(selectDistinctProductCount);
-  const [localProfil, setLocalProfil] = useState(profil);
+  const [localProfil, setLocalProfil] = useSyncedState(profil);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const onProfilUpdateRef = useRef(onProfilUpdate);
@@ -96,10 +97,6 @@ export function CompteTopBar({
   const isFideliteActive = pathname === '/compte' && activeSection === 'fidelite';
 
   useEffect(() => {
-    setLocalProfil(profil);
-  }, [profil]);
-
-  useEffect(() => {
     const onAvatarUpdated = (event: Event) => {
       const detail = (event as CustomEvent<{ avatarUrl: string | null }>).detail;
       const next = { ...localProfilRef.current, avatarUrl: detail.avatarUrl };
@@ -110,7 +107,7 @@ export function CompteTopBar({
 
     window.addEventListener(AVATAR_UPDATED_EVENT, onAvatarUpdated);
     return () => window.removeEventListener(AVATAR_UPDATED_EVENT, onAvatarUpdated);
-  }, []);
+  }, [setLocalProfil]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

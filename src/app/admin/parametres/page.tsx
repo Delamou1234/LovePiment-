@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
+import { useCallback, useState } from 'react';
 import { CheckCircle2, Gift, Loader2, Phone, Save, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { LivraisonConfig } from '@/shared/lib/shipping';
@@ -91,9 +92,7 @@ export default function AdminParametresPage() {
     }
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useRunAfterMount(() => void load(), [load]);
 
   const save = async () => {
     if (!draft) return;

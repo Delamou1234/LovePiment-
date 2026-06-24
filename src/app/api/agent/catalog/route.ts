@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  produitParSlugAgent,
-  rechercherProduitsAgent,
-} from '@/modules/agent/services/agent-data.service';
+import { rechercherProduitsAgent } from '@/modules/agent/services/agent-data.service';
 import {
   isAgentApiConfigured,
   reponseAgentNonAutorisee,

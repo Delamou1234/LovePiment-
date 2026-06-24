@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Loader2, Sparkles } from 'lucide-react';
@@ -39,7 +40,7 @@ export function ProductAiRecommendations({
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     if (!visible) return;
 
     setLoading(true);

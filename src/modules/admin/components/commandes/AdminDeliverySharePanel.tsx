@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
+import { useCallback, useState } from 'react';
 import { Check, Copy, Loader2, MapPin, MessageCircle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { buildCourierWhatsAppMessage } from '@/shared/lib/geolocation/maps-links';
@@ -44,9 +45,7 @@ export function AdminDeliverySharePanel({
     }
   }, [orderId]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useRunAfterMount(() => void load(), [load]);
 
   const geocoder = async (force = false) => {
     setGeocoding(true);

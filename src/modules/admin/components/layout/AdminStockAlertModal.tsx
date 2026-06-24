@@ -1,7 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useIsClient } from '@/shared/hooks/useIsClient';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import Link from 'next/link';
 import { AlertTriangle, Loader2, Package } from 'lucide-react';
 import { STOCK_FAIBLE_SEUIL } from '@/modules/admin/lib/stock-threshold';
@@ -40,7 +42,7 @@ export function AdminStockAlertModal({ count }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [alertes, setAlertes] = useState<StockAlerte[]>([]);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsClient();
   const [prevCount, setPrevCount] = useState(count);
 
   const produitsAlertes = useMemo(() => groupAlertesByProduct(alertes), [alertes]);
@@ -58,11 +60,7 @@ export function AdminStockAlertModal({ count }: Props) {
     }
   }, []);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
+  useRunAfterMount(() => {
     if (count <= 0) {
       setOpen(false);
       return;

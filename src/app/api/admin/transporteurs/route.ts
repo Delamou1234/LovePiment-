@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { adminUnauthorized, requireAdmin } from '@/modules/admin/lib/require-admin';
-import { productService } from '@/modules/produits/services/product.service';
-
 /** GET /api/admin/transporteurs */
 export async function GET() {
   const user = await requireAdmin();

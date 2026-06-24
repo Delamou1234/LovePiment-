@@ -35,16 +35,15 @@ export function ChatMessageList({
     );
   }
 
-  let lastDateKey = '';
+  const rows = messages.map((msg, index) => {
+    const key = dateKey(msg.createdAt);
+    const showSeparator = index === 0 || key !== dateKey(messages[index - 1].createdAt);
+    return { msg, showSeparator };
+  });
 
   return (
     <div className="flex flex-col gap-1 px-3 py-4 sm:px-4">
-      {messages.map((msg) => {
-        const key = dateKey(msg.createdAt);
-        const showSeparator = key !== lastDateKey;
-        lastDateKey = key;
-
-        return (
+      {rows.map(({ msg, showSeparator }) => (
           <div key={msg.id}>
             {showSeparator && (
               <div className="my-4 flex justify-center">
@@ -57,8 +56,7 @@ export function ChatMessageList({
               <ChatMessageBubble message={msg} isMine={msg.senderRole === myRole} />
             </div>
           </div>
-        );
-      })}
+      ))}
 
       {isTyping && (
         <div className="flex justify-start mb-2">

@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
+import { useCallback, useState } from 'react';
 import { Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ADMIN_CARD, ADMIN_CARD_PAD } from '@/modules/admin/components/admin-ui';
@@ -59,9 +60,7 @@ export function AdminTourneesMontants({ refreshKey }: { refreshKey?: number }) {
     }
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load, refreshKey]);
+  useRunAfterMount(() => void load(), [load, refreshKey]);
 
   const enregistrer = async (id: string) => {
     const draft = drafts[id];

@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -60,7 +61,7 @@ export function CompteCommandeDetailPanel({ orderId, onClose, onCancelled }: Pro
     }
   }, []);
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     if (orderId) {
       void charger(orderId);
     } else {

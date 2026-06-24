@@ -42,14 +42,15 @@ export function AdminSearchBar({ className = '' }: Props) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
-  const flatItems = useMemo<FlatItem[]>(
-    () => [...results.commandes, ...results.clients, ...results.produits],
-    [results],
-  );
-
-  const hasResults = flatItems.length > 0;
   const trimmed = query.trim();
-  const showDropdown = isOpen && trimmed.length >= 2;
+  const canSearch = trimmed.length >= 2;
+  const displayResults = canSearch ? results : EMPTY;
+  const flatItems = useMemo<FlatItem[]>(
+    () => [...displayResults.commandes, ...displayResults.clients, ...displayResults.produits],
+    [displayResults],
+  );
+  const hasResults = flatItems.length > 0;
+  const showDropdown = isOpen && canSearch;
 
   const navigateTo = useCallback(
     (item: FlatItem) => {
@@ -66,15 +67,11 @@ export function AdminSearchBar({ className = '' }: Props) {
   );
 
   useEffect(() => {
-    if (trimmed.length < 2) {
-      setResults(EMPTY);
-      setLoading(false);
-      return;
-    }
+    if (!canSearch) return;
 
-    setLoading(true);
     const controller = new AbortController();
     const timer = setTimeout(async () => {
+      setLoading(true);
       try {
         const res = await fetch(`/api/admin/recherche?q=${encodeURIComponent(trimmed)}`, {
           signal: controller.signal,
@@ -96,7 +93,7 @@ export function AdminSearchBar({ className = '' }: Props) {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [trimmed]);
+  }, [trimmed, canSearch]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -129,18 +126,28 @@ export function AdminSearchBar({ className = '' }: Props) {
     }
   };
 
-  let itemOffset = 0;
+  const sectionsWithOffset = useMemo(() => {
+    const sections = [
+      { title: 'Commandes', icon: ShoppingBag, items: displayResults.commandes },
+      { title: 'Clients', icon: User, items: displayResults.clients },
+      { title: 'Produits', icon: Package, items: displayResults.produits },
+    ];
+    let offset = 0;
+    return sections
+      .filter((section) => section.items.length > 0)
+      .map((section) => {
+        const startIndex = offset;
+        offset += section.items.length;
+        return { ...section, startIndex };
+      });
+  }, [displayResults]);
 
   const renderSection = (
     title: string,
-    icon: typeof ShoppingBag,
+    Icon: typeof ShoppingBag,
     items: FlatItem[],
+    startIndex: number,
   ) => {
-    if (items.length === 0) return null;
-    const Icon = icon;
-    const startIndex = itemOffset;
-    itemOffset += items.length;
-
     return (
       <div key={title}>
         <p className="admin-search-section-title">
@@ -262,9 +269,9 @@ export function AdminSearchBar({ className = '' }: Props) {
           ) : hasResults ? (
             <>
               <div className="admin-search-dropdown-inner">
-                {renderSection('Commandes', ShoppingBag, results.commandes)}
-                {renderSection('Clients', User, results.clients)}
-                {renderSection('Produits', Package, results.produits)}
+                {sectionsWithOffset.map(({ title, icon: Icon, items, startIndex }) =>
+                  renderSection(title, Icon, items, startIndex),
+                )}
               </div>
               {results.tookMs > 0 && (
                 <p className="admin-search-meta">{results.tookMs} ms</p>

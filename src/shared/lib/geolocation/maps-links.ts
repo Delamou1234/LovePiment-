@@ -3,9 +3,11 @@ import type { GeoCoordinates } from './forward-geocode';
 /** Lien Google Maps — navigation vers la destination. */
 export function googleMapsNavigationUrl(
   coords: GeoCoordinates,
-  _adresse: string,
-  _ville: string,
+  adresse: string,
+  ville: string,
 ): string {
+  void adresse;
+  void ville;
   const url = new URL('https://www.google.com/maps/dir/');
   url.searchParams.set('api', '1');
   url.searchParams.set('destination', `${coords.latitude},${coords.longitude}`);

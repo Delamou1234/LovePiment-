@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Loader2, Search, Tag, X } from 'lucide-react';
 import type { SuggestionRecherche } from '@/modules/produits/types';
 import { buildCatalogUrl, type CatalogSearchParams } from '@/modules/produits/lib/catalog-url';
+import { useSyncedState } from '@/shared/hooks/useSyncedState';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -18,23 +19,19 @@ type Props = {
 export function CatalogSearchBar({ currentParams, defaultQuery = '', className }: Props) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [query, setQuery] = useState(defaultQuery);
+  const [query, setQuery] = useSyncedState(defaultQuery);
   const [suggestions, setSuggestions] = useState<SuggestionRecherche[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
 
-  useEffect(() => {
-    setQuery(defaultQuery);
-  }, [defaultQuery]);
+  const trimmed = query.trim();
+  const canSearch = trimmed.length >= 2;
+  const displaySuggestions = canSearch ? suggestions : [];
+  const dropdownOpen = canSearch && isOpen && displaySuggestions.length > 0;
 
   useEffect(() => {
-    const trimmed = query.trim();
-    if (trimmed.length < 2) {
-      setSuggestions([]);
-      setIsOpen(false);
-      return;
-    }
+    if (!canSearch) return;
 
     const timer = setTimeout(async () => {
       setLoading(true);
@@ -53,7 +50,7 @@ export function CatalogSearchBar({ currentParams, defaultQuery = '', className }
     }, 250);
 
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [trimmed, canSearch]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -67,10 +64,10 @@ export function CatalogSearchBar({ currentParams, defaultQuery = '', className }
 
   const navigateSearch = useCallback(
     (q: string) => {
-      const trimmed = q.trim();
+      const next = q.trim();
       setIsOpen(false);
       router.push(
-        buildCatalogUrl(currentParams, { search: trimmed || null }),
+        buildCatalogUrl(currentParams, { search: next || null }),
       );
     },
     [router, currentParams],
@@ -82,19 +79,19 @@ export function CatalogSearchBar({ currentParams, defaultQuery = '', className }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isOpen || suggestions.length === 0) {
+    if (!dropdownOpen || displaySuggestions.length === 0) {
       if (e.key === 'Enter') navigateSearch(query);
       return;
     }
     if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setActiveIndex((i) => (i + 1) % suggestions.length);
+      setActiveIndex((i) => (i + 1) % displaySuggestions.length);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setActiveIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
+      setActiveIndex((i) => (i <= 0 ? displaySuggestions.length - 1 : i - 1));
     } else if (e.key === 'Enter' && activeIndex >= 0) {
       e.preventDefault();
-      const s = suggestions[activeIndex];
+      const s = displaySuggestions[activeIndex];
       if (s.type === 'produit' && s.slug) {
         router.push(`/produits/${s.slug}`);
       } else if (s.type === 'categorie') {
@@ -117,7 +114,7 @@ export function CatalogSearchBar({ currentParams, defaultQuery = '', className }
             setQuery(e.target.value);
             setActiveIndex(-1);
           }}
-          onFocus={() => suggestions.length > 0 && setIsOpen(true)}
+          onFocus={() => displaySuggestions.length > 0 && setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="Rechercher un sextoy, lingerie, lubrifiant..."
           className="catalog-search"
@@ -139,14 +136,14 @@ export function CatalogSearchBar({ currentParams, defaultQuery = '', className }
           type="submit"
           className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-olive transition"
         >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+          {loading && canSearch ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
         </button>
       </form>
 
-      {isOpen && suggestions.length > 0 && (
+      {dropdownOpen && (
         <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-beige-border bg-white shadow-lg shadow-black/5">
           <ul className="max-h-72 overflow-y-auto py-1">
-            {suggestions.map((s, i) => (
+            {displaySuggestions.map((s, i) => (
               <li key={`${s.type}-${s.slug ?? s.nom}-${i}`}>
                 {s.type === 'produit' && s.slug ? (
                   <Link

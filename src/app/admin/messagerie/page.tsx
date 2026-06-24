@@ -1,5 +1,6 @@
 'use client';
 
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Loader2, MessageSquare, RefreshCw } from 'lucide-react';
@@ -38,13 +39,14 @@ export default function AdminMessageriePage() {
     }
   }, []);
 
+  useRunAfterMount(() => void load(), [load]);
+
   useEffect(() => {
-    load();
     const interval = setInterval(load, 30_000);
     return () => clearInterval(interval);
   }, [load]);
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     if (initialized || conversations.length === 0) return;
 
     const fromUrl = searchParams.get('c');

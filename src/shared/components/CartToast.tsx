@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Check } from 'lucide-react';
 
 interface CartToastProps {
@@ -10,23 +10,21 @@ interface CartToastProps {
   durationMs?: number;
 }
 
-export function CartToast({ message, visible, onHide, durationMs = 2500 }: CartToastProps) {
-  const [show, setShow] = useState(false);
-
+function CartToastInner({
+  message,
+  onHide,
+  durationMs,
+}: {
+  message: string;
+  onHide: () => void;
+  durationMs: number;
+}) {
   useEffect(() => {
-    if (!visible) {
-      setShow(false);
-      return;
-    }
-    setShow(true);
     const timer = setTimeout(() => {
-      setShow(false);
       onHide();
     }, durationMs);
     return () => clearTimeout(timer);
-  }, [visible, durationMs, onHide]);
-
-  if (!show) return null;
+  }, [durationMs, onHide, message]);
 
   return (
     <div
@@ -36,5 +34,18 @@ export function CartToast({ message, visible, onHide, durationMs = 2500 }: CartT
       <Check className="h-4 w-4 text-emerald-400" />
       {message}
     </div>
+  );
+}
+
+export function CartToast({ message, visible, onHide, durationMs = 2500 }: CartToastProps) {
+  if (!visible) return null;
+
+  return (
+    <CartToastInner
+      key={`${message}-${visible}`}
+      message={message}
+      onHide={onHide}
+      durationMs={durationMs}
+    />
   );
 }

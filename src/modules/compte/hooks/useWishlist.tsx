@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import { fetchApi } from '@/shared/lib/client-fetch';
 
 type WishlistContextValue = {
@@ -33,8 +34,8 @@ export function WishlistProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  useEffect(() => {
-    refresh();
+  useRunAfterMount(() => {
+    void refresh();
   }, [refresh]);
 
   const toggle = useCallback(async (productId: string) => {

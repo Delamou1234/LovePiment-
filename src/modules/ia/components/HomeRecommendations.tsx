@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Loader2, Sparkles } from 'lucide-react';
@@ -44,7 +45,7 @@ export function HomeRecommendations() {
     return () => window.removeEventListener(BEAUTY_PROFILE_UPDATED_EVENT, onUpdate);
   }, []);
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     if (!visible) return;
 
     setLoading(true);

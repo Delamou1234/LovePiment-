@@ -1,5 +1,5 @@
 import { prisma } from '@/shared/lib/prisma';
-import type { ContactStatusKey, ContactSubjectKey, CreerContactDto } from '../types';
+import type { ContactStatusKey, CreerContactDto } from '../types';
 
 export class ContactRepository {
   async creer(dto: CreerContactDto) {

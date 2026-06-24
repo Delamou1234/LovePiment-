@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import Link from 'next/link';
 import { Boxes, Loader2 } from 'lucide-react';
 import { STOCK_FAIBLE_SEUIL } from '@/modules/admin/lib/stock-threshold';
@@ -44,8 +45,9 @@ export function AdminStockAlertsMenu({ count }: Props) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    if (open) void loadAlertes();
+  useRunAfterMount(() => {
+    if (!open) return;
+    void loadAlertes();
   }, [open, loadAlertes]);
 
   if (count <= 0) return null;

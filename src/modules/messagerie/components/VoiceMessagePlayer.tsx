@@ -91,6 +91,9 @@ export function VoiceMessagePlayer({ src, durationMs, isMine }: Props) {
         <div
           role="slider"
           tabIndex={0}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(progress)}
           onClick={seek}
           className={`relative h-1.5 rounded-full cursor-pointer ${accent}`}
         >

@@ -66,13 +66,27 @@ function buildHeroSlides(categories: HeroCategoryLink[]): HeroSlide[] {
 
 export function HomeHero({ categories = [], featured }: HomeHeroProps) {
   const slides = useMemo(() => buildHeroSlides(categories), [categories]);
+  return (
+    <HomeHeroSlides
+      key={slides.length}
+      slides={slides}
+      categories={categories}
+      featured={featured}
+    />
+  );
+}
+
+function HomeHeroSlides({
+  slides,
+  categories,
+  featured,
+}: {
+  slides: HeroSlide[];
+  categories: HeroCategoryLink[];
+  featured?: HeroFeaturedPeek | null;
+}) {
   const [slideIndex, setSlideIndex] = useState(0);
   const [progressKey, setProgressKey] = useState(0);
-
-  useEffect(() => {
-    setSlideIndex(0);
-    setProgressKey((k) => k + 1);
-  }, [slides.length]);
 
   const goToSlide = useCallback((index: number) => {
     setSlideIndex(index);

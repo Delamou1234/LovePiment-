@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { AlertTriangle, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { STOCK_FAIBLE_SEUIL } from '@/modules/admin/lib/stock-threshold';
 
 type Props = {
@@ -13,12 +13,10 @@ export function AdminStockAlertBanner({ count }: Props) {
   const [dismissed, setDismissed] = useState(false);
   const [prevCount, setPrevCount] = useState(count);
 
-  useEffect(() => {
-    if (count > prevCount) {
-      setDismissed(false);
-    }
+  if (count !== prevCount) {
+    if (count > prevCount) setDismissed(false);
     setPrevCount(count);
-  }, [count, prevCount]);
+  }
 
   if (count <= 0 || dismissed) return null;
 
@@ -39,7 +37,7 @@ export function AdminStockAlertBanner({ count }: Props) {
           className="admin-stock-banner-close"
           aria-label="Masquer l'alerte"
         >
-          <X className="h-4 w-4" />
+          <X className="h-4 w-4" strokeWidth={1.75} />
         </button>
       </div>
     </div>

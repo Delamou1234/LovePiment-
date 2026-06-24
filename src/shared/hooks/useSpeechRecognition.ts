@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 
 interface UseSpeechRecognitionOptions {
   lang?: string;
@@ -13,18 +13,22 @@ function getSpeechRecognitionClass(): (new () => SpeechRecognition) | null {
   return window.SpeechRecognition ?? window.webkitSpeechRecognition ?? null;
 }
 
+function subscribeSpeechSupport() {
+  return () => {};
+}
+
 export function useSpeechRecognition({
   lang = 'fr-FR',
   onResult,
   onError,
 }: UseSpeechRecognitionOptions = {}) {
   const [isListening, setIsListening] = useState(false);
-  const [isSupported, setIsSupported] = useState(false);
+  const isSupported = useSyncExternalStore(
+    subscribeSpeechSupport,
+    () => Boolean(getSpeechRecognitionClass()),
+    () => false,
+  );
   const recognitionRef = useRef<SpeechRecognition | null>(null);
-
-  useEffect(() => {
-    setIsSupported(Boolean(getSpeechRecognitionClass()));
-  }, []);
 
   const stopListening = useCallback(() => {
     recognitionRef.current?.stop();

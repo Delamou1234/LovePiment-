@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
+import { useCallback, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -140,9 +141,7 @@ export default function AdminBiPage() {
     }
   }, [periode]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useRunAfterMount(() => void load(), [load]);
 
   const maxCaJour = Math.max(...(rapport?.chiffreAffaires.parJour.map((d) => d.montant) ?? [1]), 1);
   const maxCaMois = Math.max(...(rapport?.chiffreAffaires.parMois.map((d) => d.montant) ?? [1]), 1);

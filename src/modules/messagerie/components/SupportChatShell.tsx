@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import { Loader2 } from 'lucide-react';
 import { ChatPanel } from './ChatPanel';
 import { SUPPORT_LABEL } from '../lib/support';
@@ -34,9 +35,9 @@ export function SupportChatShell({ className = '', fullHeight = true }: Props) {
     }
   }, []);
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     syncChatSessionCookie();
-    init();
+    void init();
   }, [init]);
 
   if (loading) {

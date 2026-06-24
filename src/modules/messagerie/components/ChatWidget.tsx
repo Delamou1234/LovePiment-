@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import Link from 'next/link';
 import { X } from 'lucide-react';
 import { SupportChatShell } from './SupportChatShell';
@@ -16,7 +17,7 @@ const POLL_FAIL_MS = 120_000;
 
 export function ChatWidget({ onOpenAssistant }: ChatWidgetProps = {}) {
   const [open, setOpen] = useState(false);
-  const [unread, setUnread] = useState(0);
+  const [, setUnread] = useState(0);
   const pollDelayRef = useRef(POLL_OK_MS);
 
   const loadUnread = useCallback(async () => {
@@ -36,9 +37,9 @@ export function ChatWidget({ onOpenAssistant }: ChatWidgetProps = {}) {
     }
   }, []);
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     syncChatSessionCookie();
-    loadUnread();
+    void loadUnread();
 
     let timeout: ReturnType<typeof setTimeout>;
     const schedule = () => {
@@ -52,8 +53,9 @@ export function ChatWidget({ onOpenAssistant }: ChatWidgetProps = {}) {
     return () => clearTimeout(timeout);
   }, [loadUnread]);
 
-  useEffect(() => {
-    if (open) loadUnread();
+  useRunAfterMount(() => {
+    if (!open) return;
+    void loadUnread();
   }, [open, loadUnread]);
 
   return (

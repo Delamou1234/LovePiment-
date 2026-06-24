@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import Image from 'next/image';
 import Link from 'next/link';
 import { X, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
@@ -57,6 +58,7 @@ export function ProductImageGallery({ images, alt, badge, relatedProducts = [] }
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const dragging = useRef(false);
+  const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0, ox: 0, oy: 0 });
 
   const activeImage = gallery[activeIndex];
@@ -83,7 +85,7 @@ export function ProductImageGallery({ images, alt, badge, relatedProducts = [] }
     return () => window.removeEventListener('keydown', onKey);
   }, [zoomOpen]);
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     if (zoomOpen) resetZoom();
   }, [zoomOpen, activeIndex, resetZoom]);
 
@@ -95,6 +97,7 @@ export function ProductImageGallery({ images, alt, badge, relatedProducts = [] }
   const onPointerDown = (e: React.PointerEvent) => {
     if (scale <= 1) return;
     dragging.current = true;
+    setIsDragging(true);
     dragStart.current = { x: e.clientX, y: e.clientY, ox: offset.x, oy: offset.y };
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   };
@@ -109,6 +112,7 @@ export function ProductImageGallery({ images, alt, badge, relatedProducts = [] }
 
   const onPointerUp = () => {
     dragging.current = false;
+    setIsDragging(false);
   };
 
   const showSidebar = gallery.length > 1 || relatedProducts.length > 0;
@@ -249,7 +253,7 @@ export function ProductImageGallery({ images, alt, badge, relatedProducts = [] }
               className="absolute inset-0 flex items-center justify-center"
               style={{
                 transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
-                transition: dragging.current ? 'none' : 'transform 0.15s ease-out',
+                transition: isDragging ? 'none' : 'transform 0.15s ease-out',
                 cursor: scale > 1 ? 'grab' : 'zoom-in',
               }}
               onClick={() => scale === 1 && setScale(2)}

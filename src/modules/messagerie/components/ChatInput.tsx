@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ImagePlus,
   Loader2,
@@ -32,18 +32,17 @@ export function ChatInput({ disabled, onSendText, onUpload, onTyping }: ChatInpu
   const [imageCaption, setImageCaption] = useState('');
   const [voiceBlob, setVoiceBlob] = useState<Blob | null>(null);
   const [voiceDurationMs, setVoiceDurationMs] = useState(0);
-  const [voicePreviewUrl, setVoicePreviewUrl] = useState<string | null>(null);
+  const voicePreviewUrl = useMemo(
+    () => (voiceBlob ? URL.createObjectURL(voiceBlob) : null),
+    [voiceBlob],
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!voiceBlob) {
-      setVoicePreviewUrl(null);
-      return;
-    }
-    const url = URL.createObjectURL(voiceBlob);
-    setVoicePreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [voiceBlob]);
+    return () => {
+      if (voicePreviewUrl) URL.revokeObjectURL(voicePreviewUrl);
+    };
+  }, [voicePreviewUrl]);
 
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);

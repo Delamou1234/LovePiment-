@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { useIsClient } from '@/shared/hooks/useIsClient';
 import { CheckCircle2, LogOut, Trash2 } from 'lucide-react';
 import {
   confirmAction as confirmActionFn,
@@ -128,7 +129,7 @@ function ConfirmModal({
 
 export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<PendingConfirm | null>(null);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useIsClient();
 
   const openLogoutConfirm = useCallback((role: LogoutRole) => {
     return new Promise<boolean>((resolve) => {
@@ -150,7 +151,6 @@ export function ConfirmDialogProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    setMounted(true);
     registerConfirmLogout(openLogoutConfirm);
     registerConfirmAction(openActionConfirm);
     return () => {

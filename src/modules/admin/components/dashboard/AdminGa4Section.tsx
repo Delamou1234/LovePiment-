@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
+import { useCallback, useState } from 'react';
 import { ExternalLink, Loader2 } from 'lucide-react';
 
 type Ga4Rapport = {
@@ -55,9 +56,7 @@ export function AdminGa4Section({ periode }: Props) {
     }
   }, [periode]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useRunAfterMount(() => void load(), [load]);
 
   const maxUsers = Math.max(...(rapport?.utilisateursParJour.map((v) => v.users) ?? [1]), 1);
 

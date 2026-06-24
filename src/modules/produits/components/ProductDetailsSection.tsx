@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { usePanier, creerItemPanier } from '@/store/panier';
@@ -97,7 +98,7 @@ export default function ProductDetailsSection({ product, avisStats, similaires =
   const selectedVariant =
     findVariant(selectedTaille, selectedCouleur, selectedCapacite) ?? liveVariantes[0];
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     if (selectedVariant && findVariant(selectedTaille, selectedCouleur, selectedCapacite)) return;
     if (selectedVariant) {
       if (selectedVariant.taille) setSelectedTaille(selectedVariant.taille);
@@ -109,7 +110,7 @@ export default function ProductDetailsSection({ product, avisStats, similaires =
   const stockDisponible = selectedVariant?.stock ?? 0;
   const aDuStock = stockDisponible > 0;
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     if (quantite > stockDisponible && stockDisponible > 0) {
       setQuantite(stockDisponible);
     }

@@ -155,7 +155,8 @@ export class ProductRepository {
   }
 
   async modifier(id: string, dto: ModifierProduitDto): Promise<ProduitAvecVariantes> {
-    const { variantes, ...produitData } = dto;
+    const { variantes: _variantes, ...produitData } = dto;
+    void _variantes;
     return prisma.product.update({
       where: { id },
       data: produitData,

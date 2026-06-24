@@ -150,7 +150,6 @@ export class ReviewRepository {
 
       for (const item of cmd.items) {
         const productId = item.variante.produit.id;
-        const key = `${cmd.id}:${productId}`;
         if (avisProduits.has(productId) || seenInOrder.has(productId)) continue;
         seenInOrder.add(productId);
 

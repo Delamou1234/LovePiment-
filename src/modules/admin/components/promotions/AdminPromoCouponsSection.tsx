@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Check,
   Copy,
@@ -67,9 +68,7 @@ export function AdminPromoCouponsSection({ refreshToken = 0 }: Props) {
     }
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load, refreshToken]);
+  useRunAfterMount(() => void load(), [load, refreshToken]);
 
   const couponStats = useMemo(
     () => ({

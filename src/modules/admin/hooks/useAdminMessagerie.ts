@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import type { ConversationResume } from '@/modules/messagerie/types';
 
 const POLL_MS = 30_000;
@@ -28,7 +29,7 @@ export function useAdminMessagerie(enabled = true) {
     }
   }, [authorized, enabled]);
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     activeRef.current = true;
 
     if (!enabled || !authorized) {
@@ -36,12 +37,17 @@ export function useAdminMessagerie(enabled = true) {
       return;
     }
 
-    refresh();
+    void refresh();
+  }, [authorized, enabled, refresh]);
+
+  useEffect(() => {
+    if (!enabled || !authorized) return;
+
     const interval = setInterval(refresh, POLL_MS);
 
     const onVisibility = () => {
       activeRef.current = !document.hidden;
-      if (activeRef.current) refresh();
+      if (activeRef.current) void refresh();
     };
     document.addEventListener('visibilitychange', onVisibility);
 

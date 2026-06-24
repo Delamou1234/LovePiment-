@@ -51,7 +51,6 @@ type Props = {
 };
 
 function SidebarContent({
-  profil,
   section,
   offreBienvenue,
   onSectionChange,

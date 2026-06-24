@@ -61,7 +61,8 @@ export type CourierTourneeDto = {
 };
 
 function sansMontant(cmd: CourierOrderDto): CourierOrderPublicDto {
-  const { montantTotal: _m, ...rest } = cmd;
+  const { montantTotal, ...rest } = cmd;
+  void montantTotal;
   return rest;
 }
 
@@ -130,7 +131,9 @@ async function withCoords(
     const geo = await deliveryNavigationService.geocoderCommande(row.id);
     if (geo) coordinates = geo;
   }
-  const { clientLatitude: _lat, clientLongitude: _lon, ...rest } = row;
+  const { clientLatitude, clientLongitude, ...rest } = row;
+  void clientLatitude;
+  void clientLongitude;
   return { ...rest, coordinates };
 }
 
@@ -238,7 +241,8 @@ export class CourierOrderService {
     const livraisons = await Promise.all(
       orders.map(async (o) => {
         const base = await withCoords(toCourierOrder(o), { geocode: false });
-        const { montantTotal: _m, ...rest } = base;
+        const { montantTotal, ...rest } = base;
+        void montantTotal;
         return {
           ...rest,
           livreeLe: base.livreeLe ?? null,

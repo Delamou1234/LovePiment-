@@ -151,7 +151,8 @@ export class CinetPayProvider implements PaymentProvider {
     }
   }
 
-  validerWebhook(_payload: unknown, _signature: string): boolean {
+  validerWebhook(..._args: [unknown, string]): boolean {
+    void _args;
     return true;
   }
 }

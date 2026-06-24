@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
+import { useCallback, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, Loader2, MessageSquare, Star } from 'lucide-react';
@@ -31,9 +32,7 @@ export function CompteAvisSection() {
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useRunAfterMount(() => void load(), [load]);
 
   if (loading) {
     return (

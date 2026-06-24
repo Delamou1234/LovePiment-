@@ -1,5 +1,6 @@
 'use client';
 
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ImagePlus, Loader2 } from 'lucide-react';
 import type { ConversationDetailDto } from '../types';
@@ -60,9 +61,7 @@ export function ChatPanel({
     setLoading(false);
   }, [conversationId, headers, mode]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useRunAfterMount(() => void load(), [load]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -92,7 +91,7 @@ export function ChatPanel({
     es.onerror = () => setConnected(false);
 
     return () => es.close();
-  }, [conversationId, mode]);
+  }, [conversationId, mode, load]);
 
   useEffect(() => {
     const ping = async (isTyping?: boolean) => {

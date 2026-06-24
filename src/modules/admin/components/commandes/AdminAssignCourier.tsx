@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import { Loader2, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -28,7 +29,7 @@ export function AdminAssignCourier({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     setLoading(true);
     fetch('/api/admin/livreurs')
       .then((r) => (r.ok ? r.json() : null))

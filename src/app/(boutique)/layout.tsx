@@ -1,4 +1,3 @@
-import { BoutiqueWidgets } from './BoutiqueWidgets';
 import { BoutiqueProviders } from './BoutiqueProviders';
 import { BoutiqueLayoutShell } from './BoutiqueLayoutShell';
 import { productService } from '@/modules/produits/services/product.service';

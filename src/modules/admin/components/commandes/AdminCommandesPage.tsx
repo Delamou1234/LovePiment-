@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
+import { useCallback, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -164,11 +165,9 @@ export function AdminCommandesPage() {
     }
   }, [filtre, page, clientId]);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useRunAfterMount(() => void load(), [load]);
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     const openId = searchParams.get('open');
     if (!openId || loading) return;
     if (commandes.some((c) => c.id === openId)) {

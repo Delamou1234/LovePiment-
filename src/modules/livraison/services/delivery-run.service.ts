@@ -1,9 +1,6 @@
 import { prisma } from '@/shared/lib/prisma';
 import { deliveryNavigationService } from './delivery-navigation.service';
 import { trackingService } from './tracking.service';
-import type { OrderStatus } from '@prisma/client';
-
-const STATUTS_ELIGIBLES: OrderStatus[] = ['PAYEE', 'EN_PREPARATION', 'EXPEDIEE'];
 
 function sommeMontantsTournee(
   orders: {

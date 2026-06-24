@@ -1,6 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
+import { useSyncedState } from '@/shared/hooks/useSyncedState';
+import { useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -56,7 +58,7 @@ export function AdminClientsPage() {
   const filtreUrl = searchParams.get('q')?.trim().toLowerCase() ?? '';
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
-  const [recherche, setRecherche] = useState(filtreUrl);
+  const [recherche, setRecherche] = useSyncedState(filtreUrl);
   const [detailClient, setDetailClient] = useState<Client | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
@@ -73,13 +75,7 @@ export function AdminClientsPage() {
     }
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  useEffect(() => {
-    if (filtreUrl) setRecherche(filtreUrl);
-  }, [filtreUrl]);
+  useRunAfterMount(() => void load(), [load]);
 
   const clientsFiltres = useMemo(() => {
     const q = (recherche.trim() || filtreUrl).toLowerCase();

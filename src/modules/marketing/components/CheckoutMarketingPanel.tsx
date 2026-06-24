@@ -71,7 +71,7 @@ export function CheckoutMarketingPanel({
         pointsUtilises,
         codeParrainage: parrainageActif ? codeParrainage.trim().toUpperCase() || null : null,
       });
-    } catch (err) {
+    } catch {
       setTotaux(null);
       onTotauxChange(null);
     } finally {

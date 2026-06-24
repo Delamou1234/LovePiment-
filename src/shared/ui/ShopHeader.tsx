@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { usePathBoundOpen } from '@/shared/hooks/usePathBoundOpen';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { usePanier, selectDistinctProductCount } from '@/store/panier';
@@ -79,8 +80,8 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
   const panier = usePanier();
   const cartProductCountDisplay = usePanier(selectDistinctProductCount);
   const { user: authUser, logout } = useAuthSession();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [boutiqueOpen, setBoutiqueOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = usePathBoundOpen(pathname);
+  const [boutiqueOpen, setBoutiqueOpen] = usePathBoundOpen(pathname);
   const [searchOpen, setSearchOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const loginHref = `/connexion?redirect=${encodeURIComponent(pathname)}`;
@@ -91,11 +92,6 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
   const isHome = pathname === '/';
 
   useEffect(() => {
-    setMenuOpen(false);
-    setBoutiqueOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
     const onClick = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setBoutiqueOpen(false);
@@ -103,7 +99,7 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
     };
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
-  }, []);
+  }, [pathname, setBoutiqueOpen]);
 
   const closeMenu = () => setMenuOpen(false);
 

@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import {
-  courierAuthRepository,
-  courierRepository,
-} from '@/modules/livraison/repository/courier.repository';
+import { courierRepository } from '@/modules/livraison/repository/courier.repository';
 import { adminUnauthorized, requireAdmin } from '@/modules/admin/lib/require-admin';
 
 type Params = Promise<{ id: string }>;

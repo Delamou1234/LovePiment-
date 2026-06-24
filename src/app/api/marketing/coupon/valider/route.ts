@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { marketingService } from '@/modules/marketing/services/marketing.service';
-import { getCustomerSession } from '@/shared/lib/auth/session';
-
 const schema = z.object({
   code: z.string().min(2).max(40),
   sousTotal: z.number().min(0),

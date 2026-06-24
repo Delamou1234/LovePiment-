@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
+import { useCallback, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -88,11 +89,9 @@ export function AdminPromoProductsSection({ refreshToken = 0 }: Props) {
     }
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load, refreshToken]);
+  useRunAfterMount(() => void load(), [load, refreshToken]);
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     const editId = searchParams.get('edit');
     if (!editId || loading || editProduit) return;
     const produit = produits.find((p) => p.id === editId);

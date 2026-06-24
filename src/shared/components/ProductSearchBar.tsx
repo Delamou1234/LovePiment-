@@ -53,6 +53,10 @@ export function ProductSearchBar({
   const [imageError, setImageError] = useState('');
   const [aiEnhanced, setAiEnhanced] = useState(false);
 
+  const trimmed = query.trim();
+  const canSearchText = searchMode === 'text' && trimmed.length >= 2;
+  const displaySuggestions = canSearchText ? suggestions : [];
+
   const navigateToSearch = useCallback(
     (q: string) => {
       const trimmed = q.trim();
@@ -149,18 +153,11 @@ export function ProductSearchBar({
   };
 
   useEffect(() => {
-    const trimmed = query.trim();
-    if (searchMode === 'image' || trimmed.length < 2) {
-      if (searchMode === 'text') {
-        setSuggestions([]);
-        if (trimmed.length < 2) setLoading(false);
-      }
-      return;
-    }
+    if (!canSearchText) return;
 
-    setLoading(true);
     const controller = new AbortController();
     const timer = setTimeout(async () => {
+      setLoading(true);
       try {
         const res = await fetch(
           `/api/recherche/suggestions?q=${encodeURIComponent(trimmed)}`,
@@ -187,7 +184,7 @@ export function ProductSearchBar({
       clearTimeout(timer);
       controller.abort();
     };
-  }, [query, searchMode, clearImageSearch]);
+  }, [query, searchMode, clearImageSearch, canSearchText, trimmed]);
 
   useEffect(() => {
     return () => {
@@ -234,7 +231,7 @@ export function ProductSearchBar({
   const dropdownItems =
     searchMode === 'image'
       ? imageResults.map((r) => ({ type: 'produit' as const, ...r }))
-      : suggestions;
+      : displaySuggestions;
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (!isOpen || dropdownItems.length === 0) {
@@ -465,7 +462,7 @@ export function ProductSearchBar({
                       </button>
                     </li>
                   ))
-                : suggestions.map((item, index) => (
+                : displaySuggestions.map((item, index) => (
                     <li
                       key={`${item.type}-${item.type === 'produit' ? item.id : item.slug}`}
                       role="option"

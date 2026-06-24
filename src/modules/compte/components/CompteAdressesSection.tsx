@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
+import { useCallback, useState } from 'react';
 import { Loader2, MapPin, Plus, Star, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { CustomerAddress } from '@/modules/compte/types';
@@ -79,11 +80,9 @@ export function CompteAdressesSection() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setAdresses, setLoading]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useRunAfterMount(() => void load(), [load]);
 
   const creer = async () => {
     if (!form.adresse.trim()) return;

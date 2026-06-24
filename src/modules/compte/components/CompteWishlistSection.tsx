@@ -1,6 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
+import { useSyncedState } from '@/shared/hooks/useSyncedState';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Heart, Loader2, ShoppingBag, Trash2 } from 'lucide-react';
@@ -21,7 +23,7 @@ type Props = {
 };
 
 export function CompteWishlistSection({ initialItems }: Props) {
-  const [items, setItems] = useState<WishlistItemClient[]>(initialItems ?? []);
+  const [items, setItems] = useSyncedState(initialItems ?? []);
   const [loading, setLoading] = useState(initialItems == null);
   const { refresh } = useWishlist();
   const panier = usePanier();
@@ -37,15 +39,14 @@ export function CompteWishlistSection({ initialItems }: Props) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setItems]);
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     if (initialItems != null) {
-      setItems(initialItems);
       setLoading(false);
       return;
     }
-    load();
+    void load();
   }, [initialItems, load]);
 
   const retirer = async (productId: string) => {

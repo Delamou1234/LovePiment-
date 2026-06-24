@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
+import { useCallback, useState } from 'react';
 import { IdCard, Loader2, Printer, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ADMIN_BTN_PRIMARY, ADMIN_CARD, ADMIN_CARD_PAD } from '@/modules/admin/components/admin-ui';
@@ -66,9 +67,7 @@ export function AdminLivreursPage() {
     }
   }, []);
 
-  useEffect(() => {
-    void load();
-  }, [load]);
+  useRunAfterMount(() => void load(), [load]);
 
   const majPhotoLivreur = (id: string, photoUrl: string | null) => {
     setLivreurs((prev) => prev.map((l) => (l.id === id ? { ...l, photoUrl } : l)));

@@ -6,7 +6,6 @@ import {
   hashResetCode,
   isValidResetCodeFormat,
 } from '@/shared/lib/auth/reset-code';
-import { hashPassword } from '@/shared/lib/auth/password';
 import { sendEmail } from '@/shared/lib/email/mailer';
 
 const CODE_TTL_MS = 15 * 60 * 1000;

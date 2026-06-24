@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -109,13 +110,12 @@ export function AdminProduitsPage() {
           categorie: p.categorie,
           variantes: p.variantes,
         },
-        p.categorie.id,
       ),
     );
     setEditorOpen(true);
   }, []);
 
-  useEffect(() => {
+  useRunAfterMount(() => {
     const editId = searchParams.get('edit');
     if (!editId || loading || editorOpen) return;
     const produit = produits.find((p) => p.id === editId);

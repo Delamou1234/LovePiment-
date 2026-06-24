@@ -1,10 +1,11 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useSyncedState } from '@/shared/hooks/useSyncedState';
 import type { StockVarianteClient } from '../types';
 
 export function useProductStock(slug: string, initialVariantes: StockVarianteClient[]) {
-  const [variantes, setVariantes] = useState(initialVariantes);
+  const [variantes, setVariantes] = useSyncedState(initialVariantes);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -22,11 +23,7 @@ export function useProductStock(slug: string, initialVariantes: StockVarianteCli
     } finally {
       setLoading(false);
     }
-  }, [slug]);
-
-  useEffect(() => {
-    setVariantes(initialVariantes);
-  }, [initialVariantes]);
+  }, [slug, setVariantes]);
 
   useEffect(() => {
     const onVisible = () => {
