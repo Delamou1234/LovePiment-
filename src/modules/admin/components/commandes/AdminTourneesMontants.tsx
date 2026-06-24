@@ -119,7 +119,7 @@ export function AdminTourneesMontants({ refreshKey }: { refreshKey?: number }) {
                 <label className="text-xs text-zinc-600">
                   Total tournée (GN)
                   <input
-                    className="input-kabishop mt-1 w-full"
+                    className="input-shop mt-1 w-full"
                     value={draft?.total ?? ''}
                     onChange={(e) =>
                       setDrafts((d) => ({
@@ -132,7 +132,7 @@ export function AdminTourneesMontants({ refreshKey }: { refreshKey?: number }) {
                 <label className="text-xs text-zinc-600">
                   Espèces à encaisser (GN)
                   <input
-                    className="input-kabishop mt-1 w-full"
+                    className="input-shop mt-1 w-full"
                     value={draft?.especes ?? ''}
                     onChange={(e) =>
                       setDrafts((d) => ({

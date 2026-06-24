@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { customerAuthRepository } from '@/modules/auth/repository/customer-auth.repository';
 import { customerProfileService } from '@/modules/compte/services/customer-profile.service';
+import { customerDashboardService } from '@/modules/compte/services/customer-dashboard.service';
 import { serialiserWishlistItems } from '@/modules/compte/lib/serialize-wishlist';
 import { avisService } from '@/modules/avis/services/review.service';
 import { getCustomerSession } from '@/shared/lib/auth/session';
@@ -25,16 +26,25 @@ export async function GET() {
     return NextResponse.json({ message: 'Compte introuvable' }, { status: 401 });
   }
 
+  const wishlist = serialiserWishlistItems(wishlistRows);
+
+  const dashboard = await customerDashboardService.obtenirTableauDeBord(
+    session.id,
+    wishlist.length,
+    eligibles.length,
+  );
+
   return NextResponse.json(
     {
       profil,
       commandes,
-      wishlist: serialiserWishlistItems(wishlistRows),
+      wishlist,
       adresses: adresses.map((a) => ({
         ...a,
         createdAt: a.createdAt.toISOString(),
       })),
       avisEligibles: eligibles,
+      dashboard,
     },
     { headers: cachePrivate(0) },
   );

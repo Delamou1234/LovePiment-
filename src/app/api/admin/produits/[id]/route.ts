@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { productService } from '@/modules/produits/services/product.service';
 import { adminUnauthorized, requireAdmin } from '@/modules/admin/lib/require-admin';
 import { revalidateBoutique } from '@/modules/produits/lib/revalidate-boutique';
+import { revalidateTag } from 'next/cache';
 
 type Params = Promise<{ id: string }>;
 
@@ -32,6 +33,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
   try {
     const produit = await productService.modifierProduit(id, parsed.data);
     revalidateBoutique({ productSlug: produit.slug });
+    revalidateTag('admin-stats', 'max');
     return NextResponse.json({
       produit: {
         ...produit,
@@ -54,6 +56,7 @@ export async function DELETE(_request: NextRequest, { params }: { params: Params
     const existant = await productService.obtenirProduitParId(id);
     await productService.supprimerProduit(id);
     revalidateBoutique({ productSlug: existant.slug });
+    revalidateTag('admin-stats', 'max');
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ message: 'Produit introuvable' }, { status: 404 });
@@ -68,5 +71,6 @@ export async function POST(_request: NextRequest, { params }: { params: Params }
   const { id } = await params;
   const result = await productService.toggleActif(id);
   revalidateBoutique();
+  revalidateTag('admin-stats', 'max');
   return NextResponse.json(result);
 }

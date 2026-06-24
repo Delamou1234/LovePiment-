@@ -105,7 +105,7 @@ function BarChart({
             </span>
             <div className="flex-1 h-2.5 bg-zinc-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-[#4a5240] rounded-full transition-all duration-500"
+                className="h-full bg-[#9B1B2E] rounded-full transition-all duration-500"
                 style={{ width: `${maxValue > 0 ? (val / maxValue) * 100 : 0}%` }}
               />
             </div>
@@ -155,11 +155,11 @@ export default function AdminBiPage() {
     <div className="space-y-8 max-w-7xl">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#4a5240] mb-1">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#9B1B2E] mb-1">
             Business Intelligence
           </p>
           <h1 className="text-2xl md:text-3xl font-bold text-zinc-900 flex items-center gap-2">
-            <LayoutDashboard className="h-7 w-7 text-[#4a5240]" />
+            <LayoutDashboard className="h-7 w-7 text-[#9B1B2E]" />
             Tableaux de bord BI
           </h1>
           <p className="text-sm text-zinc-500 mt-1">
@@ -168,7 +168,7 @@ export default function AdminBiPage() {
         </div>
         <div className="flex gap-2 items-center">
           <select
-            className="input-kabishop py-2 text-sm min-w-[120px]"
+            className="input-shop py-2 text-sm min-w-[120px]"
             value={periode}
             onChange={(e) => setPeriode(e.target.value as typeof periode)}
           >
@@ -187,14 +187,14 @@ export default function AdminBiPage() {
 
       {loading || !rapport ? (
         <div className="flex justify-center py-24">
-          <Loader2 className="h-8 w-8 animate-spin text-[#4a5240]" />
+          <Loader2 className="h-8 w-8 animate-spin text-[#9B1B2E]" />
         </div>
       ) : (
         <>
           {/* KPIs CA */}
           <section>
             <h2 className="text-sm font-bold text-zinc-800 flex items-center gap-2 mb-4">
-              <Banknote className="h-4 w-4 text-[#4a5240]" />
+              <Banknote className="h-4 w-4 text-[#9B1B2E]" />
               Chiffre d&apos;affaires
             </h2>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -213,7 +213,7 @@ export default function AdminBiPage() {
               ].map((k) => (
                 <div
                   key={k.label}
-                  className="rounded-xl border border-[#ebe4d8] bg-white p-5 shadow-sm"
+                  className="rounded-xl border border-[#F2D4DC] bg-white p-5 shadow-sm"
                 >
                   <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                     {k.label}
@@ -232,9 +232,9 @@ export default function AdminBiPage() {
           </section>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="rounded-xl border border-[#ebe4d8] bg-white p-6 shadow-sm">
+            <div className="rounded-xl border border-[#F2D4DC] bg-white p-6 shadow-sm">
               <h3 className="font-semibold text-zinc-900 mb-4 flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-[#4a5240]" />
+                <BarChart3 className="h-4 w-4 text-[#9B1B2E]" />
                 CA par jour
               </h3>
               <BarChart
@@ -248,9 +248,9 @@ export default function AdminBiPage() {
               />
             </div>
 
-            <div className="rounded-xl border border-[#ebe4d8] bg-white p-6 shadow-sm">
+            <div className="rounded-xl border border-[#F2D4DC] bg-white p-6 shadow-sm">
               <h3 className="font-semibold text-zinc-900 mb-4 flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 text-[#4a5240]" />
+                <BarChart3 className="h-4 w-4 text-[#9B1B2E]" />
                 CA par mois
               </h3>
               <BarChart
@@ -266,9 +266,9 @@ export default function AdminBiPage() {
           </div>
 
           {/* Top produits */}
-          <section className="rounded-xl border border-[#ebe4d8] bg-white p-6 shadow-sm">
+          <section className="rounded-xl border border-[#F2D4DC] bg-white p-6 shadow-sm">
             <h2 className="text-sm font-bold text-zinc-800 flex items-center gap-2 mb-4">
-              <Package className="h-4 w-4 text-[#4a5240]" />
+              <Package className="h-4 w-4 text-[#9B1B2E]" />
               Produits les plus vendus
             </h2>
             {rapport.topProduits.length === 0 ? (
@@ -277,7 +277,7 @@ export default function AdminBiPage() {
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[480px] text-sm">
                   <thead>
                     <tr className="border-b border-zinc-100 text-left text-[11px] uppercase tracking-wider text-zinc-500">
                       <th className="pb-3 pr-4 font-bold">Produit</th>
@@ -291,9 +291,9 @@ export default function AdminBiPage() {
                         <td className="py-3 pr-4">
                           <Link
                             href={`/produits/${p.slug}`}
-                            className="flex items-center gap-3 hover:text-[#4a5240] transition group"
+                            className="flex items-center gap-3 hover:text-[#9B1B2E] transition group"
                           >
-                            <div className="relative h-11 w-11 shrink-0 rounded-lg overflow-hidden bg-[#f5f0e8] ring-1 ring-[#ebe4d8]">
+                            <div className="relative h-11 w-11 shrink-0 rounded-lg overflow-hidden bg-[#FCEEE8] ring-1 ring-[#F2D4DC]">
                               {p.image && (
                                 <Image
                                   src={p.image}
@@ -315,7 +315,7 @@ export default function AdminBiPage() {
                         <td className="py-3 pr-4 text-right font-semibold tabular-nums">
                           {p.quantiteVendue}
                         </td>
-                        <td className="py-3 text-right font-semibold text-[#4a5240] tabular-nums">
+                        <td className="py-3 text-right font-semibold text-[#9B1B2E] tabular-nums">
                           {formatGn(p.chiffreAffaires)}
                         </td>
                       </tr>
@@ -329,7 +329,7 @@ export default function AdminBiPage() {
           {/* Clients */}
           <section>
             <h2 className="text-sm font-bold text-zinc-800 flex items-center gap-2 mb-4">
-              <Users className="h-4 w-4 text-[#4a5240]" />
+              <Users className="h-4 w-4 text-[#9B1B2E]" />
               Analyse des clients
             </h2>
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
@@ -342,7 +342,7 @@ export default function AdminBiPage() {
               ].map((k) => (
                 <div
                   key={k.label}
-                  className="rounded-xl border border-[#ebe4d8] bg-white p-4 shadow-sm text-center"
+                  className="rounded-xl border border-[#F2D4DC] bg-white p-4 shadow-sm text-center"
                 >
                   <p className="text-[10px] font-bold uppercase text-zinc-500">{k.label}</p>
                   <p className="text-lg font-bold text-zinc-900 mt-1">{k.value}</p>
@@ -351,7 +351,7 @@ export default function AdminBiPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="rounded-xl border border-[#ebe4d8] bg-white p-6 shadow-sm">
+              <div className="rounded-xl border border-[#F2D4DC] bg-white p-6 shadow-sm">
                 <h3 className="font-semibold mb-4">Top clients (CA)</h3>
                 <ul className="space-y-3">
                   {rapport.clients.topClients.map((c, i) => (
@@ -361,7 +361,7 @@ export default function AdminBiPage() {
                         <p className="text-[11px] text-zinc-400 truncate">{c.email ?? '—'}</p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="font-bold text-[#4a5240]">{formatGn(c.totalDepense)}</p>
+                        <p className="font-bold text-[#9B1B2E]">{formatGn(c.totalDepense)}</p>
                         <p className="text-[10px] text-zinc-400">{c.commandes} cmd.</p>
                       </div>
                     </li>
@@ -372,7 +372,7 @@ export default function AdminBiPage() {
                 </ul>
               </div>
 
-              <div className="rounded-xl border border-[#ebe4d8] bg-white p-6 shadow-sm">
+              <div className="rounded-xl border border-[#F2D4DC] bg-white p-6 shadow-sm">
                 <h3 className="font-semibold mb-4">Répartition par ville</h3>
                 <BarChart
                   data={rapport.clients.repartitionVilles.map((v) => ({
@@ -391,9 +391,9 @@ export default function AdminBiPage() {
           </section>
 
           {/* Prévisions */}
-          <section className="rounded-xl border border-[#ebe4d8] bg-white p-6 shadow-sm">
+          <section className="rounded-xl border border-[#F2D4DC] bg-white p-6 shadow-sm">
             <h2 className="text-sm font-bold text-zinc-800 flex items-center gap-2 mb-4">
-              <TrendingUp className="h-4 w-4 text-[#4a5240]" />
+              <TrendingUp className="h-4 w-4 text-[#9B1B2E]" />
               Prévisions des ventes
             </h2>
             <p className="text-xs text-zinc-500 mb-4">
@@ -406,7 +406,7 @@ export default function AdminBiPage() {
                 { label: 'Prévision 7j', value: formatGn(rapport.previsions.prevision7j) },
                 { label: 'Prévision 30j', value: formatGn(rapport.previsions.prevision30j) },
               ].map((k) => (
-                <div key={k.label} className="rounded-lg bg-[#faf7f2] border border-[#ebe4d8] p-4">
+                <div key={k.label} className="rounded-lg bg-[#FFF8F6] border border-[#F2D4DC] p-4">
                   <p className="text-[10px] font-bold uppercase text-zinc-500">{k.label}</p>
                   <p className="text-lg font-bold text-zinc-900 mt-1">{k.value}</p>
                 </div>
@@ -422,12 +422,12 @@ export default function AdminBiPage() {
                   <span className="w-20 text-zinc-500">{d.date.slice(5)}</span>
                   <div className="flex-1 flex gap-1 h-3">
                     <div
-                      className="h-full bg-[#4a5240] rounded-sm"
+                      className="h-full bg-[#9B1B2E] rounded-sm"
                       style={{ width: `${maxPrev > 0 ? (d.reel / maxPrev) * 50 : 0}%` }}
                       title={`Réel: ${formatGn(d.reel)}`}
                     />
                     <div
-                      className="h-full bg-[#4a5240]/30 rounded-sm border border-dashed border-[#4a5240]/50"
+                      className="h-full bg-[#9B1B2E]/30 rounded-sm border border-dashed border-[#9B1B2E]/50"
                       style={{ width: `${maxPrev > 0 ? (d.prevision / maxPrev) * 50 : 0}%` }}
                       title={`Moyenne: ${formatGn(d.prevision)}`}
                     />
@@ -445,27 +445,27 @@ export default function AdminBiPage() {
           </section>
 
           {/* Power BI */}
-          <section className="rounded-xl border border-[#ebe4d8] bg-white p-6 shadow-sm">
+          <section className="rounded-xl border border-[#F2D4DC] bg-white p-6 shadow-sm">
             <h2 className="text-sm font-bold text-zinc-800 flex items-center gap-2 mb-2">
-              <LayoutDashboard className="h-4 w-4 text-[#4a5240]" />
+              <LayoutDashboard className="h-4 w-4 text-[#9B1B2E]" />
               Tableaux de bord Power BI
             </h2>
             {rapport.powerBi.configure && rapport.powerBi.embedUrl ? (
               <div className="mt-4 rounded-xl overflow-hidden border border-zinc-200 aspect-video bg-zinc-100">
                 <iframe
-                  title="Power BI KabiShop"
+                  title="Power BI Love Piment&"
                   src={rapport.powerBi.embedUrl}
                   className="w-full h-full min-h-[420px]"
                   allowFullScreen
                 />
               </div>
             ) : (
-              <div className="mt-4 rounded-xl border-2 border-dashed border-[#ebe4d8] bg-[#faf7f2] p-8 text-center">
+              <div className="mt-4 rounded-xl border-2 border-dashed border-[#F2D4DC] bg-[#FFF8F6] p-8 text-center">
                 <LayoutDashboard className="h-10 w-10 mx-auto text-zinc-300 mb-3" />
                 <p className="text-sm font-medium text-zinc-700">Power BI non configuré</p>
                 <p className="text-xs text-zinc-500 mt-2 max-w-md mx-auto leading-relaxed">
                   Ajoutez{' '}
-                  <code className="bg-white px-1.5 py-0.5 rounded text-[#4a5240]">
+                  <code className="bg-white px-1.5 py-0.5 rounded text-[#9B1B2E]">
                     NEXT_PUBLIC_POWER_BI_EMBED_URL
                   </code>{' '}
                   dans <code className="bg-white px-1.5 py-0.5 rounded">.env.local</code> pour
@@ -476,7 +476,7 @@ export default function AdminBiPage() {
                     href={rapport.powerBi.reportUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 mt-4 text-sm font-semibold text-[#4a5240] hover:underline"
+                    className="inline-flex items-center gap-2 mt-4 text-sm font-semibold text-[#9B1B2E] hover:underline"
                   >
                     Ouvrir le rapport Power BI
                     <ExternalLink className="h-4 w-4" />
@@ -489,7 +489,7 @@ export default function AdminBiPage() {
                 href={rapport.powerBi.reportUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-[#4a5240] hover:underline"
+                className="inline-flex items-center gap-2 mt-4 text-sm font-medium text-[#9B1B2E] hover:underline"
               >
                 Ouvrir dans Power BI
                 <ExternalLink className="h-4 w-4" />

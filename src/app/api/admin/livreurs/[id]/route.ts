@@ -20,6 +20,7 @@ const patchSchema = z.object({
   contactUrgenceNom: z.string().max(120).optional().nullable(),
   contactUrgenceTel: z.string().max(30).optional().nullable(),
   permisConduire: z.string().max(40).optional().nullable(),
+  photoUrl: z.string().max(500).optional().nullable(),
   verifie: z.boolean().optional(),
   actif: z.boolean().optional(),
   notesAdmin: z.string().max(500).optional().nullable(),

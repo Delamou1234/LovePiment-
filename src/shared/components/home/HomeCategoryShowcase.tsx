@@ -11,10 +11,10 @@ type Props = {
 export function HomeCategoryShowcase({ categories }: Props) {
   if (categories.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-[#ebe4d8] bg-white/60 px-6 py-12 text-center">
+      <div className="rounded-2xl border border-dashed border-[#F2D4DC] bg-white/60 px-6 py-12 text-center">
         <p className="text-sm text-zinc-600">
           Aucune catégorie active.{' '}
-          <Link href="/admin/categories" className="font-medium text-[#4a5240] hover:underline">
+          <Link href="/admin/categories" className="font-medium text-[#9B1B2E] hover:underline">
             Ajoutez-en dans l&apos;administration
           </Link>
           .

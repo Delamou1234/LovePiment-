@@ -28,7 +28,7 @@ function construireSlides(
 
   if (fromCategories.length > 0) return fromCategories;
 
-  return [{ src: CATEGORIE_IMAGE_DEFAUT, alt: 'Promo KabiShop' }];
+  return [{ src: CATEGORIE_IMAGE_DEFAUT, alt: 'Promo Love Piment&' }];
 }
 
 export function HomePromoSection({ categories, statsPromos, promoBanniere }: Props) {
@@ -39,18 +39,18 @@ export function HomePromoSection({ categories, statsPromos, promoBanniere }: Pro
       ? `Jusqu'à -${statsPromos.remiseMax}% sur une sélection premium`
       : statsPromos.total > 0
         ? `${statsPromos.total} promotion${statsPromos.total > 1 ? 's' : ''} en cours`
-        : 'Offres spéciales parfums & soins du corps';
+        : 'Offres spéciales plaisir & intimité';
 
   const promoDesc =
     statsPromos.total > 0
-      ? 'Parfums, huiles peau et crèmes corporelles à prix réduit — stock limité, livraison rapide à Conakry.'
+      ? 'Produits intimes à prix réduit — stock limité, livraison discrète à Conakry.'
       : 'Retrouvez bientôt nos ventes flash et codes promo exclusifs.';
 
   return (
     <section className="relative w-full overflow-hidden" aria-label="Offre promotionnelle">
       <div className="grid grid-cols-1 lg:grid-cols-2 lg:min-h-[min(520px,70vh)]">
         {/* Panneau texte — pleine largeur fond olive */}
-        <div className="relative flex flex-col justify-center order-2 lg:order-1 bg-[#4a5240] text-white overflow-hidden">
+        <div className="relative flex flex-col justify-center order-2 lg:order-1 bg-primary text-white overflow-hidden">
           <div
             className="absolute inset-0 opacity-[0.07] pointer-events-none"
             style={{
@@ -95,7 +95,7 @@ export function HomePromoSection({ categories, statsPromos, promoBanniere }: Pro
             <div className="mt-10 flex flex-wrap items-center gap-3">
               <Link
                 href="/promos"
-                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-bold text-[#4a5240] shadow-lg shadow-black/10 transition hover:bg-[#faf7f2] hover:scale-[1.02]"
+                className="inline-flex items-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-bold text-[#9B1B2E] shadow-lg shadow-black/10 transition hover:bg-[#FFF8F6] hover:scale-[1.02]"
               >
                 Profiter de l&apos;offre
                 <ArrowRight className="h-4 w-4" />

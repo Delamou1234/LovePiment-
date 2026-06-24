@@ -43,6 +43,7 @@ export type AvisAdmin = {
   createdAt: string;
   clientNom: string;
   clientVille: string;
+  productId: string;
   productNom: string;
   productSlug: string;
 };

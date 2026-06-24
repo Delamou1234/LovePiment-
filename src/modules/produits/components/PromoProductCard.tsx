@@ -85,8 +85,8 @@ export function PromoProductCard({
 
   return (
     <>
-      <article className="group flex flex-col overflow-hidden rounded-2xl border border-[#ebe4d8] bg-white shadow-sm transition hover:shadow-md hover:border-[#4a5240]/30">
-        <div className="relative aspect-[4/5] bg-[#f5f0e8]">
+      <article className="group flex flex-col overflow-hidden rounded-2xl border border-[#F2D4DC] bg-white shadow-sm transition hover:shadow-md hover:border-[#9B1B2E]/30">
+        <div className="relative aspect-[4/5] bg-[#FCEEE8]">
           <Link href={`/produits/${slug}`} className="absolute inset-0">
             <Image
               src={imgSrc}
@@ -102,7 +102,7 @@ export function PromoProductCard({
             -{remisePct}%
           </span>
 
-          <span className="absolute top-3 right-3 rounded-full bg-white/95 px-2 py-1 text-[10px] font-semibold text-[#4a5240] shadow-sm">
+          <span className="absolute top-3 right-3 rounded-full bg-white/95 px-2 py-1 text-[10px] font-semibold text-[#9B1B2E] shadow-sm">
             {categorie}
           </span>
 
@@ -130,16 +130,16 @@ export function PromoProductCard({
             </div>
             <div className="text-right shrink-0">
               <p className="text-[10px] uppercase tracking-wider text-zinc-400">Économie</p>
-              <p className="text-sm font-bold text-[#4a5240]">
+              <p className="text-sm font-bold text-[#9B1B2E]">
                 {economie.toLocaleString('fr-FR')} GN
               </p>
             </div>
           </div>
 
-          <div className="mt-auto grid grid-cols-3 gap-2">
+          <div className="mt-auto grid grid-cols-1 min-[380px]:grid-cols-3 gap-2">
             <Link
               href={`/produits/${slug}`}
-              className="inline-flex items-center justify-center gap-1 rounded-xl border border-[#ebe4d8] py-2.5 text-[11px] font-semibold text-zinc-700 hover:bg-[#faf7f2] transition"
+              className="inline-flex items-center justify-center gap-1 rounded-xl border border-[#F2D4DC] py-2.5 text-[11px] font-semibold text-zinc-700 hover:bg-[#FFF8F6] transition"
             >
               <ArrowUpRight className="h-3.5 w-3.5 shrink-0" />
               Voir
@@ -148,7 +148,7 @@ export function PromoProductCard({
               type="button"
               onClick={handleAdd}
               disabled={!canAdd || busy}
-              className="relative inline-flex items-center justify-center gap-1 rounded-xl border border-[#4a5240] py-2.5 text-[11px] font-semibold text-[#4a5240] hover:bg-[#4a5240]/5 disabled:opacity-40 transition"
+              className="relative inline-flex items-center justify-center gap-1 rounded-xl border border-[#9B1B2E] py-2.5 text-[11px] font-semibold text-[#9B1B2E] hover:bg-[#9B1B2E]/5 disabled:opacity-40 transition"
             >
               <ShoppingBag className="h-3.5 w-3.5 shrink-0" />
               Panier
@@ -162,7 +162,7 @@ export function PromoProductCard({
               type="button"
               onClick={handleBuy}
               disabled={!canAdd || busy}
-              className="inline-flex items-center justify-center gap-1 rounded-xl bg-[#4a5240] py-2.5 text-[11px] font-semibold text-white hover:bg-[#3d4534] disabled:opacity-40 transition"
+              className="inline-flex items-center justify-center gap-1 rounded-xl bg-[#9B1B2E] py-2.5 text-[11px] font-semibold text-white hover:bg-[#6E1020] disabled:opacity-40 transition"
             >
               <Zap className="h-3.5 w-3.5 shrink-0" />
               Acheter

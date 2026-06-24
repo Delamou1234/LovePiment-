@@ -75,8 +75,8 @@ export function HomeRecommendations() {
   if (loading) {
     return (
       <section ref={sectionRef} className="py-12 md:py-16">
-        <div className="container-kabishop flex justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-[#4a5240]" />
+        <div className="container-shop flex justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-[#9B1B2E]" />
         </div>
       </section>
     );
@@ -85,11 +85,11 @@ export function HomeRecommendations() {
   if (products.length === 0) return null;
 
   return (
-    <section ref={sectionRef} className="py-12 md:py-16 border-t border-[#ebe4d8]/60">
-      <div className="container-kabishop">
+    <section ref={sectionRef} className="py-12 md:py-16 border-t border-[#F2D4DC]/60">
+      <div className="container-shop">
         <div className="flex flex-wrap items-end justify-between gap-4 mb-8">
           <div className="space-y-1">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-[#4a5240] flex items-center gap-1.5">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-[#9B1B2E] flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5" />
               {poweredByAi ? 'Recommandations IA' : 'Pour vous'}
             </p>
@@ -97,14 +97,14 @@ export function HomeRecommendations() {
               Recommandations personnalisées
             </h2>
             <p className="text-sm text-zinc-500 max-w-lg">
-              Sélectionnées selon votre navigation, votre panier et votre profil beauté.
+              Sélectionnées selon votre navigation, votre panier et votre profil intime.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-4">
-            <Link href="/profil-beaute" className="text-sm font-semibold text-[#4a5240] hover:underline">
+            <Link href="/profil-beaute" className="text-sm font-semibold text-[#9B1B2E] hover:underline">
               Personnaliser mon profil →
             </Link>
-            <Link href="/produits" className="text-sm font-semibold text-[#4a5240] hover:underline">
+            <Link href="/produits" className="text-sm font-semibold text-[#9B1B2E] hover:underline">
               Explorer la boutique →
             </Link>
           </div>
@@ -115,9 +115,9 @@ export function HomeRecommendations() {
             <Link
               key={p.id}
               href={`/produits/${p.slug}`}
-              className="group block rounded-xl border border-[#ebe4d8] bg-white overflow-hidden hover:shadow-md transition"
+              className="group block rounded-xl border border-[#F2D4DC] bg-white overflow-hidden hover:shadow-md transition"
             >
-              <div className="relative aspect-[3/4] bg-[#f5f0e8]">
+              <div className="relative aspect-[3/4] bg-[#FCEEE8]">
                 {p.image ? (
                   <Image
                     src={p.image}
@@ -142,7 +142,7 @@ export function HomeRecommendations() {
                   {p.prix.toLocaleString('fr-FR')} GN
                 </p>
                 {p.raison && (
-                  <p className="text-[10px] text-[#4a5240] line-clamp-2 pt-1">{p.raison}</p>
+                  <p className="text-[10px] text-[#9B1B2E] line-clamp-2 pt-1">{p.raison}</p>
                 )}
               </div>
             </Link>

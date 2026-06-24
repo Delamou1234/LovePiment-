@@ -11,11 +11,14 @@ import {
   ShoppingBag,
   Store,
 } from 'lucide-react';
-import { ProductSearchBar } from '@/shared/components/ProductSearchBar';
+import { AdminSearchBar } from './AdminSearchBar';
 import { AdminNotificationBell } from './AdminNotificationBell';
 import { AdminMessagesMenu } from './AdminMessagesMenu';
+import { AdminStockAlertsMenu } from './AdminStockAlertsMenu';
+import { useAdminStats } from './AdminStatsProvider';
 import type { ConversationResume } from '@/modules/messagerie/types';
 import {
+  adminTopbarQuick,
   isAdminNavActive,
   resolveAdminNavLabel,
   type AdminSessionUser,
@@ -26,13 +29,8 @@ type Props = {
   onLogout: () => void;
   conversations: ConversationResume[];
   messagerieUnread: number;
+  stockFaible?: number;
 };
-
-const QUICK_ACTION =
-  'relative flex h-9 w-9 items-center justify-center rounded-xl border border-beige-border bg-white text-zinc-500 shadow-sm transition hover:border-olive/30 hover:text-olive hover:shadow-md';
-
-const QUICK_ACTION_ACTIVE =
-  'border-olive/40 bg-olive/5 text-olive shadow-sm';
 
 const MENU_ITEMS = [
   { href: '/admin', label: 'Tableau de bord', icon: LayoutDashboard, exact: true },
@@ -48,19 +46,25 @@ function AdminInitials({ name }: { name: string }) {
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('');
 
-  return (
-    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-olive/10 text-xs font-bold text-olive">
-      {initials || 'A'}
-    </div>
-  );
+  return <div className="admin-topbar-avatar">{initials || 'A'}</div>;
 }
 
-export function AdminTopBar({ admin, onLogout, conversations, messagerieUnread }: Props) {
+export function AdminTopBar({
+  admin,
+  onLogout,
+  conversations,
+  messagerieUnread,
+  stockFaible = 0,
+}: Props) {
   const pathname = usePathname();
   const router = useRouter();
+  const { stats } = useAdminStats();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const pageTitle = resolveAdminNavLabel(pathname);
+  const isDashboard = pathname === '/admin';
+
+  const commandesEnAttente = stats?.commandesEnAttente ?? 0;
 
   const isCommandesActive = isAdminNavActive(pathname, '/admin/commandes');
   const isParametresActive = isAdminNavActive(pathname, '/admin/parametres');
@@ -82,47 +86,56 @@ export function AdminTopBar({ admin, onLogout, conversations, messagerieUnread }
     onLogout();
   };
 
+  const commandesBadge =
+    commandesEnAttente > 0
+      ? String(commandesEnAttente > 99 ? '99+' : commandesEnAttente)
+      : null;
+
   return (
-    <header className="relative z-30 shrink-0 border-b border-beige-border/80 bg-white/80 px-4 py-2.5 backdrop-blur-md md:px-6 lg:px-8">
+    <header className="relative z-30 shrink-0 border-b border-zinc-200/80 bg-white px-4 py-2.5 md:px-6 lg:px-8">
       <div className="flex items-center gap-3 md:gap-4">
-        <div className="hidden min-w-0 shrink-0 md:block md:max-w-[140px] lg:max-w-[180px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
-            Administration
-          </p>
-          <h1 className="font-serif text-base font-bold text-zinc-900 truncate lg:text-lg">
-            {pageTitle}
-          </h1>
-        </div>
+        {!isDashboard && (
+          <>
+            <div className="hidden min-w-0 shrink-0 md:block md:max-w-[140px] lg:max-w-[180px]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
+                Administration
+              </p>
+              <h1 className="font-serif text-base font-bold text-zinc-900 truncate lg:text-lg">
+                {pageTitle}
+              </h1>
+            </div>
+            <div className="admin-topbar-divider hidden md:block" aria-hidden />
+          </>
+        )}
 
-        <div className="hidden h-8 w-px shrink-0 bg-beige-border/80 md:block" aria-hidden />
+        <AdminSearchBar className="min-w-0 flex-1 sm:flex-none sm:w-[180px] md:w-[240px] lg:w-[320px]" />
 
-        <ProductSearchBar
-          compact
-          placeholder="Rechercher un produit…"
-          className="w-[148px] shrink-0 sm:w-[180px] md:w-[200px] lg:w-[220px]"
-          inputClassName="border-beige-border bg-cream/50 text-xs shadow-none focus:border-olive/40 focus:bg-white focus:ring-2 focus:ring-olive/10"
-        />
+        <div className="hidden min-w-2 flex-1 sm:block" aria-hidden />
 
-        <div className="flex-1 min-w-2" aria-hidden />
-
-        <nav className="flex items-center gap-1 sm:gap-1.5" aria-label="Raccourcis admin">
-          <Link href="/" className={QUICK_ACTION} title="Boutique">
+        <nav className="flex shrink-0 items-center gap-1 sm:gap-1.5" aria-label="Raccourcis essentiels">
+          <Link href="/" className={`${adminTopbarQuick()} hidden md:inline-flex`} title="Voir la boutique">
             <Store className="h-4 w-4" strokeWidth={1.75} />
           </Link>
 
           <Link
             href="/admin/commandes"
-            className={`${QUICK_ACTION} ${isCommandesActive ? QUICK_ACTION_ACTIVE : ''}`}
+            className={adminTopbarQuick(isCommandesActive)}
             title="Commandes"
+            aria-label={
+              commandesBadge ? `Commandes (${commandesBadge} en attente)` : 'Commandes'
+            }
           >
             <ShoppingBag className="h-4 w-4" strokeWidth={1.75} />
+            {commandesBadge && <span className="admin-topbar-badge">{commandesBadge}</span>}
           </Link>
 
           <AdminMessagesMenu conversations={conversations} totalUnread={messagerieUnread} />
 
+          <AdminStockAlertsMenu count={stockFaible} />
+
           <Link
             href="/admin/parametres"
-            className={`hidden sm:flex ${QUICK_ACTION} ${isParametresActive ? QUICK_ACTION_ACTIVE : ''}`}
+            className={`${adminTopbarQuick(isParametresActive)} hidden md:inline-flex`}
             title="Paramètres"
           >
             <Settings className="h-4 w-4" strokeWidth={1.75} />
@@ -131,14 +144,14 @@ export function AdminTopBar({ admin, onLogout, conversations, messagerieUnread }
           <AdminNotificationBell />
         </nav>
 
-        <div className="hidden h-8 w-px shrink-0 bg-beige-border/80 sm:block" aria-hidden />
+        <div className="admin-topbar-divider" aria-hidden />
 
         <div className="relative shrink-0" ref={menuRef}>
           <button
             type="button"
             onClick={() => setMenuOpen((open) => !open)}
-            className={`flex h-10 w-10 items-center justify-center overflow-hidden rounded-full ring-2 transition focus-visible:outline-none focus-visible:ring-olive/40 ${
-              menuOpen ? 'ring-olive/50' : 'ring-beige-border hover:ring-olive/30'
+            className={`rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e91e8c]/30 ${
+              menuOpen ? 'ring-2 ring-[#e91e8c]/40' : 'hover:ring-2 hover:ring-zinc-300'
             }`}
             aria-expanded={menuOpen}
             aria-haspopup="menu"
@@ -151,12 +164,12 @@ export function AdminTopBar({ admin, onLogout, conversations, messagerieUnread }
           {menuOpen && (
             <div
               role="menu"
-              className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 overflow-hidden rounded-xl border border-beige-border bg-white py-1 shadow-[0_12px_40px_rgba(0,0,0,0.1)] animate-fadeIn"
+              className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 overflow-hidden rounded-xl border border-zinc-200 bg-white py-1 shadow-[0_12px_40px_rgba(0,0,0,0.1)] animate-fadeIn"
             >
-              <div className="border-b border-beige-border/80 px-4 py-3">
+              <div className="border-b border-zinc-100 px-4 py-3">
                 <p className="truncate text-sm font-semibold text-zinc-900">{admin.name}</p>
                 <p className="truncate text-xs text-zinc-500">{admin.email}</p>
-                <span className="mt-2 inline-flex rounded-full bg-olive/10 px-2 py-0.5 text-[10px] font-semibold text-olive">
+                <span className="mt-2 inline-flex rounded-full bg-[#fce7f3] px-2 py-0.5 text-[10px] font-semibold text-[#e91e8c]">
                   Administrateur
                 </span>
               </div>
@@ -174,8 +187,8 @@ export function AdminTopBar({ admin, onLogout, conversations, messagerieUnread }
                       onClick={closeMenu}
                       className={`flex items-center gap-2.5 px-4 py-2.5 text-sm transition ${
                         active
-                          ? 'bg-cream text-olive font-medium'
-                          : 'text-zinc-600 hover:bg-cream hover:text-zinc-900'
+                          ? 'bg-[#fce7f3]/60 text-[#e91e8c] font-medium'
+                          : 'text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900'
                       }`}
                     >
                       <Icon className="h-4 w-4 shrink-0 opacity-80" />
@@ -185,7 +198,7 @@ export function AdminTopBar({ admin, onLogout, conversations, messagerieUnread }
                 })}
               </div>
 
-              <div className="border-t border-beige-border/80 py-1">
+              <div className="border-t border-zinc-100 py-1">
                 <button
                   type="button"
                   role="menuitem"
@@ -193,7 +206,7 @@ export function AdminTopBar({ admin, onLogout, conversations, messagerieUnread }
                     closeMenu();
                     router.push('/');
                   }}
-                  className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-zinc-600 transition hover:bg-cream hover:text-zinc-900"
+                  className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900"
                 >
                   <Store className="h-4 w-4 shrink-0 opacity-80" />
                   Voir la boutique

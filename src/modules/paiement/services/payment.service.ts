@@ -21,7 +21,7 @@ export class PaymentService {
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '');
     const email =
       clientEmail?.trim() ||
-      `commande+${commande.id.slice(0, 8)}@kabishop.local`;
+      `commande+${commande.id.slice(0, 8)}@lovepiment.local`;
 
     if (/localhost|127\.0\.0\.1/i.test(appUrl)) {
       throw new Error(
@@ -32,7 +32,7 @@ export class PaymentService {
     const result = await this.provider.initierPaiement({
       transactionId,
       montant: Number(commande.montantTotal),
-      description: `Commande KabiShop #${commande.id.slice(0, 8)}`,
+      description: `Commande Love Piment& #${commande.id.slice(0, 8)}`,
       clientNom: commande.clientNom,
       clientTelephone: commande.clientTelephone,
       clientEmail: email,

@@ -40,7 +40,10 @@ export async function POST(request: NextRequest) {
     if (existing) {
       if (existing.googleId && !existing.passwordHash) {
         return NextResponse.json(
-          { message: 'Ce compte utilise Google. Connectez-vous avec Google.' },
+          {
+            message:
+              'Un compte existe déjà avec cet e-mail. Utilisez « Mot de passe oublié » pour définir un mot de passe.',
+          },
           { status: 409 },
         );
       }

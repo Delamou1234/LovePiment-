@@ -1,11 +1,11 @@
 import type { PrismaClient } from '@prisma/client';
 import { hashPassword } from '../src/shared/lib/auth/password';
 
-export const DEFAULT_ADMIN_EMAIL = 'admin@kabishop.com';
-export const DEFAULT_ADMIN_NOM = 'Administrateur KabiShop';
+export const DEFAULT_ADMIN_EMAIL = 'admin@lovepiment.gn';
+export const DEFAULT_ADMIN_NOM = 'Administrateur Love Piment&';
 
 /** Mot de passe dev si ADMIN_PASSWORD absent (à changer en prod). */
-export const DEFAULT_ADMIN_PASSWORD = 'KabiShop2026!';
+export const DEFAULT_ADMIN_PASSWORD = 'LovePiment2026!';
 
 export function resolveAdminSeedCredentials() {
   const email = (process.env.ADMIN_EMAIL ?? DEFAULT_ADMIN_EMAIL).trim().toLowerCase();

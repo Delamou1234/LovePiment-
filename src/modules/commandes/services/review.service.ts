@@ -34,7 +34,7 @@ export class ReviewService {
         ville: o.clientVille,
         commentaire:
           o.satisfactionCommentaire?.trim() ||
-          'Client satisfait de sa commande KabiShop.',
+          'Client satisfait de sa commande Love Piment&.',
         date: (o.satisfactionLe ?? new Date()).toISOString(),
         note: 5 as number,
         photos: [] as string[],

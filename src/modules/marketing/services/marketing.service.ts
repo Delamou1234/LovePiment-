@@ -3,6 +3,7 @@ import { prisma } from '@/shared/lib/prisma';
 import { storeSettingsService } from '@/modules/admin/services/store-settings.service';
 import { calculerFraisLivraison } from '@/shared/lib/shipping';
 import { LOYALTY } from '../lib/constants';
+import { calculerRemiseCoupon, getCouponValidationError } from '../lib/coupon-math';
 import { cheminInscriptionParrainage, genererCodeParrainage, normaliserCodeParrainage } from '../lib/referral-code';
 import {
   marketingRepository,
@@ -120,33 +121,30 @@ export class MarketingService {
 
   async validerCoupon(code: string, sousTotal: number): Promise<CouponClient> {
     const coupon = await this.repo.trouverCouponParCode(code);
-    if (!coupon || !coupon.actif) {
+    if (!coupon) {
       throw new Error('Code promo invalide ou expiré');
     }
 
-    const now = new Date();
-    if (coupon.debut && coupon.debut > now) {
-      throw new Error('Ce code promo n\'est pas encore actif');
-    }
-    if (coupon.fin && coupon.fin < now) {
-      throw new Error('Ce code promo a expiré');
-    }
-    if (coupon.maxUtilisations != null && coupon.utilisations >= coupon.maxUtilisations) {
-      throw new Error('Ce code promo a atteint sa limite d\'utilisation');
-    }
-
     const minCommande = coupon.minCommande ? Number(coupon.minCommande) : null;
-    if (minCommande != null && sousTotal < minCommande) {
-      throw new Error(
-        `Minimum de commande : ${minCommande.toLocaleString('fr-FR')} GN`,
-      );
+    const validationError = getCouponValidationError({
+      actif: coupon.actif,
+      debut: coupon.debut,
+      fin: coupon.fin,
+      utilisations: coupon.utilisations,
+      maxUtilisations: coupon.maxUtilisations,
+      minCommande,
+      sousTotal,
+    });
+    if (validationError) {
+      throw new Error(validationError);
     }
 
     const valeur = Number(coupon.valeur);
-    const remiseEstimee =
-      coupon.type === 'POURCENT'
-        ? Math.min(Math.round((sousTotal * valeur) / 100), sousTotal)
-        : Math.min(valeur, sousTotal);
+    const remiseEstimee = calculerRemiseCoupon({
+      type: coupon.type,
+      valeur,
+      sousTotal,
+    });
 
     return {
       id: coupon.id,
@@ -213,7 +211,12 @@ export class MarketingService {
       }
     }
 
-    const fraisLivraison = calculerFraisLivraison(apresCoupon, input.clientVille);
+    const livraisonConfig = await storeSettingsService.getLivraisonConfig();
+    const fraisLivraison = calculerFraisLivraison(
+      apresCoupon,
+      input.clientVille,
+      livraisonConfig,
+    );
     const montantTotal = apresCoupon + fraisLivraison;
     const pointsGagnes = Math.floor(montantTotal / 1000) * LOYALTY.POINTS_PAR_1000_GN;
 
@@ -401,6 +404,10 @@ export class MarketingService {
 
   async listerCouponsAdmin() {
     return this.repo.listerCoupons();
+  }
+
+  async listerCouponsActifsPublics(limit = 6) {
+    return this.repo.listerCouponsActifsPublics(limit);
   }
 
   async creerCoupon(dto: CreerCouponDto) {

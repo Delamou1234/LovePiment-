@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePanier, selectTotalQuantity } from '@/store/panier';
-import { formaterPrixGN, LIVRAISON_CONFIG } from '@/shared/lib/shipping';
+import { formaterPrixGN, calculerTotauxCommande, libelleLivraisonOfferte } from '@/shared/lib/shipping';
+import { useLivraisonConfig } from '@/shared/hooks/useLivraisonConfig';
 import { 
   Trash2, 
   ArrowRight, 
@@ -14,11 +15,13 @@ import {
   ChevronRight 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { confirmPanierVider } from '@/shared/lib/confirm-action';
 
 // ─── CART PAGE (CLIENT COMPONENT) ───────────────────────────────────────────
 
 export default function CartPage() {
   const panier = usePanier();
+  const livraisonConfig = useLivraisonConfig();
   const totalItems = usePanier(selectTotalQuantity);
   const [mounted, setMounted] = useState(false);
 
@@ -29,7 +32,7 @@ export default function CartPage() {
 
   if (!mounted) {
     return (
-      <div className="container-kabishop py-16 text-center">
+      <div className="container-shop py-16 text-center">
         <div className="skeleton h-6 w-32 mx-auto mb-4"></div>
         <div className="skeleton h-32 w-full max-w-2xl mx-auto rounded-2xl"></div>
       </div>
@@ -37,16 +40,17 @@ export default function CartPage() {
   }
 
   const items = panier.items;
-  const sousTotal = panier.getSousTotal();
-  const fraisLivraison = panier.getFraisLivraison();
-  const totalAvecLivraison = panier.getTotalAvecLivraison();
-  const livraisonGratuite = fraisLivraison === 0 && items.length > 0;
+  const { sousTotal, fraisLivraison, total, livraisonGratuite } = calculerTotauxCommande(
+    items,
+    livraisonConfig.villeParDefaut,
+    livraisonConfig,
+  );
   const formattedSubtotal = formaterPrixGN(sousTotal);
   const formattedShipping = livraisonGratuite ? 'Offerte' : formaterPrixGN(fraisLivraison);
-  const formattedTotal = formaterPrixGN(totalAvecLivraison);
+  const formattedTotal = formaterPrixGN(total);
 
   return (
-    <div className="container-kabishop py-8 animate-fadeIn">
+    <div className={`container-shop py-8 animate-fadeIn${items.length > 0 ? ' cart-page-with-bar lg:pb-8' : ''}`}>
       {/* ─── BREADCRUMB ────────────────────────────────────────────────── */}
       <div className="flex items-center gap-1.5 text-xs text-zinc-500 mb-6">
         <Link href="/" className="hover:text-primary transition font-medium">Accueil</Link>
@@ -81,7 +85,7 @@ export default function CartPage() {
 
                     {/* Informations */}
                     <div className="flex-grow min-w-0 space-y-1">
-                      <span className="text-[10px] font-black uppercase text-primary tracking-widest">KabiShop</span>
+                      <span className="text-[10px] font-black uppercase text-primary tracking-widest">Love Piment&</span>
                       <Link href={`/produits/${item.slug}`} className="block">
                         <h3 className="font-extrabold text-zinc-950 text-sm sm:text-base hover:text-primary transition line-clamp-1 leading-snug">
                           {item.nomProduit}
@@ -175,7 +179,10 @@ export default function CartPage() {
             {/* Vider le panier */}
             <div className="flex justify-start">
               <button
-                onClick={() => panier.viderPanier()}
+                type="button"
+                onClick={async () => {
+                  if (await confirmPanierVider()) panier.viderPanier();
+                }}
                 className="text-xs font-bold text-zinc-400 hover:text-red-500 transition flex items-center gap-1"
               >
                 <Trash2 className="h-4 w-4" /> Vider mon panier
@@ -196,14 +203,14 @@ export default function CartPage() {
                   <span>{formattedSubtotal}</span>
                 </div>
                 <div className="flex justify-between text-sm text-zinc-500 font-semibold">
-                  <span>Livraison (Conakry)</span>
+                  <span>Livraison ({livraisonConfig.villeParDefaut})</span>
                   <span className={livraisonGratuite ? 'text-emerald-600 font-bold' : ''}>
                     {formattedShipping}
                   </span>
                 </div>
-                {!livraisonGratuite && items.length > 0 && (
+                {!livraisonGratuite && items.length > 0 && livraisonConfig.gratuiteActive && (
                   <p className="text-[11px] text-zinc-400">
-                    Livraison offerte dès {formaterPrixGN(LIVRAISON_CONFIG.seuilGratuit)}
+                    {libelleLivraisonOfferte(livraisonConfig)}
                   </p>
                 )}
                 
@@ -259,9 +266,25 @@ export default function CartPage() {
           </p>
           <Link href="/produits">
             <Button className="btn-primary rounded-full px-8 py-5 text-base font-bold shadow-lg">
-              Découvrir nos parfums & huiles <ArrowRight className="h-5 w-5 ml-1" />
+              Découvrir la boutique intime <ArrowRight className="h-5 w-5 ml-1" />
             </Button>
           </Link>
+        </div>
+      )}
+
+      {items.length > 0 && (
+        <div className="cart-mobile-bar lg:hidden" aria-label="Récapitulatif commande">
+          <div className="cart-mobile-bar-inner">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Total</p>
+              <p className="text-lg font-extrabold text-zinc-950 truncate">{formattedTotal}</p>
+            </div>
+            <Link href="/commande" className="shrink-0">
+              <Button className="btn-primary rounded-full px-6 py-5 font-bold text-sm shadow-lg whitespace-nowrap">
+                Commander <ArrowRight className="h-4 w-4 ml-1" />
+              </Button>
+            </Link>
+          </div>
         </div>
       )}
     </div>

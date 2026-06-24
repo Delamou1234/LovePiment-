@@ -40,4 +40,5 @@ export type FiltresCommandes = {
   modePaiement?: string;
   dateDebut?: Date;
   dateFin?: Date;
+  customerId?: string;
 };

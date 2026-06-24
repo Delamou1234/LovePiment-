@@ -4,7 +4,7 @@ type PasswordResetEmailData = {
 };
 
 export function buildPasswordResetEmail(data: PasswordResetEmailData) {
-  const subject = 'Votre code de réinitialisation — KabiShop';
+  const subject = 'Votre code de réinitialisation — Love Piment&';
 
   const html = `<!DOCTYPE html>
 <html lang="fr">
@@ -12,7 +12,7 @@ export function buildPasswordResetEmail(data: PasswordResetEmailData) {
   <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
     <tr>
       <td style="background:#4a5240;padding:24px;color:#fff;">
-        <div style="font-size:18px;font-weight:700;">KabiShop</div>
+        <div style="font-size:18px;font-weight:700;">Love Piment&</div>
         <div style="font-size:13px;opacity:0.85;margin-top:4px;">Code de réinitialisation</div>
       </td>
     </tr>
@@ -40,7 +40,7 @@ export function buildPasswordResetEmail(data: PasswordResetEmailData) {
   const text = [
     `Bonjour ${data.nom},`,
     '',
-    'Votre code de réinitialisation KabiShop :',
+    'Votre code de réinitialisation Love Piment& :',
     data.code,
     '',
     'Ce code expire dans 15 minutes.',

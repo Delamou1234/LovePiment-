@@ -79,7 +79,10 @@ export async function POST(request: NextRequest) {
     const existing = await customerAuthRepository.trouverParEmail(email);
     if (existing?.googleId && !existing.passwordHash) {
       return NextResponse.json(
-        { message: 'Ce compte utilise Google. Connectez-vous avec Google.' },
+        {
+          message:
+            'Ce compte n\'a pas encore de mot de passe. Utilisez « Mot de passe oublié » pour en définir un.',
+        },
         { status: 401 },
       );
     }

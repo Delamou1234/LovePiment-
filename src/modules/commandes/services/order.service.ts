@@ -5,6 +5,7 @@ import {
   orderNotificationService,
 } from '@/modules/notifications/services/order-notification.service';
 import { notifierAdminNouvelleCommande } from '@/modules/livraison/services/admin-order-alert.service';
+import { revalidateBoutique } from '@/modules/produits/lib/revalidate-boutique';
 import type { CommandeAvecItems, CreerCommandeDto, FiltresCommandes } from '../types';
 import type { Pagination } from '@/types';
 
@@ -31,6 +32,19 @@ export class OrderService {
     await trackingService.initialiserSuivi(commande.id, dto.clientVille);
     orderNotificationService.notifyOrderCreated(buildNotificationContext(commande));
     void notifierAdminNouvelleCommande(commande);
+
+    const slugs = [
+      ...new Set(
+        commande.items
+          .map((item) => item.variante?.produit?.slug)
+          .filter((slug): slug is string => Boolean(slug)),
+      ),
+    ];
+    revalidateBoutique();
+    for (const slug of slugs) {
+      revalidateBoutique({ productSlug: slug });
+    }
+
     return commande;
   }
 
@@ -75,9 +89,14 @@ export class OrderService {
   }
 
   async echecPaiement(id: string): Promise<void> {
-    return this.repo.mettreAJourPaiement(id, {
-      statutPaiement: 'ECHOUEE',
-    });
+    await this.repo.annulerEtRestaurerStock(id, { statutPaiement: 'ECHOUEE' });
+    revalidateBoutique();
+  }
+
+  /** Annule une commande et remet le stock (ex. échec CinetPay à l'initiation). */
+  async annulerApresEchecPaiement(id: string): Promise<void> {
+    await this.repo.annulerEtRestaurerStock(id, { statutPaiement: 'ECHOUEE' });
+    revalidateBoutique();
   }
 
   calculerTotal(items: { prixUnitaire: number; quantite: number }[]): number {

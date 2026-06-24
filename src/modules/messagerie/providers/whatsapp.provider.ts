@@ -44,7 +44,7 @@ export function genererMessageProduit(params: {
   prix: number;
 }): string {
   const { nomProduit, taille, couleur, prix } = params;
-  let message = `Bonjour KabiShop 👋\n\nJe suis intéressé(e) par :\n📦 *${nomProduit}*`;
+  let message = `Bonjour Love Piment& 👋\n\nJe suis intéressé(e) par :\n📦 *${nomProduit}*`;
   if (taille) message += `\n📏 Taille : ${taille}`;
   if (couleur) message += `\n🎨 Couleur : ${couleur}`;
   message += `\n💰 Prix : ${prix.toLocaleString('fr-GN')} GNF\n\nEst-ce encore disponible ?`;
@@ -55,9 +55,9 @@ export function genererMessageCommande(params: {
   numeroCommande: string;
   montant: number;
 }): string {
-  return `Bonjour KabiShop 👋\n\nJe voudrais suivre ma commande n°*${params.numeroCommande}* (${params.montant.toLocaleString('fr-GN')} GNF).\n\nMerci !`;
+  return `Bonjour Love Piment& 👋\n\nJe voudrais suivre ma commande n°*${params.numeroCommande}* (${params.montant.toLocaleString('fr-GN')} GNF).\n\nMerci !`;
 }
 
 export function genererMessageGeneral(): string {
-  return `Bonjour KabiShop 👋\n\nJ'ai une question concernant vos articles. Pouvez-vous m'aider ?`;
+  return `Bonjour Love Piment& 👋\n\nJ'ai une question concernant vos articles. Pouvez-vous m'aider ?`;
 }

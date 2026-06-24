@@ -54,6 +54,10 @@ export async function GET(request: NextRequest) {
   const limit = Math.min(100, Math.max(10, Number(params.get('limit') ?? 50) || 50));
 
   const filtres = filtresDepuisParam(filtre);
+  const clientId = params.get('clientId')?.trim();
+  if (clientId) {
+    filtres.customerId = clientId;
+  }
   const [{ commandes, pagination }, resume] = await Promise.all([
     orderService.listerCommandes(filtres, { page, limit }),
     obtenirResume(),

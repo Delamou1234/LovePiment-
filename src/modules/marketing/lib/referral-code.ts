@@ -1,6 +1,6 @@
 const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
-export const PARRAINAGE_SESSION_KEY = 'kabishop_parrain_pending';
+export const PARRAINAGE_SESSION_KEY = 'lovepiment_parrain_pending';
 
 export function genererCodeParrainage(): string {
   let suffix = '';

@@ -6,27 +6,27 @@ import { AppProviders } from '@/shared/providers/AppProviders';
 
 export const metadata: Metadata = {
   title: {
-    default: 'KabiShop — Parfums, huiles & crèmes corporelles à Conakry',
-    template: '%s | KabiShop',
+    default: 'Love Piment& — Boutique intime & plaisir à Conakry',
+    template: '%s | Love Piment&',
   },
   description:
-    'Parfums, huiles pour la peau et crèmes corporelles à Conakry. Livraison rapide, paiement Mobile Money et carte bancaire.',
-  keywords: ['parfums', 'huiles corporelles', 'crèmes corporelles', 'Conakry', 'Guinée', 'KabiShop'],
-  authors: [{ name: 'KabiShop' }],
-  creator: 'KabiShop',
+    'Boutique intime pour adultes à Conakry : sextoys, lingerie, lubrifiants. Livraison discrète, paiement Mobile Money.',
+  keywords: ['boutique intime', 'sextoys', 'lingerie', 'lubrifiant', 'Conakry', 'Guinée', 'Love Piment&'],
+  authors: [{ name: 'Love Piment&' }],
+  creator: 'Love Piment&',
   openGraph: {
     type: 'website',
     locale: 'fr_GN',
     url: process.env.NEXT_PUBLIC_APP_URL,
-    siteName: 'KabiShop',
-    title: 'KabiShop — Parfums, huiles & crèmes corporelles à Conakry',
+    siteName: 'Love Piment&',
+    title: 'Love Piment& — Boutique intime & plaisir à Conakry',
     description:
-      'Parfums, huiles pour la peau et crèmes corporelles chez KabiShop à Conakry.',
+      'Sextoys, lingerie et accessoires intimes Love Piment& — livraison discrète à Conakry.',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'KabiShop — Parfums, huiles & crèmes corporelles à Conakry',
-    description: 'Parfums, huiles peau et crèmes corporelles sélectionnées à Conakry.',
+    title: 'Love Piment& — Boutique intime & plaisir à Conakry',
+    description: 'Boutique érotique discrète à Conakry — sextoys, lingerie, lubrifiants.',
   },
   robots: {
     index: true,
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#4a5240',
+  themeColor: '#9B1B2E',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,

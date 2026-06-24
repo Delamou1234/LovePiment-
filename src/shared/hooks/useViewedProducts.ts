@@ -1,6 +1,6 @@
 'use client';
 
-const STORAGE_KEY = 'kabishop-viewed-products';
+const STORAGE_KEY = 'lovepiment-viewed-products';
 const MAX_ITEMS = 20;
 
 export function getViewedProductIds(): string[] {
@@ -24,7 +24,7 @@ export function trackViewedProduct(productId: string): void {
 export function getCartProductIds(): string[] {
   if (typeof window === 'undefined') return [];
   try {
-    const raw = localStorage.getItem('kabishop-panier');
+    const raw = localStorage.getItem('lovepiment-panier');
     if (!raw) return [];
     const parsed = JSON.parse(raw) as { state?: { items?: { productId: string }[] } };
     return (parsed.state?.items ?? []).map((i) => i.productId);

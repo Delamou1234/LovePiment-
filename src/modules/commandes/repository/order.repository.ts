@@ -1,5 +1,6 @@
 import { prisma } from '@/shared/lib/prisma';
 import { marketingService } from '@/modules/marketing/services/marketing.service';
+import { decrementerStockPourArticles, restaurerStockPourArticles } from '@/modules/produits/lib/order-stock';
 import type { CommandeAvecItems, CreerCommandeDto, FiltresCommandes } from '../types';
 import type { Pagination } from '@/types';
 
@@ -22,14 +23,7 @@ export class OrderRepository {
     const crediterPoints = dto.modePaiement === 'PAIEMENT_LIVRAISON';
 
     return prisma.$transaction(async (tx) => {
-      for (const item of dto.items) {
-        const variant = await tx.productVariant.findUnique({
-          where: { id: item.variantId },
-        });
-        if (!variant || variant.stock < item.quantite) {
-          throw new Error('Stock insuffisant pour un ou plusieurs articles');
-        }
-      }
+      await decrementerStockPourArticles(tx, dto.items);
 
       const order = await tx.order.create({
         data: {
@@ -72,13 +66,6 @@ export class OrderRepository {
           },
         },
       });
-
-      for (const item of dto.items) {
-        await tx.productVariant.update({
-          where: { id: item.variantId },
-          data: { stock: { decrement: item.quantite } },
-        });
-      }
 
       if (dto.customerId) {
         await marketingService.appliquerEffetsCommande(tx, {
@@ -134,6 +121,7 @@ export class OrderRepository {
             },
           }
         : {}),
+      ...(filtres.customerId && { customerId: filtres.customerId }),
     };
 
     const skip = (pagination.page - 1) * pagination.limit;
@@ -194,6 +182,31 @@ export class OrderRepository {
     if (data.statutPaiement === 'REUSSIE') {
       await marketingService.confirmerPointsApresPaiement(id);
     }
+  }
+
+  async annulerEtRestaurerStock(
+    id: string,
+    options: { statutPaiement?: string } = {},
+  ): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      const order = await tx.order.findUnique({
+        where: { id },
+        include: { items: true },
+      });
+      if (!order || order.statut === 'ANNULEE') return;
+
+      await restaurerStockPourArticles(tx, order.items);
+
+      await tx.order.update({
+        where: { id },
+        data: {
+          statut: 'ANNULEE',
+          ...(options.statutPaiement && {
+            statutPaiement: options.statutPaiement as any,
+          }),
+        },
+      });
+    });
   }
 
   async listerAvisSatisfaits(limit = 6) {

@@ -26,8 +26,8 @@ export default async function LivraisonNavigationPage({ params }: { params: Para
   if (!livraison) notFound();
 
   return (
-    <div className="min-h-screen bg-cream py-8 px-4">
-      <div className="container-kabishop max-w-2xl">
+    <div className="min-h-dvh bg-cream py-8 px-4">
+      <div className="container-shop max-w-2xl">
         <DeliveryNavigationView token={token} initialData={livraison} />
       </div>
     </div>

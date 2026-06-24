@@ -23,7 +23,7 @@ const bodySchema = z.object({
 export async function POST(request: NextRequest) {
   if (!isAgentApiConfigured()) {
     return NextResponse.json(
-      { message: 'AGENT_API_SECRET non configuré sur le serveur KabiShop.' },
+      { message: 'AGENT_API_SECRET non configuré sur le serveur Love Piment&.' },
       { status: 503 },
     );
   }

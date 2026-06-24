@@ -16,8 +16,9 @@ import {
   COMPTE_SHELL,
   type CourierProfil,
 } from '@/modules/livraison/components/livreur-ui';
-import type { CourierHistoriqueDto } from '@/modules/livraison/services/courier-order.service';
+import type { CourierHistoriqueDto, CourierTotauxDto } from '@/modules/livraison/services/courier-order.service';
 import { confirmLogout } from '@/shared/lib/confirm-logout';
+import { CourierTotalsBanner, TOTAUX_LIVREUR_VIDES } from '@/modules/livraison/components/CourierTotalsBanner';
 
 export function CourierHistoryPage() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export function CourierHistoryPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [totaux, setTotaux] = useState<CourierTotauxDto>(TOTAUX_LIVREUR_VIDES);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -42,7 +44,10 @@ export function CourierHistoryPage() {
     }
     if (!res.ok) return null;
     const data = await res.json();
-    return data.profil as CourierProfil;
+    return {
+      profil: data.profil as CourierProfil,
+      totaux: (data.totaux as CourierTotauxDto) ?? TOTAUX_LIVREUR_VIDES,
+    };
   }, [router]);
 
   const loadHistorique = useCallback(
@@ -65,6 +70,7 @@ export function CourierHistoryPage() {
           setLivraisons(data.livraisons ?? []);
           setTotalPages(data.pagination?.totalPages ?? 1);
           setTotal(data.pagination?.total ?? 0);
+          setTotaux(data.totaux ?? TOTAUX_LIVREUR_VIDES);
         }
       } finally {
         setLoading(false);
@@ -75,8 +81,11 @@ export function CourierHistoryPage() {
   );
 
   useEffect(() => {
-    void loadProfil().then((p) => {
-      if (p) setProfil(p);
+    void loadProfil().then((result) => {
+      if (result) {
+        setProfil(result.profil);
+        setTotaux(result.totaux);
+      }
     });
   }, [loadProfil]);
 
@@ -108,13 +117,14 @@ export function CourierHistoryPage() {
     <div className={`${COMPTE_SHELL} animate-fadeIn`}>
       <CourierSidebar
         profil={profil}
+        totaux={totaux}
         onLogout={handleLogout}
         mobileOpen={mobileMenuOpen}
         onMobileClose={() => setMobileMenuOpen(false)}
       />
 
       <div className={COMPTE_MAIN}>
-        <CourierMobileNav title="Historique" onMenuOpen={() => setMobileMenuOpen(true)} />
+        <CourierMobileNav title="Historique" totaux={totaux} onMenuOpen={() => setMobileMenuOpen(true)} />
         <CourierTopBar
           profil={profil}
           title="Historique"
@@ -122,10 +132,12 @@ export function CourierHistoryPage() {
           tourneesCount={0}
           arretsCount={0}
           especesTotal={0}
+          totaux={totaux}
           onLogout={handleLogout}
           onRefresh={refresh}
           refreshing={refreshing}
         />
+        <CourierTotalsBanner totaux={totaux} />
 
         <div className={COMPTE_MAIN_SCROLL}>
           <header className="mb-6 hidden lg:block">
@@ -135,6 +147,10 @@ export function CourierHistoryPage() {
               commande.
             </p>
           </header>
+
+          <div className="mb-6">
+            <CourierTotalsBanner totaux={totaux} variant="card" />
+          </div>
 
           {loading ? (
             <div className="flex justify-center py-16">

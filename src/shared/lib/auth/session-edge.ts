@@ -63,13 +63,11 @@ async function verifySignature(payload: string, signature: string, secret: strin
     ['verify'],
   );
   const signatureBytes = base64UrlToBytes(signature);
+  const signatureCopy = Uint8Array.from(signatureBytes);
   return crypto.subtle.verify(
     'HMAC',
     key,
-    signatureBytes.buffer.slice(
-      signatureBytes.byteOffset,
-      signatureBytes.byteOffset + signatureBytes.byteLength,
-    ),
+    signatureCopy,
     new TextEncoder().encode(payload),
   );
 }

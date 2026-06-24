@@ -79,8 +79,8 @@ export function CompteFideliteSection({ pointsFidelite, codeParrainage }: Props)
     if (navigator.share) {
       try {
         await navigator.share({
-          title: 'KabiShop — Parrainage',
-          text: `Inscris-toi sur KabiShop avec mon code ${monCode} et profite de −${statut?.remiseFilleulPct ?? Math.round(LOYALTY.FILLEUL_REMISE_PCT * 100)}% sur ta 1ère commande !`,
+          title: 'Love Piment& — Parrainage',
+          text: `Inscris-toi sur Love Piment& avec mon code ${monCode} et profite de −${statut?.remiseFilleulPct ?? Math.round(LOYALTY.FILLEUL_REMISE_PCT * 100)}% sur ta 1ère commande !`,
           url: lienPartage,
         });
         return;
@@ -168,7 +168,7 @@ export function CompteFideliteSection({ pointsFidelite, codeParrainage }: Props)
 
         {!parrainageEnabled && (
           <p className="text-sm text-zinc-500 rounded-xl bg-cream border border-beige-border px-4 py-3">
-            Le programme de parrainage est temporairement désactivé par KabiShop.
+            Le programme de parrainage est temporairement désactivé par Love Piment&.
           </p>
         )}
       </div>

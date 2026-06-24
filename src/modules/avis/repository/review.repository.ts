@@ -202,6 +202,10 @@ export class ReviewRepository {
       data: { statut, modereLe: new Date() },
     });
   }
+
+  async supprimer(id: string) {
+    return prisma.productReview.delete({ where: { id } });
+  }
 }
 
 export const reviewRepository = new ReviewRepository();

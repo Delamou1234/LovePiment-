@@ -20,6 +20,26 @@ export async function confirmAction(options: ActionConfirmOptions): Promise<bool
   return window.confirm(`${options.title}\n\n${options.message}`);
 }
 
+export function confirmPanierVider(): Promise<boolean> {
+  return confirmAction({
+    title: 'Vider le panier ?',
+    message: 'Tous les articles seront retirés de votre panier sur cet appareil.',
+    confirmLabel: 'Vider le panier',
+    cancelLabel: 'Annuler',
+    variant: 'danger',
+  });
+}
+
+export function confirmPanierRetirer(nomProduit: string): Promise<boolean> {
+  return confirmAction({
+    title: 'Retirer cet article ?',
+    message: `« ${nomProduit} » sera supprimé de votre panier.`,
+    confirmLabel: 'Retirer',
+    cancelLabel: 'Garder',
+    variant: 'danger',
+  });
+}
+
 export function confirmDeliveryCopy(
   clientNom: string,
   paiementEspeces?: boolean,

@@ -77,7 +77,7 @@ function versProduitCatalogueIa(p: ProduitAvecVariantes): ProduitCatalogueIa {
 
 async function chargerCatalogueIa(limit: number): Promise<ProduitCatalogueIa[]> {
   const produits = await prisma.product.findMany({
-    where: { actif: true },
+    where: { actif: true, variantes: { some: { stock: { gt: 0 } } } },
     include: {
       categorie: true,
       variantes: {
@@ -140,7 +140,7 @@ export function formaterCataloguePourPrompt(catalogue: ProduitCatalogueIa[]): st
 export async function produitsParIds(ids: string[]): Promise<ProduitCatalogueIa[]> {
   if (ids.length === 0) return [];
   const produits = await prisma.product.findMany({
-    where: { id: { in: ids }, actif: true },
+    where: { id: { in: ids }, actif: true, variantes: { some: { stock: { gt: 0 } } } },
     include: {
       categorie: true,
       variantes: {

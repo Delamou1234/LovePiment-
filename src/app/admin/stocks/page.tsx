@@ -1,8 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { Boxes, Loader2, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { AlertTriangle, Boxes, Loader2, RefreshCw } from 'lucide-react';
+import { isStockFaible, STOCK_FAIBLE_SEUIL } from '@/modules/admin/lib/stock-threshold';
+import { useAdminStats } from '@/modules/admin/components/layout/AdminStatsProvider';
 
 type StockRow = {
   id: string;
@@ -18,6 +20,9 @@ type StockRow = {
 const AUTO_REFRESH_MS = 30_000;
 
 export default function AdminStocksPage() {
+  const searchParams = useSearchParams();
+  const { refresh: refreshStats } = useAdminStats();
+  const filtreFaible = searchParams.get('faible') === '1';
   const [stocks, setStocks] = useState<StockRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<Record<string, string>>({});
@@ -47,6 +52,20 @@ export default function AdminStocksPage() {
     return () => clearInterval(interval);
   }, [load]);
 
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash.startsWith('#variant-')) return;
+    const el = document.querySelector(hash);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [stocks, loading]);
+
+  const stocksAffichés = useMemo(
+    () => (filtreFaible ? stocks.filter((s) => isStockFaible(s.stock)) : stocks),
+    [stocks, filtreFaible],
+  );
+
+  const faible = stocks.filter((s) => isStockFaible(s.stock)).length;
+
   const save = async (variantId: string) => {
     setSavingId(variantId);
     try {
@@ -56,6 +75,7 @@ export default function AdminStocksPage() {
         body: JSON.stringify({ variantId, stock: Number(editing[variantId]) || 0 }),
       });
       await load();
+      await refreshStats();
     } finally {
       setSavingId(null);
     }
@@ -64,18 +84,44 @@ export default function AdminStocksPage() {
   const varianteLabel = (s: StockRow) =>
     [s.capacite, s.taille, s.couleur].filter(Boolean).join(' · ') || '—';
 
-  const faible = stocks.filter((s) => s.stock <= 5).length;
-
   return (
     <div className="space-y-6">
+      {faible > 0 && (
+        <div className="admin-stock-banner" role="alert">
+          <div className="admin-stock-banner-inner">
+            <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" strokeWidth={1.75} />
+            <p className="flex-1 text-sm text-amber-950">
+              <strong>{faible}</strong> variante{faible > 1 ? 's' : ''} à ≤ {STOCK_FAIBLE_SEUIL}{' '}
+              unité{STOCK_FAIBLE_SEUIL > 1 ? 's' : ''}.
+              {filtreFaible ? (
+                <a href="/admin/stocks" className="ml-1 font-semibold underline underline-offset-2">
+                  Voir tout
+                </a>
+              ) : (
+                <a
+                  href="/admin/stocks?faible=1"
+                  className="ml-1 font-semibold underline underline-offset-2"
+                >
+                  Filtrer les alertes
+                </a>
+              )}
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-bold text-zinc-900">
-            <Boxes className="h-6 w-6" />
+            <Boxes className="h-7 w-7 text-[#e91e8c]" strokeWidth={1.75} />
             Gestion des stocks
           </h1>
           <p className="mt-1 text-sm text-zinc-500">
-            {stocks.length} variante(s) — {faible} en stock faible (≤ 5). Actualisation auto toutes les 30 s.
+            {stocks.length} variante(s) —{' '}
+            <span className={faible > 0 ? 'font-semibold text-amber-700' : ''}>
+              {faible} en stock faible (≤ {STOCK_FAIBLE_SEUIL})
+            </span>
+            . Actualisation auto toutes les 30 s.
           </p>
           {lastSync && (
             <p className="text-xs text-zinc-400">
@@ -83,10 +129,15 @@ export default function AdminStocksPage() {
             </p>
           )}
         </div>
-        <Button variant="outline" size="sm" onClick={load} disabled={loading}>
-          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+        <button
+          type="button"
+          onClick={load}
+          disabled={loading}
+          className="admin-marketing-refresh"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           Actualiser
-        </Button>
+        </button>
       </div>
 
       {loading && stocks.length === 0 ? (
@@ -94,50 +145,66 @@ export default function AdminStocksPage() {
           <Loader2 className="h-6 w-6 animate-spin text-zinc-400" />
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
-          <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-500">
-              <tr>
-                <th className="px-4 py-3">Produit</th>
-                <th className="px-4 py-3">Variante</th>
-                <th className="px-4 py-3">SKU</th>
-                <th className="px-4 py-3">Code-barres</th>
-                <th className="px-4 py-3">Stock</th>
-                <th className="px-4 py-3 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {stocks.map((s) => (
-                <tr key={s.id} className={s.stock <= 5 ? 'bg-red-50/30' : ''}>
-                  <td className="px-4 py-3 font-medium">{s.produit.nom}</td>
-                  <td className="px-4 py-3 text-zinc-500">{varianteLabel(s)}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-zinc-500">{s.sku ?? '—'}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-zinc-400">{s.codeBarre ?? '—'}</td>
-                  <td className="px-4 py-3">
-                    <input
-                      type="number"
-                      min={0}
-                      className="input-kabishop w-24 py-1.5"
-                      value={editing[s.id] ?? s.stock}
-                      onChange={(e) =>
-                        setEditing((prev) => ({ ...prev, [s.id]: e.target.value }))
-                      }
-                    />
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      disabled={savingId === s.id}
-                      onClick={() => save(s.id)}
-                    >
-                      {savingId === s.id ? '…' : 'OK'}
-                    </Button>
-                  </td>
+        <div className="admin-marketing-table-card">
+          <div className="admin-marketing-table-wrap">
+            <table className="admin-marketing-table">
+              <thead>
+                <tr>
+                  <th>Produit</th>
+                  <th>Variante</th>
+                  <th>SKU</th>
+                  <th>Code-barres</th>
+                  <th>Stock</th>
+                  <th className="text-right">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {stocksAffichés.map((s) => (
+                  <tr
+                    key={s.id}
+                    id={`variant-${s.id}`}
+                    className={isStockFaible(s.stock) ? 'admin-stock-row-alert' : ''}
+                  >
+                    <td className="font-medium text-zinc-900">{s.produit.nom}</td>
+                    <td className="text-zinc-500">{varianteLabel(s)}</td>
+                    <td className="font-mono text-xs text-zinc-500">{s.sku ?? '—'}</td>
+                    <td className="font-mono text-xs text-zinc-400">{s.codeBarre ?? '—'}</td>
+                    <td>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={0}
+                          className="admin-marketing-input w-24 py-1.5"
+                          value={editing[s.id] ?? s.stock}
+                          onChange={(e) =>
+                            setEditing((prev) => ({ ...prev, [s.id]: e.target.value }))
+                          }
+                        />
+                        {isStockFaible(s.stock) && (
+                          <span className="admin-stock-pill">
+                            {s.stock === 0 ? 'Rupture' : 'Faible'}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="text-right">
+                      <button
+                        type="button"
+                        disabled={savingId === s.id}
+                        onClick={() => save(s.id)}
+                        className="admin-marketing-create-btn !py-1.5 !px-3"
+                      >
+                        {savingId === s.id ? '…' : 'OK'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {stocksAffichés.length === 0 && (
+            <p className="admin-marketing-empty-text">Aucune variante à afficher.</p>
+          )}
         </div>
       )}
     </div>

@@ -17,7 +17,7 @@ const ENGIN_LABELS: Record<string, string> = {
 
 export function buildCourierWelcomeEmail(data: CourierWelcomeEmailData) {
   const engin = data.typeEngin ? (ENGIN_LABELS[data.typeEngin] ?? data.typeEngin) : null;
-  const subject = 'Votre compte livreur KabiShop — identifiants de connexion';
+  const subject = 'Votre compte livreur Love Piment& — identifiants de connexion';
 
   const html = `<!DOCTYPE html>
 <html lang="fr">
@@ -25,7 +25,7 @@ export function buildCourierWelcomeEmail(data: CourierWelcomeEmailData) {
   <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;">
     <tr>
       <td style="background:#4a5240;padding:24px;color:#fff;">
-        <div style="font-size:18px;font-weight:700;">KabiShop</div>
+        <div style="font-size:18px;font-weight:700;">Love Piment&</div>
         <div style="font-size:13px;opacity:0.85;margin-top:4px;">Espace livreur</div>
       </td>
     </tr>
@@ -33,7 +33,7 @@ export function buildCourierWelcomeEmail(data: CourierWelcomeEmailData) {
       <td style="padding:24px;">
         <p style="margin:0 0 16px;font-size:15px;color:#18181b;">Bonjour ${escapeHtml(data.nom)},</p>
         <p style="margin:0 0 20px;font-size:14px;color:#3f3f46;line-height:1.6;">
-          Votre compte livreur KabiShop a été créé. Voici vos identifiants pour accéder à vos tournées et livraisons.
+          Votre compte livreur Love Piment& a été créé. Voici vos identifiants pour accéder à vos tournées et livraisons.
         </p>
         <table width="100%" cellpadding="0" cellspacing="0" style="background:#faf7f2;border-radius:10px;margin-bottom:20px;">
           <tr><td style="padding:14px 16px;font-size:13px;color:#52525b;"><strong>E-mail</strong><br>${escapeHtml(data.email)}</td></tr>
@@ -52,7 +52,7 @@ export function buildCourierWelcomeEmail(data: CourierWelcomeEmailData) {
           Pour chaque livraison en espèces, vous devez signaler si le client a payé.
         </p>
         <p style="margin:0;font-size:12px;color:#a1a1aa;line-height:1.5;">
-          Si vous n'attendiez pas ce compte, contactez l'administration KabiShop.
+          Si vous n'attendiez pas ce compte, contactez l'administration Love Piment&.
         </p>
       </td>
     </tr>
@@ -63,7 +63,7 @@ export function buildCourierWelcomeEmail(data: CourierWelcomeEmailData) {
   const text = [
     `Bonjour ${data.nom},`,
     '',
-    'Votre compte livreur KabiShop a été créé.',
+    'Votre compte livreur Love Piment& a été créé.',
     '',
     `E-mail : ${data.email}`,
     `Mot de passe : ${data.password}`,

@@ -4,7 +4,7 @@ import { redirectUrlApresSessionExpiree } from '@/shared/lib/auth/stale-session'
 import { getCourierSession } from '@/shared/lib/auth/session';
 
 export const metadata: Metadata = {
-  title: 'Espace livreur — KabiShop',
+  title: 'Espace livreur — Love Piment&',
   robots: { index: false, follow: false },
 };
 
@@ -14,5 +14,5 @@ export default async function LivreurAppLayout({ children }: { children: React.R
     redirect(redirectUrlApresSessionExpiree('/livreur'));
   }
 
-  return <div className="h-screen overflow-hidden bg-cream">{children}</div>;
+  return <div className="h-dvh overflow-hidden bg-cream">{children}</div>;
 }

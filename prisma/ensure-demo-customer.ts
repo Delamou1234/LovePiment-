@@ -1,7 +1,7 @@
 import type { PrismaClient } from '@prisma/client';
 import { hashPassword } from '../src/shared/lib/auth/password';
 
-export const DEFAULT_DEMO_CUSTOMER_EMAIL = 'client@kabishop.com';
+export const DEFAULT_DEMO_CUSTOMER_EMAIL = 'client@lovepiment.gn';
 export const DEFAULT_DEMO_CUSTOMER_PASSWORD = 'Client2026!';
 
 export function resolveDemoCustomerCredentials() {

@@ -1,6 +1,5 @@
 /** Image par défaut si la catégorie n'a pas d'image en base. */
-export const CATEGORIE_IMAGE_DEFAUT =
-  'https://images.unsplash.com/photo-1541643600914-78b084683601?w=900&q=85&auto=format&fit=crop';
+export const CATEGORIE_IMAGE_DEFAUT = '/images/love-piment-secret.png';
 
 export type CategorieVitrine = {
   nom: string;

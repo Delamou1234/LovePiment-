@@ -43,30 +43,26 @@ export default async function ProductDetailPage({ params }: { params: Params }) 
 
   return (
     <div className="product-detail-page animate-fadeIn">
-      <header className="border-b border-beige-border/60 bg-white/80 backdrop-blur-sm">
-        <div className="container-kabishop py-4 md:py-5">
-          <nav className="catalog-breadcrumb" aria-label="Fil d'Ariane">
-            <Link href="/">Accueil</Link>
-            <ChevronRight className="h-3 w-3 opacity-40" aria-hidden />
-            <Link href="/produits">Boutique</Link>
-            <ChevronRight className="h-3 w-3 opacity-40" aria-hidden />
-            <Link href={`/produits?categorie=${productClient.categorie.slug}`}>
-              {productClient.categorie.nom}
-            </Link>
-            <ChevronRight className="h-3 w-3 opacity-40" aria-hidden />
-            <span className="max-w-[10rem] truncate text-zinc-600 sm:max-w-md">{productClient.nom}</span>
-          </nav>
-        </div>
-      </header>
+      <div className="container-shop product-detail-inner">
+        <nav className="product-detail-breadcrumb" aria-label="Fil d'Ariane">
+          <Link href="/">Accueil</Link>
+          <ChevronRight className="h-3 w-3 opacity-40" aria-hidden />
+          <Link href="/produits">Boutique</Link>
+          <ChevronRight className="h-3 w-3 opacity-40" aria-hidden />
+          <Link href={`/produits?categorie=${productClient.categorie.slug}`}>
+            {productClient.categorie.nom}
+          </Link>
+          <ChevronRight className="h-3 w-3 opacity-40" aria-hidden />
+          <span className="product-detail-breadcrumb-current">{productClient.nom}</span>
+        </nav>
 
-      <div className="container-kabishop space-y-12 py-6 md:space-y-16 md:py-10 lg:py-12">
         <ProductDetailsSection
           product={productClient}
           avisStats={avisStats}
           similaires={similaires}
         />
 
-        <div id="avis-clients">
+        <div id="avis-clients" className="product-reviews-wrap">
           <ProductReviewsSection
             productId={productClient.id}
             productSlug={productClient.slug}

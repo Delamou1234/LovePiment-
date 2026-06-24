@@ -1,4 +1,4 @@
-/** Règles fidélité & parrainage KabiShop. */
+/** Règles fidélité & parrainage Love Piment&. */
 export const LOYALTY = {
   /** 1 point gagné par tranche de 1 000 GN dépensés (total TTC). */
   POINTS_PAR_1000_GN: 1,

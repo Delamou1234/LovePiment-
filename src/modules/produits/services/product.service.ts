@@ -29,8 +29,12 @@ export class ProductService {
 
   async obtenirProduit(slug: string): Promise<ProduitAvecVariantes> {
     const produit = await this.repo.trouverParSlug(slug);
-    if (!produit) {
+    if (!produit || !produit.actif) {
       throw new Error(`Produit introuvable : ${slug}`);
+    }
+    const enStock = produit.variantes.some((v) => v.stock > 0);
+    if (!enStock) {
+      throw new Error(`Produit indisponible : ${slug}`);
     }
     return produit;
   }
@@ -60,6 +64,10 @@ export class ProductService {
       total: produits.length,
       remiseMax: remises.length ? Math.max(...remises) : 0,
     };
+  }
+
+  async compterPromotionsActives() {
+    return this.repo.compterPromotionsActives();
   }
 
   async creerProduit(dto: CreerProduitDto): Promise<ProduitAvecVariantes> {

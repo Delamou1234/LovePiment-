@@ -42,7 +42,7 @@ export function buildCourierWhatsAppMessage(params: {
   montantTotal?: number;
 }): string {
   const lines = [
-    '🚚 *Livraison KabiShop*',
+    '🚚 *Livraison Love Piment&*',
     '',
     `Client : ${params.clientNom}`,
     `Tél : ${params.clientTelephone}`,

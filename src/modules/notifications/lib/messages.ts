@@ -26,7 +26,7 @@ export function messageCommandeCreee(ctx: OrderNotificationContext): string {
   return [
     `Bonjour ${prenom(ctx.clientNom)},`,
     '',
-    'Merci pour votre commande KabiShop !',
+    'Merci pour votre commande Love Piment& !',
     `Montant : ${formatMontant(ctx.montantTotal)}`,
     `Livraison : ${ctx.clientVille}`,
     paiement,
@@ -34,7 +34,7 @@ export function messageCommandeCreee(ctx: OrderNotificationContext): string {
     `Suivez votre commande :`,
     lienSuivi(ctx.suiviToken),
     '',
-    'KabiShop · Conakry',
+    'Love Piment& · Conakry',
   ].join('\n');
 }
 
@@ -46,7 +46,7 @@ export function messageChangementStatut(ctx: OrderNotificationContext): string {
   const lines = [
     `Bonjour ${prenom(ctx.clientNom)},`,
     '',
-    `Mise à jour de votre commande KabiShop`,
+    `Mise à jour de votre commande Love Piment&`,
     `Statut : ${libelle}`,
     description,
   ];
@@ -72,12 +72,12 @@ export function messagePaiementConfirme(ctx: OrderNotificationContext): string {
   return [
     `Bonjour ${prenom(ctx.clientNom)},`,
     '',
-    'Votre paiement KabiShop est confirmé.',
+    'Votre paiement Love Piment& est confirmé.',
     `Montant : ${formatMontant(ctx.montantTotal)}`,
     'Nous préparons votre colis.',
     '',
     lienSuivi(ctx.suiviToken),
     '',
-    'KabiShop · Conakry',
+    'Love Piment& · Conakry',
   ].join('\n');
 }

@@ -67,7 +67,7 @@ export function ProductAiRecommendations({
   if (loading) {
     return (
       <section ref={sectionRef} className="py-8 flex justify-center">
-        <Loader2 className="h-5 w-5 animate-spin text-[#4a5240]" />
+        <Loader2 className="h-5 w-5 animate-spin text-[#9B1B2E]" />
       </section>
     );
   }
@@ -75,9 +75,9 @@ export function ProductAiRecommendations({
   if (products.length === 0) return null;
 
   return (
-    <section ref={sectionRef} className="border-t border-[#ebe4d8]/60 pt-12">
+    <section ref={sectionRef} className="border-t border-[#F2D4DC]/60 pt-12">
       <div className="flex items-center gap-2 mb-6">
-        <Sparkles className="h-4 w-4 text-[#4a5240]" />
+        <Sparkles className="h-4 w-4 text-[#9B1B2E]" />
         <h2 className="text-lg font-bold text-zinc-900">
           {poweredByAi ? 'Recommandations IA' : 'Vous aimerez aussi'}
         </h2>
@@ -87,9 +87,9 @@ export function ProductAiRecommendations({
           <Link
             key={p.id}
             href={`/produits/${p.slug}`}
-            className="group rounded-xl border border-[#ebe4d8] bg-white overflow-hidden hover:shadow-md transition"
+            className="group rounded-xl border border-[#F2D4DC] bg-white overflow-hidden hover:shadow-md transition"
           >
-            <div className="relative aspect-square bg-[#f5f0e8]">
+            <div className="relative aspect-square bg-[#FCEEE8]">
               {p.image ? (
                 <Image
                   src={p.image}

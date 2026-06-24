@@ -71,7 +71,7 @@ export default function AdminTraficPage() {
         </div>
         <div className="flex gap-2 items-center">
           <select
-            className="input-kabishop py-2 text-sm"
+            className="input-shop py-2 text-sm"
             value={periode}
             onChange={(e) => setPeriode(e.target.value as typeof periode)}
           >
@@ -131,7 +131,7 @@ export default function AdminTraficPage() {
                     <span className="w-20 text-zinc-500 text-xs">{v.date.slice(5)}</span>
                     <div className="flex-1 h-2 bg-zinc-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-[#4a5240] rounded-full"
+                        className="h-full bg-[#9B1B2E] rounded-full"
                         style={{ width: `${(v.count / maxVisites) * 100}%` }}
                       />
                     </div>

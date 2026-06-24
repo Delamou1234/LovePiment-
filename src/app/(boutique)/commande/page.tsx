@@ -8,7 +8,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { usePanier } from '@/store/panier';
-import { calculerTotauxCommande, formaterPrixGN, LIVRAISON_CONFIG } from '@/shared/lib/shipping';
+import { calculerTotauxCommande, formaterPrixGN, libelleLivraisonOfferte } from '@/shared/lib/shipping';
+import { useLivraisonConfig } from '@/shared/hooks/useLivraisonConfig';
 import { CheckoutMarketingPanel } from '@/modules/marketing/components/CheckoutMarketingPanel';
 import { GeolocationAddressPrompt } from '@/shared/components/GeolocationAddressPrompt';
 import type { GeolocationAddressSuggestion } from '@/shared/lib/geolocation/reverse-geocode';
@@ -24,8 +25,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '224625617377';
+import { getShopPhoneDisplay, getShopTelHref, getShopWhatsAppHref } from '@/shared/lib/shop-contact';
 
 // ─── VALIDATION SCHEMA (ZOD) ─────────────────────────────────────────────────
 
@@ -62,6 +62,7 @@ function messageErreurPaiement(message: string): string {
 
 export default function CheckoutPage() {
   const panier = usePanier();
+  const livraisonConfig = useLivraisonConfig();
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -94,10 +95,11 @@ export default function CheckoutPage() {
   } = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
-      clientVille: 'Conakry',
+      clientVille: livraisonConfig.villeParDefaut,
       modePaiement: 'CINETPAY',
     },
   });
+
 
   // Pré-remplir depuis le compte client en base
   useEffect(() => {
@@ -143,7 +145,7 @@ export default function CheckoutPage() {
   );
 
   const selectedPaymentMethod = watch('modePaiement');
-  const selectedVille = watch('clientVille') || 'Conakry';
+  const selectedVille = watch('clientVille') || livraisonConfig.villeParDefaut;
   const clientAdresse = watch('clientAdresse');
 
   const applyCheckoutAddress = (suggestion: GeolocationAddressSuggestion) => {
@@ -157,7 +159,7 @@ export default function CheckoutPage() {
 
   if (!mounted) {
     return (
-      <div className="container-kabishop py-16 text-center">
+      <div className="container-shop py-16 text-center">
         <div className="skeleton h-6 w-32 mx-auto mb-4"></div>
         <div className="skeleton h-64 w-full max-w-3xl mx-auto rounded-2xl"></div>
       </div>
@@ -168,6 +170,7 @@ export default function CheckoutPage() {
   const { sousTotal, fraisLivraison, total, livraisonGratuite } = calculerTotauxCommande(
     items,
     selectedVille,
+    livraisonConfig,
   );
 
   const totauxFinaux = totauxMarketing ?? {
@@ -258,7 +261,7 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="container-kabishop py-8 animate-fadeIn">
+    <div className="container-shop py-8 animate-fadeIn">
       {/* ─── BREADCRUMB ────────────────────────────────────────────────── */}
       <div className="flex items-center gap-1.5 text-xs text-zinc-500 mb-6">
         <Link href="/" className="hover:text-primary transition font-medium">Accueil</Link>
@@ -290,7 +293,7 @@ export default function CheckoutPage() {
                     id="clientNom"
                     type="text"
                     placeholder="Ex: Diallo Mamadou"
-                    className="input-kabishop"
+                    className="input-shop"
                     {...register('clientNom')}
                   />
                   {errors.clientNom && (
@@ -305,7 +308,7 @@ export default function CheckoutPage() {
                     id="clientTelephone"
                     type="text"
                     placeholder="Ex: 620000000"
-                    className="input-kabishop"
+                    className="input-shop"
                     {...register('clientTelephone')}
                   />
                   {errors.clientTelephone && (
@@ -330,7 +333,7 @@ export default function CheckoutPage() {
                     id="clientAdresse"
                     type="text"
                     placeholder="Ex: Camayenne, près de la Mosquée, Immeuble X"
-                    className="input-kabishop"
+                    className="input-shop"
                     {...register('clientAdresse')}
                   />
                   {errors.clientAdresse && (
@@ -345,7 +348,7 @@ export default function CheckoutPage() {
                     id="clientVille"
                     type="text"
                     placeholder="Conakry"
-                    className="input-kabishop"
+                    className="input-shop"
                     {...register('clientVille')}
                   />
                   {errors.clientVille && (
@@ -483,9 +486,9 @@ export default function CheckoutPage() {
                     {formattedShipping}
                   </span>
                 </div>
-                {!totauxFinaux.livraisonGratuite && (
+                {!totauxFinaux.livraisonGratuite && livraisonConfig.gratuiteActive && (
                   <p className="text-[10px] text-zinc-400">
-                    Livraison offerte dès {formaterPrixGN(LIVRAISON_CONFIG.seuilGratuit)} à Conakry
+                    {libelleLivraisonOfferte(livraisonConfig)}
                   </p>
                 )}
                 
@@ -528,16 +531,20 @@ export default function CheckoutPage() {
               <div>
                 <p className="font-bold text-zinc-800">Besoin d'aide pour finaliser ?</p>
                 <p className="mt-1">
-                  Vous pouvez également nous écrire sur WhatsApp au{' '}
+                  Écrivez-nous sur{' '}
                   <a
-                    href={`https://wa.me/${WHATSAPP.replace(/[\s+\-()]/g, '')}`}
+                    href={getShopWhatsAppHref()}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary font-bold hover:underline"
                   >
-                    +{WHATSAPP.replace(/^224/, '224 ')}
+                    WhatsApp
                   </a>
-                  . Nous serons ravis de vous aider !
+                  {' '}ou appelez le{' '}
+                  <a href={getShopTelHref()} className="text-primary font-bold hover:underline">
+                    {getShopPhoneDisplay()}
+                  </a>
+                  .
                 </p>
               </div>
             </div>

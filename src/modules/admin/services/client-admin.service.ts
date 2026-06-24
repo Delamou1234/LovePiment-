@@ -10,6 +10,9 @@ export type ClientAdminDto = {
   montantTotal: number;
   derniereCommande: string | null;
   inscritLe: string;
+  pointsFidelite: number;
+  adressePreferee: string | null;
+  villePreferee: string | null;
 };
 
 export class ClientAdminService {
@@ -22,6 +25,9 @@ export class ClientAdminService {
         telephone: true,
         googleId: true,
         createdAt: true,
+        pointsFidelite: true,
+        adressePreferee: true,
+        villePreferee: true,
         commandes: {
           select: {
             montantTotal: true,
@@ -47,6 +53,9 @@ export class ClientAdminService {
         montantTotal,
         derniereCommande: derniere?.toISOString() ?? null,
         inscritLe: c.createdAt.toISOString(),
+        pointsFidelite: c.pointsFidelite,
+        adressePreferee: c.adressePreferee,
+        villePreferee: c.villePreferee,
       };
     });
   }

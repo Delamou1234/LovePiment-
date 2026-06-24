@@ -90,8 +90,8 @@ export function BeautyProfilePage() {
 
   if (!hydrated) {
     return (
-      <div className="container-kabishop flex justify-center py-20">
-        <Loader2 className="h-6 w-6 animate-spin text-[#4a5240]" />
+      <div className="container-shop flex justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-[#9B1B2E]" />
       </div>
     );
   }
@@ -100,15 +100,15 @@ export function BeautyProfilePage() {
   const resume = profile ? resumeProfilBeaute(profile) : null;
 
   return (
-    <div className="animate-fadeIn bg-[#faf7f2]">
-      <section className="border-b border-[#ebe4d8]/60 bg-white">
-        <div className="container-kabishop py-12 md:py-16">
-          <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.15em] text-[#4a5240]">
+    <div className="animate-fadeIn bg-[#FFF8F6]">
+      <section className="border-b border-[#F2D4DC]/60 bg-white">
+        <div className="container-shop py-12 md:py-16">
+          <p className="mb-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.15em] text-[#9B1B2E]">
             <Sparkles className="h-3.5 w-3.5" />
             Personnalisation
           </p>
           <h1 className="max-w-2xl text-3xl font-black text-zinc-900 md:text-4xl">
-            Votre profil beauté
+            Votre profil intime
           </h1>
           <p className="mt-4 max-w-2xl text-base text-zinc-600 md:text-lg">
             Répondez à quelques questions pour recevoir des recommandations adaptées à votre peau,
@@ -116,7 +116,7 @@ export function BeautyProfilePage() {
           </p>
           {!user && (
             <p className="mt-3 text-sm text-zinc-500">
-              <Link href="/connexion?redirect=/profil-beaute" className="font-semibold text-[#4a5240] hover:underline">
+              <Link href="/connexion?redirect=/profil-beaute" className="font-semibold text-[#9B1B2E] hover:underline">
                 Connectez-vous
               </Link>{' '}
               pour sauvegarder votre profil sur tous vos appareils.
@@ -125,7 +125,7 @@ export function BeautyProfilePage() {
         </div>
       </section>
 
-      <section className="container-kabishop py-10 md:py-14">
+      <section className="container-shop py-10 md:py-14">
         <div className="mx-auto max-w-3xl space-y-6">
           {savedMsg && (
             <div className="rounded-xl border border-[#c5d4b8] bg-[#f0f5eb] px-4 py-3 text-sm font-medium text-[#3d4a35]">
@@ -141,7 +141,7 @@ export function BeautyProfilePage() {
           )}
 
           {!showQuiz && resume && (
-            <div className="rounded-2xl border border-[#ebe4d8] bg-white p-6 shadow-sm sm:p-8">
+            <div className="rounded-2xl border border-[#F2D4DC] bg-white p-6 shadow-sm sm:p-8">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-black text-zinc-900">Votre profil actuel</h2>
@@ -152,7 +152,7 @@ export function BeautyProfilePage() {
                 <button
                   type="button"
                   onClick={() => setEditing(true)}
-                  className="inline-flex items-center gap-2 rounded-full border border-[#ebe4d8] px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-[#faf7f2]"
+                  className="inline-flex items-center gap-2 rounded-full border border-[#F2D4DC] px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-[#FFF8F6]"
                 >
                   <RefreshCw className="h-4 w-4" />
                   Refaire le quiz
@@ -172,13 +172,13 @@ export function BeautyProfilePage() {
               <div className="mt-8 flex flex-wrap gap-3">
                 <Link
                   href="/produits"
-                  className="inline-flex items-center rounded-full bg-[#4a5240] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#3d4436]"
+                  className="inline-flex items-center rounded-full bg-[#9B1B2E] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#3d4436]"
                 >
                   Voir la boutique
                 </Link>
                 <Link
                   href="/"
-                  className="inline-flex items-center rounded-full border border-[#ebe4d8] px-5 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-[#faf7f2]"
+                  className="inline-flex items-center rounded-full border border-[#F2D4DC] px-5 py-2.5 text-sm font-semibold text-zinc-700 hover:bg-[#FFF8F6]"
                 >
                   Retour à l&apos;accueil
                 </Link>
@@ -201,8 +201,8 @@ export function BeautyProfilePage() {
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-xl bg-[#faf7f2] p-4">
-      <dt className="text-[11px] font-bold uppercase tracking-widest text-[#4a5240]">{label}</dt>
+    <div className="rounded-xl bg-[#FFF8F6] p-4">
+      <dt className="text-[11px] font-bold uppercase tracking-widest text-[#9B1B2E]">{label}</dt>
       <dd className="mt-1 text-sm font-semibold text-zinc-900">{value}</dd>
     </div>
   );

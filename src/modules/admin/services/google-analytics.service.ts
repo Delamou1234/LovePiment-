@@ -21,7 +21,10 @@ function periodeEnDates(periode: RapportPeriode): { startDate: string; endDate: 
   return { startDate: `${jours}daysAgo`, endDate: 'today' };
 }
 
-function parseMetric(row: { metricValues?: { value?: string | null }[] } | undefined, index: number): number {
+function parseMetric(
+  row: { metricValues?: { value?: string | null }[] | null } | null | undefined,
+  index: number,
+): number {
   const raw = row?.metricValues?.[index]?.value;
   const n = Number(raw ?? 0);
   return Number.isFinite(n) ? n : 0;

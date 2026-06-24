@@ -71,7 +71,7 @@ export function AdminBatchDelivery({
             <Loader2 className="h-4 w-4 animate-spin text-olive" />
           ) : (
             <select
-              className="input-kabishop text-sm min-w-[180px]"
+              className="input-shop text-sm min-w-[180px]"
               value={selected}
               onChange={(e) => setSelected(e.target.value)}
               disabled={disabled || saving}

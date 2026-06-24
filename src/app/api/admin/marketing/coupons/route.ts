@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { marketingService } from '@/modules/marketing/services/marketing.service';
 import { adminUnauthorized, requireAdmin } from '@/modules/admin/lib/require-admin';
+import { revalidateBoutique } from '@/modules/produits/lib/revalidate-boutique';
 
 function mapCoupon(c: Awaited<ReturnType<typeof marketingService.listerCouponsAdmin>>[number]) {
   return {
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
       debut: parsed.data.debut ? new Date(parsed.data.debut) : null,
       fin: parsed.data.fin ? new Date(parsed.data.fin) : null,
     });
+    revalidateBoutique();
     return NextResponse.json({ coupon: mapCoupon(coupon) }, { status: 201 });
   } catch {
     return NextResponse.json({ message: 'Code déjà utilisé' }, { status: 409 });
@@ -80,6 +82,7 @@ export async function PATCH(request: NextRequest) {
     debut: data.debut !== undefined ? (data.debut ? new Date(data.debut) : null) : undefined,
     fin: data.fin !== undefined ? (data.fin ? new Date(data.fin) : null) : undefined,
   });
+  revalidateBoutique();
   return NextResponse.json({ coupon: mapCoupon(coupon) });
 }
 
@@ -92,5 +95,6 @@ export async function DELETE(request: NextRequest) {
   if (!id) return NextResponse.json({ message: 'ID requis' }, { status: 400 });
 
   await marketingService.supprimerCoupon(id);
+  revalidateBoutique();
   return NextResponse.json({ ok: true });
 }

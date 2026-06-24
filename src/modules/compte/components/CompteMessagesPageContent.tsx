@@ -90,12 +90,12 @@ export function CompteMessagesPageContent() {
           <header className="mb-4 shrink-0 hidden lg:block">
             <h1 className="font-serif text-2xl font-bold text-zinc-900">Messagerie</h1>
             <p className="mt-1 text-sm text-zinc-500">
-              Envoyez des messages, photos et vocaux à l&apos;équipe KabiShop.
+              Envoyez des messages, photos et vocaux à l&apos;équipe Love Piment&.
             </p>
           </header>
 
           <div
-            className={`${COMPTE_CARD} flex-1 min-h-[520px] overflow-hidden flex flex-col`}
+            className={`${COMPTE_CARD} flex-1 min-h-[min(520px,70dvh)] overflow-hidden flex flex-col`}
           >
             <SupportChatShell fullHeight />
           </div>

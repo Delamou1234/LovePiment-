@@ -330,7 +330,7 @@ export function ProductSearchBar({
           onKeyDown={handleKeyDown}
           disabled={searchMode === 'image' && imageLoading}
           className={cn(
-            'rounded-full border border-[#e8e0d4] bg-[#faf7f2] text-zinc-700 outline-none placeholder:text-zinc-400 focus:border-zinc-300 focus:bg-white',
+            'rounded-full border border-[#e8e0d4] bg-[#FFF8F6] text-zinc-700 outline-none placeholder:text-zinc-400 focus:border-zinc-300 focus:bg-white',
             compact ? 'py-1.5 text-xs' : 'py-2 text-sm',
             fullWidth ? 'w-full py-2.5' : compact ? 'w-48 xl:w-64' : 'w-52 xl:w-72',
             imagePreview ? (compact ? 'pl-12' : 'pl-14') : compact ? 'pl-3' : 'pl-4',
@@ -349,7 +349,7 @@ export function ProductSearchBar({
               'flex items-center justify-center rounded-full transition',
               actionBtnClass,
               searchMode === 'image'
-                ? 'bg-[#4a5240] text-white'
+                ? 'bg-[#9B1B2E] text-white'
                 : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700',
             )}
             aria-label="Rechercher par image"
@@ -405,11 +405,11 @@ export function ProductSearchBar({
         <div
           id="search-suggestions"
           role="listbox"
-          className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-[#ebe4d8] bg-white shadow-lg animate-fadeIn"
+          className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-xl border border-[#F2D4DC] bg-white shadow-lg animate-fadeIn"
         >
           {searchMode === 'image' && (
-            <div className="border-b border-[#ebe4d8] bg-[#faf7f2] px-3 py-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#4a5240]">
+            <div className="border-b border-[#F2D4DC] bg-[#FFF8F6] px-3 py-2">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-[#9B1B2E]">
                 Recherche par image {aiEnhanced ? '· Gemini IA' : ''}
               </p>
               <p className="text-[11px] text-zinc-500 mt-0.5">
@@ -421,8 +421,8 @@ export function ProductSearchBar({
           )}
 
           {searchMode === 'text' && aiEnhanced && query.trim().length >= 2 && (
-            <div className="border-b border-[#ebe4d8] bg-[#faf7f2] px-3 py-2">
-              <p className="text-[11px] font-semibold text-[#4a5240]">
+            <div className="border-b border-[#F2D4DC] bg-[#FFF8F6] px-3 py-2">
+              <p className="text-[11px] font-semibold text-[#9B1B2E]">
                 Suggestions intelligentes · Gemini
               </p>
             </div>
@@ -443,7 +443,7 @@ export function ProductSearchBar({
                         onClick={() => selectProduct(item.slug)}
                         className={cn(
                           'flex w-full items-center gap-3 px-3 py-2.5 text-left transition',
-                          index === activeIndex ? 'bg-[#faf7f2]' : 'hover:bg-[#faf7f2]',
+                          index === activeIndex ? 'bg-[#FFF8F6]' : 'hover:bg-[#FFF8F6]',
                         )}
                       >
                         <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-zinc-100">
@@ -477,7 +477,7 @@ export function ProductSearchBar({
                           onClick={() => selectSuggestion(item)}
                           className={cn(
                             'flex w-full items-center gap-3 px-3 py-2.5 text-left transition',
-                            index === activeIndex ? 'bg-[#faf7f2]' : 'hover:bg-[#faf7f2]',
+                            index === activeIndex ? 'bg-[#FFF8F6]' : 'hover:bg-[#FFF8F6]',
                           )}
                         >
                           <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-zinc-100">
@@ -503,10 +503,10 @@ export function ProductSearchBar({
                           onClick={() => selectSuggestion(item)}
                           className={cn(
                             'flex w-full items-center gap-3 px-3 py-2.5 text-left transition',
-                            index === activeIndex ? 'bg-[#faf7f2]' : 'hover:bg-[#faf7f2]',
+                            index === activeIndex ? 'bg-[#FFF8F6]' : 'hover:bg-[#FFF8F6]',
                           )}
                         >
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#f5f0e8] text-[#4a5240]">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-[#FCEEE8] text-[#9B1B2E]">
                             <Tag className="h-4 w-4" />
                           </div>
                           <div>
@@ -529,7 +529,7 @@ export function ProductSearchBar({
           ) : null}
 
           {searchMode === 'text' && query.trim().length >= 2 && (
-            <div className="border-t border-[#ebe4d8] bg-[#faf7f2]/80 px-3 py-2">
+            <div className="border-t border-[#F2D4DC] bg-[#FFF8F6]/80 px-3 py-2">
               <button
                 type="button"
                 onClick={() => navigateToSearch(query)}

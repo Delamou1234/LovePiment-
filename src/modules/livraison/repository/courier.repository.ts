@@ -22,6 +22,10 @@ export class CourierAuthRepository {
 }
 
 export class CourierRepository {
+  async trouverParId(id: string) {
+    return prisma.courier.findUnique({ where: { id } });
+  }
+
   async lister(actifOnly = false) {
     return prisma.courier.findMany({
       where: actifOnly ? { actif: true, verifie: true } : undefined,
@@ -52,6 +56,7 @@ export class CourierRepository {
     contactUrgenceNom?: string | null;
     contactUrgenceTel?: string | null;
     permisConduire?: string | null;
+    photoUrl?: string | null;
     verifie?: boolean;
     notesAdmin?: string | null;
   }) {
@@ -70,6 +75,7 @@ export class CourierRepository {
         contactUrgenceNom: data.contactUrgenceNom?.trim() || null,
         contactUrgenceTel: data.contactUrgenceTel?.trim() || null,
         permisConduire: data.permisConduire?.trim() || null,
+        photoUrl: data.photoUrl?.trim() || null,
         verifie: data.verifie ?? false,
         notesAdmin: data.notesAdmin?.trim() || null,
       },
@@ -90,6 +96,7 @@ export class CourierRepository {
       contactUrgenceNom: string | null;
       contactUrgenceTel: string | null;
       permisConduire: string | null;
+      photoUrl: string | null;
       verifie: boolean;
       actif: boolean;
       notesAdmin: string | null;

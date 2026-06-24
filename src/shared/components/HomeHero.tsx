@@ -10,13 +10,13 @@ const SLIDE_DURATION_MS = 6500;
 const FALLBACK_SLIDES = [
   {
     id: 'boutique',
-    src: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=1920&h=1080&fit=crop&crop=center&q=90&auto=format',
-    alt: 'KabiShop',
+    src: '/images/love-piment-secret.png',
+    alt: 'Love Piment& — boutique intime',
     position: 'object-center',
-    tag: 'KabiShop',
-    title: 'Parfums & soins du corps',
-    subtitle: 'Découvrez notre sélection à Conakry — livraison 24 à 48h.',
-    cta: { label: 'Toute la boutique', href: '/produits' },
+    tag: 'Boutique intime',
+    title: 'Osez le plaisir, en toute discrétion',
+    subtitle: 'Sextoys, lingerie, lubrifiants et accessoires pour adultes — livraison discrète à Conakry.',
+    cta: { label: 'Découvrir la boutique', href: '/produits' },
   },
 ];
 
@@ -135,7 +135,7 @@ export function HomeHero({ categories = [], featured }: HomeHeroProps) {
       <div className="absolute inset-0 z-[2] bg-gradient-to-t from-black/50 via-transparent to-black/20" aria-hidden />
 
       <div className="relative z-10 flex h-full items-center pb-16 sm:pb-20 md:pb-24">
-        <div className="container-kabishop w-full">
+        <div className="container-shop w-full">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
             <div className="lg:col-span-7 xl:col-span-8 hero-content-enter" key={slide.id}>
               <div className="flex flex-wrap items-center gap-3 mb-5">
@@ -143,14 +143,14 @@ export function HomeHero({ categories = [], featured }: HomeHeroProps) {
                   <Sparkles className="h-3 w-3" />
                   {slide.tag}
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#4a5240]/90 px-3 py-1 text-[11px] font-medium text-white">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/90 px-3 py-1 text-[11px] font-medium text-white">
                   <Truck className="h-3 w-3" />
                   Livraison 24–48h Conakry
                 </span>
               </div>
 
               <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-white/60 mb-3">
-                KabiShop · Parfums & soins du corps
+                Love Piment& · Boutique intime & plaisir
               </p>
 
               <h1 className="font-serif text-[1.75rem] leading-[1.12] font-bold tracking-tight text-white sm:text-5xl md:text-[3.25rem]">
@@ -164,7 +164,7 @@ export function HomeHero({ categories = [], featured }: HomeHeroProps) {
               <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 sm:gap-4">
                 <Link
                   href={slide.cta.href}
-                  className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-white px-8 py-3.5 text-sm font-bold text-zinc-900 shadow-xl shadow-black/25 transition hover:bg-[#faf7f2] hover:scale-[1.02]"
+                  className="group inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-olive px-8 py-3.5 text-sm font-bold text-white shadow-xl shadow-olive/30 transition hover:bg-olive-dark hover:scale-[1.02]"
                 >
                   {slide.cta.label}
                   <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />

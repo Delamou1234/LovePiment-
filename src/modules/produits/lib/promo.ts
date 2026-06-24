@@ -41,3 +41,14 @@ export function formaterDatePromo(date: Date | string | null | undefined): strin
   ];
   return `${d.getUTCDate()} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
 }
+
+/** Normalise une date promo (Prisma Date ou chaîne après cache). */
+export function versDatePromo(date: Date | string | null | undefined): Date | null {
+  if (!date) return null;
+  return typeof date === 'string' ? new Date(date) : date;
+}
+
+export function promoFinVersIso(date: Date | string | null | undefined): string | null {
+  const d = versDatePromo(date);
+  return d ? d.toISOString() : null;
+}

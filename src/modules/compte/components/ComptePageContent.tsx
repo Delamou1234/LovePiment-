@@ -18,6 +18,7 @@ import { fetchApi } from '@/shared/lib/client-fetch';
 import { confirmLogout } from '@/shared/lib/confirm-logout';
 import type {
   CustomerAddress,
+  CustomerDashboardData,
   CustomerOrderResume,
   CustomerProfile,
   WishlistItemClient,
@@ -33,6 +34,7 @@ export function ComptePageContent() {
   const [wishlist, setWishlist] = useState<WishlistItemClient[]>([]);
   const [adresses, setAdresses] = useState<CustomerAddress[]>([]);
   const [avisEnAttente, setAvisEnAttente] = useState(0);
+  const [dashboard, setDashboard] = useState<CustomerDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const redirectingRef = useRef(false);
 
@@ -60,6 +62,7 @@ export function ComptePageContent() {
           setWishlist(data.wishlist ?? []);
           setAdresses(data.adresses ?? []);
           setAvisEnAttente((data.avisEligibles ?? []).length);
+          setDashboard(data.dashboard ?? null);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -104,6 +107,7 @@ export function ComptePageContent() {
       const data = await res.json();
       setCommandes(data.commandes ?? []);
       if (data.profil) setProfil(data.profil as CustomerProfile);
+      if (data.dashboard) setDashboard(data.dashboard as CustomerDashboardData);
     }
   };
 
@@ -111,7 +115,7 @@ export function ComptePageContent() {
     (i) => i.kind === 'section' && i.id === section,
   );
 
-  if (loading || !profil) {
+  if (loading || !profil || !dashboard) {
     return (
       <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 bg-cream">
         <Loader2 className="h-8 w-8 animate-spin text-olive" />
@@ -126,6 +130,7 @@ export function ComptePageContent() {
       <CompteSidebar
         profil={profil}
         section={section}
+        offreBienvenue={dashboard?.offreBienvenue}
         onSectionChange={setSection}
         onLogout={handleLogout}
         mobileOpen={mobileMenuOpen}
@@ -143,6 +148,7 @@ export function ComptePageContent() {
           onProfilUpdate={setProfil}
           onLogout={handleLogout}
           onGoToSection={goTo}
+          minimal={section === 'dashboard'}
         />
 
         <div className={COMPTE_MAIN_SCROLL}>
@@ -152,20 +158,17 @@ export function ComptePageContent() {
             </header>
           )}
 
-          {section === 'dashboard' && (
+          {section === 'dashboard' && dashboard && (
             <CompteDashboard
               profil={profil}
               commandes={commandes}
-              wishlist={wishlist}
-              adresses={adresses}
-              avisEnAttente={avisEnAttente}
-              onProfilUpdate={setProfil}
-              onEditProfil={() => goTo('profil')}
+              dashboard={dashboard}
               onVoirCommandes={() => goTo('commandes')}
               onVoirFavoris={() => goTo('favoris')}
               onVoirAdresses={() => goTo('adresses')}
               onVoirProfil={() => goTo('profil')}
               onVoirFidelite={() => goTo('fidelite')}
+              onVoirAvis={() => goTo('avis')}
             />
           )}
 

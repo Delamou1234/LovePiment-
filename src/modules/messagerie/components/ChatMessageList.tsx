@@ -29,7 +29,7 @@ export function ChatMessageList({
         </div>
         <p className="font-semibold text-zinc-800">Démarrez la conversation</p>
         <p className="mt-1 max-w-xs text-sm text-zinc-500">
-          Envoyez un message, une photo ou un vocal. L&apos;équipe KabiShop vous répond ici.
+          Envoyez un message, une photo ou un vocal. L&apos;équipe Love Piment& vous répond ici.
         </p>
       </div>
     );

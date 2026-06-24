@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { calculerTotauxCommande, LIVRAISON_CONFIG } from '@/shared/lib/shipping';
+import { calculerTotauxCommande, LIVRAISON_CONFIG_DEFAULT } from '@/shared/lib/shipping';
 
 export interface PanierItem {
   variantId: string;
@@ -118,18 +118,18 @@ export const usePanier = create<PanierState>()(
 
       getSousTotal: () => get().items.reduce((acc, i) => acc + i.prix * i.quantite, 0),
 
-      getFraisLivraison: (ville = LIVRAISON_CONFIG.villeParDefaut) => {
+      getFraisLivraison: (ville = LIVRAISON_CONFIG_DEFAULT.villeParDefaut) => {
         const { fraisLivraison } = calculerTotauxCommande(get().items, ville);
         return fraisLivraison;
       },
 
-      getTotalAvecLivraison: (ville = LIVRAISON_CONFIG.villeParDefaut) => {
+      getTotalAvecLivraison: (ville = LIVRAISON_CONFIG_DEFAULT.villeParDefaut) => {
         const { total } = calculerTotauxCommande(get().items, ville);
         return total;
       },
     }),
     {
-      name: 'kabishop-panier',
+      name: 'lovepiment-panier',
       partialize: (state) => ({
         items: state.items,
         lastSavedAt: state.lastSavedAt,

@@ -38,7 +38,7 @@ export function HomePromoFlashBand({
 
   return (
     <section className="w-full bg-zinc-950">
-      <div className="container-kabishop">
+      <div className="container-shop">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 py-5 sm:py-6 md:gap-8">
           <div className="flex items-center gap-4 text-white min-w-0">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-olive shadow-lg shadow-olive/30">

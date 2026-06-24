@@ -1,8 +1,25 @@
 import React from 'react';
 import Link from 'next/link';
-import { SlidersHorizontal } from 'lucide-react';
+import { RotateCcw, SlidersHorizontal } from 'lucide-react';
 import type { CategorieArbre, FacettesCatalogue } from '@/modules/produits/types';
 import { buildCatalogUrl, type CatalogSearchParams } from '@/modules/produits/lib/catalog-url';
+
+const CATEGORY_ORDER = [
+  'sextoys',
+  'lingerie',
+  'lubrifiants',
+  'accessoires',
+  'bien-etre-intime',
+  'cadeaux-couple',
+];
+
+function sortCategories(categories: CategorieArbre[]) {
+  return [...categories].sort((a, b) => {
+    const ia = CATEGORY_ORDER.indexOf(a.slug);
+    const ib = CATEGORY_ORDER.indexOf(b.slug);
+    return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+  });
+}
 
 type Props = {
   categories: CategorieArbre[];
@@ -22,6 +39,8 @@ export function CatalogFilters({ categories, facettes, params, mobile = false }:
     enStock: activeEnStock = '',
     promo: activePromo = '',
   } = params;
+
+  const sortedCategories = sortCategories(categories);
 
   const hasActiveFilters = Boolean(
     activeCategorie ||
@@ -44,74 +63,87 @@ export function CatalogFilters({ categories, facettes, params, mobile = false }:
     return slug;
   };
 
-  const wrapperClass = mobile ? 'space-y-6' : 'catalog-sidebar space-y-6';
+  const wrapperClass = mobile ? 'catalog-sidebar catalog-sidebar--embedded' : 'catalog-sidebar';
 
   return (
     <aside className={wrapperClass}>
-      <div className="flex items-center justify-between border-b border-beige-border/70 pb-4">
-        <h3 className="flex items-center gap-2 text-sm font-bold text-zinc-900">
-          <SlidersHorizontal className="h-4 w-4 text-olive" strokeWidth={2} />
+      <div className="catalog-sidebar-head">
+        <h3 className="catalog-sidebar-title">
+          <span className="catalog-sidebar-icon" aria-hidden>
+            <SlidersHorizontal className="h-4 w-4" strokeWidth={2} />
+          </span>
           Affiner
         </h3>
         {hasActiveFilters && (
-          <Link href="/produits" className="text-[11px] font-semibold text-olive hover:text-olive-dark">
+          <Link href="/produits" className="catalog-sidebar-reset">
+            <RotateCcw className="h-3 w-3" aria-hidden />
             Réinitialiser
           </Link>
         )}
       </div>
 
-      <div className="space-y-3">
+      <section className="catalog-filter-section catalog-filter-section--first">
         <h4 className="catalog-filter-title">Catégorie</h4>
-        <div className="flex flex-col gap-0.5">
+        <nav className="catalog-filter-nav" aria-label="Catégories produits">
           <Link
             href={buildCatalogUrl(params, { categorie: null })}
             className={`catalog-filter-link ${!activeCategorie ? 'is-active' : ''}`}
           >
             Tous les produits
           </Link>
-          {categories.map((cat) => (
-            <div key={cat.id} className="space-y-0.5">
-              <Link
-                href={buildCatalogUrl(params, { categorie: cat.slug })}
-                className={`catalog-filter-link ${activeCategorie === cat.slug ? 'is-active' : ''}`}
+
+          {sortedCategories.map((cat) => {
+            const parentActive = activeCategorie === cat.slug;
+            const childActive = cat.children.some((c) => c.slug === activeCategorie);
+
+            return (
+              <div
+                key={cat.id}
+                className={`catalog-filter-group ${parentActive || childActive ? 'is-expanded' : ''}`}
               >
-                {cat.nom}
-              </Link>
-              {cat.children.length > 0 && (
-                <div className="ml-2 border-l border-beige-border pl-2">
-                  {cat.children.map((sub) => (
-                    <Link
-                      key={sub.id}
-                      href={buildCatalogUrl(params, { categorie: sub.slug })}
-                      className={`catalog-filter-sublink ${activeCategorie === sub.slug ? 'is-active' : ''}`}
-                    >
-                      {sub.nom}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
+                <Link
+                  href={buildCatalogUrl(params, { categorie: cat.slug })}
+                  className={`catalog-filter-link catalog-filter-link--parent ${parentActive ? 'is-active' : ''}`}
+                >
+                  {cat.nom}
+                </Link>
+
+                {cat.children.length > 0 && (
+                  <div className="catalog-filter-children">
+                    {cat.children.map((sub) => (
+                      <Link
+                        key={sub.id}
+                        href={buildCatalogUrl(params, { categorie: sub.slug })}
+                        className={`catalog-filter-sublink ${activeCategorie === sub.slug ? 'is-active' : ''}`}
+                      >
+                        {sub.nom}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </nav>
+      </section>
 
       {facettes.prixMax > 0 && (
-        <div className="space-y-3 border-t border-beige-border/70 pt-5">
+        <section className="catalog-filter-section">
           <h4 className="catalog-filter-title">Budget (GNF)</h4>
-          <form action="/produits" method="GET" className="space-y-2.5">
+          <form action="/produits" method="GET" className="catalog-filter-form">
             {Object.entries(params).map(([key, val]) =>
               key !== 'prixMin' && key !== 'prixMax' && val ? (
                 <input key={key} type="hidden" name={key} value={val} />
               ) : null,
             )}
-            <div className="flex gap-2">
+            <div className="catalog-filter-price-row">
               <input
                 type="number"
                 name="prixMin"
                 placeholder="Min"
                 defaultValue={activePrixMin}
                 min={0}
-                className="input-kabishop !rounded-xl !py-2 !text-xs"
+                className="catalog-filter-input"
               />
               <input
                 type="number"
@@ -119,26 +151,23 @@ export function CatalogFilters({ categories, facettes, params, mobile = false }:
                 placeholder="Max"
                 defaultValue={activePrixMax}
                 min={0}
-                className="input-kabishop !rounded-xl !py-2 !text-xs"
+                className="catalog-filter-input"
               />
             </div>
-            <button
-              type="submit"
-              className="w-full rounded-xl bg-olive-light py-2 text-xs font-semibold text-olive transition hover:bg-olive/10"
-            >
+            <button type="submit" className="catalog-filter-submit">
               Appliquer
             </button>
           </form>
-          <p className="text-[11px] text-zinc-400">
+          <p className="catalog-filter-hint">
             {facettes.prixMin.toLocaleString('fr-GN')} – {facettes.prixMax.toLocaleString('fr-GN')} GNF
           </p>
-        </div>
+        </section>
       )}
 
       {facettes.marques.length > 0 && (
-        <div className="space-y-3 border-t border-beige-border/70 pt-5">
+        <section className="catalog-filter-section">
           <h4 className="catalog-filter-title">Marque</h4>
-          <div className="flex flex-col gap-0.5">
+          <nav className="catalog-filter-nav catalog-filter-nav--compact">
             {facettes.marques.map((m) => (
               <Link
                 key={m}
@@ -148,87 +177,71 @@ export function CatalogFilters({ categories, facettes, params, mobile = false }:
                 {m}
               </Link>
             ))}
-          </div>
-        </div>
+          </nav>
+        </section>
       )}
 
-      <div className="space-y-3 border-t border-beige-border/70 pt-5">
+      <section className="catalog-filter-section">
         <h4 className="catalog-filter-title">Offres</h4>
-        <div className="flex flex-col gap-2">
+        <div className="catalog-filter-toggles">
           <Link
             href={buildCatalogUrl(params, { enStock: activeEnStock === '1' ? null : '1' })}
-            className={`rounded-xl border px-3 py-2.5 text-xs font-semibold transition ${
-              activeEnStock === '1'
-                ? 'border-olive/30 bg-olive-light text-olive'
-                : 'border-beige-border text-zinc-600 hover:border-olive/20 hover:bg-cream'
-            }`}
+            className={`catalog-filter-toggle ${activeEnStock === '1' ? 'is-active' : ''}`}
           >
             En stock uniquement
           </Link>
           <Link
             href={buildCatalogUrl(params, { promo: activePromo === '1' ? null : '1' })}
-            className={`rounded-xl border px-3 py-2.5 text-xs font-semibold transition ${
-              activePromo === '1'
-                ? 'border-olive/30 bg-olive-light text-olive'
-                : 'border-beige-border text-zinc-600 hover:border-olive/20 hover:bg-cream'
-            }`}
+            className={`catalog-filter-toggle ${activePromo === '1' ? 'is-active' : ''}`}
           >
             En promotion
           </Link>
         </div>
-      </div>
+      </section>
 
       {facettes.tailles.length > 0 && (
-        <div className="space-y-3 border-t border-beige-border/70 pt-5">
-          <h4 className="catalog-filter-title">Format</h4>
-          <div className="flex flex-wrap gap-1.5">
+        <section className="catalog-filter-section">
+          <h4 className="catalog-filter-title">Taille / format</h4>
+          <div className="catalog-filter-chips">
             {facettes.tailles.map((t) => {
               const isSelected = activeTaille === t;
               return (
                 <Link
                   key={t}
                   href={buildCatalogUrl(params, { taille: isSelected ? null : t })}
-                  className={`flex h-9 min-w-9 items-center justify-center rounded-lg border px-2.5 text-xs font-semibold transition ${
-                    isSelected
-                      ? 'border-olive bg-olive text-white'
-                      : 'border-beige-border text-zinc-600 hover:border-olive/25 hover:bg-cream'
-                  }`}
+                  className={`catalog-filter-chip ${isSelected ? 'is-active' : ''}`}
                 >
                   {t}
                 </Link>
               );
             })}
           </div>
-        </div>
+        </section>
       )}
 
       {facettes.couleurs.length > 0 && (
-        <div className="space-y-3 border-t border-beige-border/70 pt-5">
-          <h4 className="catalog-filter-title">Fragrance / nuance</h4>
-          <div className="flex flex-wrap gap-1.5">
+        <section className="catalog-filter-section">
+          <h4 className="catalog-filter-title">Couleur</h4>
+          <div className="catalog-filter-chips catalog-filter-chips--round">
             {facettes.couleurs.map((c) => {
               const isSelected = activeCouleur === c;
               return (
                 <Link
                   key={c}
                   href={buildCatalogUrl(params, { couleur: isSelected ? null : c })}
-                  className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
-                    isSelected
-                      ? 'border-olive bg-olive-light text-olive'
-                      : 'border-beige-border text-zinc-600 hover:border-olive/20 hover:bg-cream'
-                  }`}
+                  className={`catalog-filter-chip catalog-filter-chip--round ${isSelected ? 'is-active' : ''}`}
                 >
                   {c}
                 </Link>
               );
             })}
           </div>
-        </div>
+        </section>
       )}
 
       {activeCategorie && (
-        <p className="text-[11px] text-zinc-400">
-          Sélection : {findCategoryName(activeCategorie)}
+        <p className="catalog-filter-selection">
+          Sélection : <strong>{findCategoryName(activeCategorie)}</strong>
         </p>
       )}
     </aside>

@@ -1,2 +1,2 @@
-export const CHAT_SESSION_COOKIE = 'kabishop_chat_session';
-export const CHAT_SESSION_HEADER = 'x-kabishop-chat-session';
+export const CHAT_SESSION_COOKIE = 'lovepiment_chat_session';
+export const CHAT_SESSION_HEADER = 'x-lovepiment-chat-session';

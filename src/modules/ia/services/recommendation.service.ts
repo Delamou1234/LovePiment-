@@ -8,7 +8,7 @@ import {
 import { formaterProfilBeautePourIa, type BeautyProfile } from '../lib/beauty-profile';
 import type { ProduitRecommande } from '../types';
 
-const SYSTEM = `Tu es le moteur de recommandations KabiShop (parfums, huiles pour la peau, crèmes corporelles, Guinée).
+const SYSTEM = `Tu es le moteur de recommandations Love Piment& (boutique intime : sextoys, lingerie, lubrifiants, Guinée).
 Sélectionne les produits les plus pertinents pour le client selon son historique de navigation et panier.
 Réponds en JSON avec productIds (tableau d'IDs exacts du catalogue) et reasons (objet id→raison courte en français).`;
 
@@ -113,7 +113,12 @@ Choisis ${limit} produits complémentaires ou similaires. JSON: {"productIds":["
 
   private async similairesFallback(productId: string, categorieId: string, limit: number) {
     const similaires = await prisma.product.findMany({
-      where: { actif: true, categorieId, id: { not: productId } },
+      where: {
+        actif: true,
+        categorieId,
+        id: { not: productId },
+        variantes: { some: { stock: { gt: 0 } } },
+      },
       include: { categorie: true },
       take: limit,
       orderBy: { createdAt: 'desc' },
@@ -180,16 +185,16 @@ Recommande ${limit} produits personnalisés. JSON: {"productIds":["..."],"reason
     if (beautyProfile?.univers?.length) {
       const universSlugs = beautyProfile.univers.flatMap((u) => {
         switch (u) {
-          case 'parfums':
-            return ['parfums', 'eaux-parfum'];
-          case 'huiles-corps':
-            return ['huiles-corps', 'huiles-pures'];
-          case 'huiles-cheveux':
-            return ['huiles-capillaires'];
-          case 'cremes':
-            return ['cremes-corporelles'];
+          case 'sextoys':
+            return ['sextoys', 'vibrateurs'];
+          case 'lingerie':
+            return ['lingerie', 'lingerie-dentelle'];
+          case 'lubrifiants':
+            return ['lubrifiants', 'lubrifiants-aqueux'];
+          case 'accessoires':
+            return ['accessoires', 'menottes-masques'];
           default:
-            return [];
+            return [u];
         }
       });
 
@@ -197,6 +202,7 @@ Recommande ${limit} produits personnalisés. JSON: {"productIds":["..."],"reason
         where: {
           actif: true,
           id: { notIn: [...exclude] },
+          variantes: { some: { stock: { gt: 0 } } },
           categorie: {
             slug: { in: universSlugs },
           },
@@ -229,6 +235,7 @@ Recommande ${limit} produits personnalisés. JSON: {"productIds":["..."],"reason
             actif: true,
             categorieId: ref.categorieId,
             id: { notIn: [...exclude] },
+            variantes: { some: { stock: { gt: 0 } } },
           },
           include: { categorie: true },
           take: limit,
@@ -248,7 +255,12 @@ Recommande ${limit} produits personnalisés. JSON: {"productIds":["..."],"reason
     }
 
     const featured = await prisma.product.findMany({
-      where: { actif: true, featured: true, id: { notIn: [...exclude] } },
+      where: {
+        actif: true,
+        featured: true,
+        id: { notIn: [...exclude] },
+        variantes: { some: { stock: { gt: 0 } } },
+      },
       include: { categorie: true },
       take: limit,
       orderBy: { createdAt: 'desc' },

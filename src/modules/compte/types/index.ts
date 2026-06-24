@@ -77,6 +77,39 @@ export type CustomerAddress = {
   createdAt: string;
 };
 
+export type CustomerDashboardStats = {
+  commandes: number;
+  enCours: number;
+  livrees: number;
+  favoris: number;
+  bonsReduction: number;
+  avisEnAttente: number;
+  notifications: number;
+};
+
+export type CustomerDashboardRecommandation = {
+  id: string;
+  slug: string;
+  nom: string;
+  image: string | null;
+  prix: number;
+  prixPromo: number | null;
+  rating: number;
+  reviews: number;
+};
+
+export type CustomerDashboardOffre = {
+  code: string;
+  remisePct: number;
+  titre: string;
+};
+
+export type CustomerDashboardData = {
+  stats: CustomerDashboardStats;
+  recommandations: CustomerDashboardRecommandation[];
+  offreBienvenue: CustomerDashboardOffre | null;
+};
+
 export type WishlistItemClient = {
   id: string;
   productId: string;

@@ -16,7 +16,7 @@ export async function notifierAdminNouvelleCommande(order: {
 
   const baseUrl = getAppUrl();
   const montant = Number(order.montantTotal).toLocaleString('fr-FR');
-  const subject = `Nouvelle commande KabiShop — ${order.clientNom}`;
+  const subject = `Nouvelle commande Love Piment& — ${order.clientNom}`;
   const html = `
     <p>Une nouvelle commande vient d'être passée.</p>
     <ul>
@@ -29,7 +29,7 @@ export async function notifierAdminNouvelleCommande(order: {
     <p><a href="${baseUrl}/admin/commandes">Affecter un livreur →</a></p>
   `;
   const text = [
-    'Nouvelle commande KabiShop',
+    'Nouvelle commande Love Piment&',
     `Client : ${order.clientNom}`,
     `Tél : ${order.clientTelephone}`,
     `Adresse : ${order.clientAdresse}, ${order.clientVille}`,

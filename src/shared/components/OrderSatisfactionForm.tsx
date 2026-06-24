@@ -86,7 +86,7 @@ export function OrderSatisfactionForm({
   };
 
   return (
-    <div className="rounded-2xl border border-[#ebe4d8] bg-white p-6 shadow-sm">
+    <div className="rounded-2xl border border-[#F2D4DC] bg-white p-6 shadow-sm">
       <h2 className="font-bold text-zinc-900 mb-1">Votre commande est livrée</h2>
       <p className="text-sm text-zinc-600 mb-5">
         Êtes-vous satisfait(e) de votre achat ?
@@ -98,7 +98,7 @@ export function OrderSatisfactionForm({
             type="button"
             disabled={loading}
             onClick={() => submit('SATISFAIT')}
-            className="inline-flex flex-1 min-w-[140px] items-center justify-center gap-2 rounded-full bg-[#4a5240] px-5 py-3 text-sm font-semibold text-white hover:bg-[#3d4534] transition disabled:opacity-50"
+            className="inline-flex flex-1 min-w-[140px] items-center justify-center gap-2 rounded-full bg-[#9B1B2E] px-5 py-3 text-sm font-semibold text-white hover:bg-[#6E1020] transition disabled:opacity-50"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ThumbsUp className="h-4 w-4" />}
             Oui, satisfait(e)
@@ -107,7 +107,7 @@ export function OrderSatisfactionForm({
             type="button"
             disabled={loading}
             onClick={() => submit('NON_SATISFAIT')}
-            className="inline-flex flex-1 min-w-[140px] items-center justify-center gap-2 rounded-full border border-[#ebe4d8] bg-[#faf7f2] px-5 py-3 text-sm font-semibold text-zinc-700 hover:bg-[#f5f0e8] transition disabled:opacity-50"
+            className="inline-flex flex-1 min-w-[140px] items-center justify-center gap-2 rounded-full border border-[#F2D4DC] bg-[#FFF8F6] px-5 py-3 text-sm font-semibold text-zinc-700 hover:bg-[#FCEEE8] transition disabled:opacity-50"
           >
             <ThumbsDown className="h-4 w-4" />
             Non, pas satisfait(e)
@@ -124,14 +124,14 @@ export function OrderSatisfactionForm({
             rows={3}
             maxLength={500}
             placeholder="Produit, livraison, emballage…"
-            className="w-full rounded-xl border border-[#ebe4d8] bg-[#faf7f2] px-4 py-3 text-sm text-zinc-800 outline-none focus:border-[#4a5240]"
+            className="w-full rounded-xl border border-[#F2D4DC] bg-[#FFF8F6] px-4 py-3 text-sm text-zinc-800 outline-none focus:border-[#9B1B2E]"
           />
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
               disabled={loading}
               onClick={() => submit(pendingStatut ?? 'NON_SATISFAIT', true)}
-              className="inline-flex items-center gap-2 rounded-full bg-[#4a5240] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#3d4534] transition disabled:opacity-50"
+              className="inline-flex items-center gap-2 rounded-full bg-[#9B1B2E] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#6E1020] transition disabled:opacity-50"
             >
               {loading && <Loader2 className="h-4 w-4 animate-spin" />}
               Envoyer mon avis

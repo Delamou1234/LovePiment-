@@ -41,6 +41,7 @@ export async function GET() {
       contactUrgenceNom: l.contactUrgenceNom,
       contactUrgenceTel: l.contactUrgenceTel,
       permisConduire: l.permisConduire,
+      photoUrl: l.photoUrl,
       verifie: l.verifie,
       actif: l.actif,
       notesAdmin: l.notesAdmin,

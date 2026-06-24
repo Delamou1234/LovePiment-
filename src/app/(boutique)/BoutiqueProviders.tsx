@@ -2,6 +2,7 @@
 
 import { WishlistProvider } from '@/modules/compte/hooks/useWishlist';
 import { FeatureFlagsProvider } from '@/shared/hooks/useFeatureFlags';
+import { LivraisonConfigProvider } from '@/shared/hooks/useLivraisonConfig';
 import { AuthSessionProvider } from '@/shared/providers/AuthSessionProvider';
 import { PanierDrawerHost } from '@/shared/ui/PanierDrawerHost';
 
@@ -10,10 +11,12 @@ export function BoutiqueProviders({ children }: { children: React.ReactNode }) {
   return (
     <AuthSessionProvider>
       <FeatureFlagsProvider>
-        <WishlistProvider>
-          {children}
-          <PanierDrawerHost />
-        </WishlistProvider>
+        <LivraisonConfigProvider>
+          <WishlistProvider>
+            {children}
+            <PanierDrawerHost />
+          </WishlistProvider>
+        </LivraisonConfigProvider>
       </FeatureFlagsProvider>
     </AuthSessionProvider>
   );

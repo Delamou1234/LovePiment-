@@ -1,35 +1,35 @@
-export const BEAUTY_PROFILE_STORAGE_KEY = 'kabishop-beauty-profile';
-export const BEAUTY_PROFILE_UPDATED_EVENT = 'kabishop:beauty-profile-updated';
+export const BEAUTY_PROFILE_STORAGE_KEY = 'lovepiment-beauty-profile';
+export const BEAUTY_PROFILE_UPDATED_EVENT = 'lovepiment:beauty-profile-updated';
 
 export const TYPE_PEAU_OPTIONS = [
-  { id: 'seche', label: 'Sèche', desc: 'Tiraillements, manque de confort' },
-  { id: 'normale', label: 'Normale', desc: 'Équilibrée, peu de soucis' },
-  { id: 'mixte', label: 'Mixte', desc: 'Zone T un peu grasse, joues normales' },
-  { id: 'grasse', label: 'Grasse', desc: 'Brillance, pores visibles' },
+  { id: 'seche', label: 'Débutant·e', desc: 'Je découvre, je préfère le doux' },
+  { id: 'normale', label: 'Curieux·se', desc: 'Ouvert·e aux nouveautés' },
+  { id: 'mixte', label: 'Confirmé·e', desc: 'Je sais ce que j\'aime' },
+  { id: 'grasse', label: 'Expert·e', desc: 'J\'ose tout, sans limites' },
 ] as const;
 
 export const PREOCCUPATION_OPTIONS = [
-  { id: 'hydratation', label: 'Hydratation' },
-  { id: 'parfum', label: 'Parfum durable' },
-  { id: 'cheveux', label: 'Soin des cheveux' },
-  { id: 'eclat', label: 'Éclat du teint' },
-  { id: 'souplesse', label: 'Souplesse de la peau' },
-  { id: 'relaxation', label: 'Moment détente' },
+  { id: 'hydratation', label: 'Confort & douceur' },
+  { id: 'parfum', label: 'Stimulation intense' },
+  { id: 'cheveux', label: 'Jeux de rôle' },
+  { id: 'eclat', label: 'Surprise & découverte' },
+  { id: 'souplesse', label: 'Couple & complicité' },
+  { id: 'relaxation', label: 'Détente sensuelle' },
 ] as const;
 
 export const UNIVERS_OPTIONS = [
-  { id: 'parfums', label: 'Parfums' },
-  { id: 'huiles-corps', label: 'Huiles corps' },
-  { id: 'huiles-cheveux', label: 'Huiles cheveux' },
-  { id: 'cremes', label: 'Crèmes corporelles' },
+  { id: 'sextoys', label: 'Sextoys' },
+  { id: 'lingerie', label: 'Lingerie sexy' },
+  { id: 'lubrifiants', label: 'Lubrifiants' },
+  { id: 'accessoires', label: 'Accessoires érotiques' },
 ] as const;
 
 export const PARFUM_OPTIONS = [
-  { id: 'floral', label: 'Floral' },
-  { id: 'boise', label: 'Boisé' },
-  { id: 'fruite', label: 'Fruité' },
-  { id: 'oriental', label: 'Oriental' },
-  { id: 'frais', label: 'Frais & léger' },
+  { id: 'floral', label: 'Doux & romantique' },
+  { id: 'boise', label: 'Audacieux & intense' },
+  { id: 'fruite', label: 'Ludique & fun' },
+  { id: 'oriental', label: 'Sensuel & mystérieux' },
+  { id: 'frais', label: 'Discret & minimaliste' },
 ] as const;
 
 export const BUDGET_OPTIONS = [

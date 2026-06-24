@@ -98,8 +98,8 @@ export default function AdminMessageriePage() {
         </button>
       </div>
 
-      <div className={`${ADMIN_CARD} overflow-hidden min-h-[560px] flex flex-col lg:flex-row`}>
-        <aside className="lg:w-80 border-b lg:border-b-0 lg:border-r border-beige-border/60 shrink-0">
+      <div className={`${ADMIN_CARD} overflow-hidden min-h-[min(560px,75dvh)] flex flex-col lg:flex-row`}>
+        <aside className={`lg:w-80 border-b lg:border-b-0 lg:border-r border-beige-border/60 shrink-0 ${activeId ? 'max-lg:hidden' : ''}`}>
           {loading && conversations.length === 0 ? (
             <div className="flex justify-center py-12">
               <Loader2 className="h-6 w-6 animate-spin text-olive" />
@@ -114,7 +114,7 @@ export default function AdminMessageriePage() {
           )}
         </aside>
 
-        <div className="flex-1 min-h-[480px] flex flex-col min-w-0">
+        <div className={`flex-1 min-h-[min(480px,70dvh)] flex flex-col min-w-0 ${activeId ? '' : 'max-lg:hidden'}`}>
           {activeId && active ? (
             <ChatPanel
               mode="admin"
@@ -122,6 +122,10 @@ export default function AdminMessageriePage() {
               title={active.clientNom}
               subtitle={active.clientTelephone ?? active.sujet ?? undefined}
               className="flex-1 min-h-0"
+              onBack={() => {
+                setActiveId(null);
+                router.replace('/admin/messagerie', { scroll: false });
+              }}
             />
           ) : (
             <div className="flex flex-1 flex-col items-center justify-center gap-2 p-8 text-center">

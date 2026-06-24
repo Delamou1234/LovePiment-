@@ -34,7 +34,7 @@ export function OrderTrackingView({ token, initialData }: OrderTrackingViewProps
     const latest = suivi.notifications[0];
     if (!latest || latest.id === lastNotifRef.current) return;
     lastNotifRef.current = latest.id;
-    showBrowserNotification('KabiShop — Livraison', latest.message);
+    showBrowserNotification('Love Piment& — Livraison', latest.message);
   }, [suivi, showBrowserNotification]);
 
   useEffect(() => {
@@ -74,10 +74,10 @@ export function OrderTrackingView({ token, initialData }: OrderTrackingViewProps
 
   return (
     <div className="space-y-8">
-      <div className="rounded-2xl border border-[#ebe4d8] bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-[#F2D4DC] bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-[#4a5240] mb-1">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-[#9B1B2E] mb-1">
               Commande #{suivi.id.slice(0, 8)}
             </p>
             <h1 className="font-serif text-2xl font-bold text-zinc-900">{suivi.statutLibelle}</h1>
@@ -96,8 +96,8 @@ export function OrderTrackingView({ token, initialData }: OrderTrackingViewProps
         </div>
 
         {enCours && (
-          <div className="mt-5 flex items-start gap-3 rounded-xl bg-[#faf7f2] border border-[#ebe4d8] p-4">
-            <Truck className="h-5 w-5 text-[#4a5240] shrink-0 mt-0.5" />
+          <div className="mt-5 flex items-start gap-3 rounded-xl bg-[#FFF8F6] border border-[#F2D4DC] p-4">
+            <Truck className="h-5 w-5 text-[#9B1B2E] shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-zinc-900">Estimation de livraison</p>
               <p className="text-sm text-zinc-600 mt-0.5">{suivi.livraisonLibelle}</p>
@@ -131,9 +131,9 @@ export function OrderTrackingView({ token, initialData }: OrderTrackingViewProps
         />
       )}
 
-      <div className="rounded-2xl border border-[#ebe4d8] bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-[#F2D4DC] bg-white p-6 shadow-sm">
         <h2 className="font-bold text-zinc-900 mb-6 flex items-center gap-2">
-          <Package className="h-5 w-5 text-[#4a5240]" />
+          <Package className="h-5 w-5 text-[#9B1B2E]" />
           Progression
         </h2>
         <ol className="space-y-0">
@@ -142,16 +142,16 @@ export function OrderTrackingView({ token, initialData }: OrderTrackingViewProps
               {index < suivi.timeline.length - 1 && (
                 <span
                   className={`absolute left-[11px] top-6 h-full w-0.5 ${
-                    step.atteint ? 'bg-[#4a5240]' : 'bg-zinc-200'
+                    step.atteint ? 'bg-[#9B1B2E]' : 'bg-zinc-200'
                   }`}
                 />
               )}
               <span
                 className={`relative z-[1] mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${
                   step.actif
-                    ? 'border-[#4a5240] bg-[#4a5240] text-white'
+                    ? 'border-[#9B1B2E] bg-[#9B1B2E] text-white'
                     : step.atteint
-                      ? 'border-[#4a5240] bg-white text-[#4a5240]'
+                      ? 'border-[#9B1B2E] bg-white text-[#9B1B2E]'
                       : 'border-zinc-200 bg-white text-zinc-300'
                 }`}
               >
@@ -171,17 +171,17 @@ export function OrderTrackingView({ token, initialData }: OrderTrackingViewProps
         </ol>
       </div>
 
-      <div className="rounded-2xl border border-[#ebe4d8] bg-white p-6 shadow-sm">
+      <div className="rounded-2xl border border-[#F2D4DC] bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between gap-4 mb-4">
           <h2 className="font-bold text-zinc-900 flex items-center gap-2">
-            <Bell className="h-5 w-5 text-[#4a5240]" />
+            <Bell className="h-5 w-5 text-[#9B1B2E]" />
             Notifications
           </h2>
           {!notificationsEnabled && (
             <button
               type="button"
               onClick={activerNotifications}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#ebe4d8] px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-[#faf7f2]"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#F2D4DC] px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:bg-[#FFF8F6]"
             >
               <BellRing className="h-3.5 w-3.5" />
               Activer les alertes
@@ -195,7 +195,7 @@ export function OrderTrackingView({ token, initialData }: OrderTrackingViewProps
             {suivi.notifications.map((n) => (
               <li
                 key={n.id}
-                className="rounded-lg border border-[#ebe4d8] bg-[#faf7f2]/50 px-4 py-3 text-sm text-zinc-700"
+                className="rounded-lg border border-[#F2D4DC] bg-[#FFF8F6]/50 px-4 py-3 text-sm text-zinc-700"
               >
                 <p>{n.message}</p>
                 <p className="text-[11px] text-zinc-400 mt-1">

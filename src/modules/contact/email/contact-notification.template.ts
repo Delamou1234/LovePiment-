@@ -11,7 +11,7 @@ type ContactEmailData = {
 
 export function buildContactNotificationEmail(data: ContactEmailData) {
   const sujetLabel = labelSujet(data.sujet);
-  const subject = `[KabiShop Contact] ${sujetLabel} — ${data.nom}`;
+  const subject = `[Love Piment& Contact] ${sujetLabel} — ${data.nom}`;
 
   const html = `<!DOCTYPE html>
 <html lang="fr">

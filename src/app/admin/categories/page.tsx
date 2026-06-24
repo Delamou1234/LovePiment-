@@ -239,11 +239,11 @@ export default function AdminCategoriesPage() {
 
       <p className="text-xs text-zinc-500">
         Les catégories apparaissent dans le{' '}
-        <Link href="/produits" className="text-[#4a5240] font-medium hover:underline">
+        <Link href="/produits" className="text-[#9B1B2E] font-medium hover:underline">
           catalogue
         </Link>{' '}
         et lors de la{' '}
-        <Link href="/admin/produits" className="text-[#4a5240] font-medium hover:underline">
+        <Link href="/admin/produits" className="text-[#9B1B2E] font-medium hover:underline">
           création de produits
         </Link>
         .
@@ -273,8 +273,8 @@ export default function AdminCategoriesPage() {
           </Button>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
+          <table className="w-full min-w-[720px] text-sm">
             <thead className="bg-zinc-50 text-left text-xs uppercase text-zinc-500">
               <tr>
                 <th className="px-4 py-3">Catégorie</th>
@@ -295,7 +295,7 @@ export default function AdminCategoriesPage() {
                           <Image src={c.image} alt="" fill className="object-cover" unoptimized />
                         </div>
                       ) : (
-                        <div className="h-9 w-9 rounded-lg bg-[#faf7f2] ring-1 ring-[#ebe4d8] shrink-0" />
+                        <div className="h-9 w-9 rounded-lg bg-[#FFF8F6] ring-1 ring-[#F2D4DC] shrink-0" />
                       )}
                       <div>
                         <p className="font-medium text-zinc-900">

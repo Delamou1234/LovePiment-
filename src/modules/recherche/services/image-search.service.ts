@@ -104,7 +104,7 @@ export class ImageSearchService {
     const catalogText = formaterCataloguePourPrompt(catalogue);
 
     const analysis = await geminiAnalyzeImage(
-      `Tu es un expert visuel KabiShop (parfums, huiles, cosmétiques).`,
+      `Tu es un expert visuel Love Piment& (boutique intime, lingerie, accessoires).`,
       `CATALOGUE:\n${catalogText}\n\nAnalyse cette photo et réponds UNIQUEMENT en JSON: {"description":"...","productIds":["id1"]} — max ${limit} IDs ordonnés par pertinence.`,
       { mimeType, data: imageBuffer },
     );

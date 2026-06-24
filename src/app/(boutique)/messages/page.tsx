@@ -12,7 +12,7 @@ export default function MessagesPage() {
   }, []);
 
   return (
-    <div className="container-kabishop py-6 md:py-8 animate-fadeIn flex flex-col min-h-[calc(100vh-8rem)]">
+    <div className="container-shop py-6 md:py-8 animate-fadeIn flex flex-col min-h-[calc(100vh-8rem)]">
       <div className="flex items-center gap-1.5 text-xs text-zinc-500 mb-4 shrink-0">
         <Link href="/" className="hover:text-zinc-900 transition font-medium">
           Accueil

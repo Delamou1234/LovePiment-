@@ -24,7 +24,7 @@ export function getSmtpConfig(): SmtpConfig | null {
   const port = Number(process.env.SMTP_PORT ?? 587);
   const secure = process.env.SMTP_SECURE === 'true' || port === 465;
   const from =
-    clean(process.env.MAIL_FROM) ?? clean(process.env.SMTP_FROM) ?? `"KabiShop" <${user}>`;
+    clean(process.env.MAIL_FROM) ?? clean(process.env.SMTP_FROM) ?? `"Love Piment&" <${user}>`;
 
   return { host, port, secure, user, pass, from };
 }

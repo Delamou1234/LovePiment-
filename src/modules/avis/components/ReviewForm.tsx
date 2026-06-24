@@ -76,10 +76,10 @@ export function ReviewForm({
   }
 
   return (
-    <div className={`rounded-2xl border border-[#ebe4d8] bg-white ${compact ? 'p-4' : 'p-6'} space-y-4`}>
+    <div className={`rounded-2xl border border-[#F2D4DC] bg-white ${compact ? 'p-4' : 'p-6'} space-y-4`}>
       {!compact && (
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-[#4a5240] mb-1">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#9B1B2E] mb-1">
             Laisser un avis
           </p>
           <h3 className="font-bold text-zinc-900">{productNom}</h3>
@@ -102,8 +102,8 @@ export function ReviewForm({
           onChange={(e) => setCommentaire(e.target.value)}
           rows={compact ? 3 : 4}
           maxLength={2000}
-          placeholder="Qualité, parfum, texture, emballage…"
-          className="mt-1.5 w-full rounded-xl border border-[#ebe4d8] bg-[#faf7f2] px-4 py-3 text-sm outline-none focus:border-[#4a5240]"
+          placeholder="Qualité, discrétion, confort, emballage…"
+          className="mt-1.5 w-full rounded-xl border border-[#F2D4DC] bg-[#FFF8F6] px-4 py-3 text-sm outline-none focus:border-[#9B1B2E]"
         />
       </div>
 
@@ -113,7 +113,7 @@ export function ReviewForm({
         </p>
         <div className="flex flex-wrap gap-2">
           {photos.map((url) => (
-            <div key={url} className="relative h-16 w-16 rounded-lg overflow-hidden border border-[#ebe4d8]">
+            <div key={url} className="relative h-16 w-16 rounded-lg overflow-hidden border border-[#F2D4DC]">
               <Image src={url} alt="" fill className="object-cover" unoptimized />
               <button
                 type="button"
@@ -125,7 +125,7 @@ export function ReviewForm({
             </div>
           ))}
           {photos.length < 3 && (
-            <label className="flex h-16 w-16 cursor-pointer items-center justify-center rounded-lg border border-dashed border-[#ebe4d8] bg-[#faf7f2] hover:border-[#4a5240] transition">
+            <label className="flex h-16 w-16 cursor-pointer items-center justify-center rounded-lg border border-dashed border-[#F2D4DC] bg-[#FFF8F6] hover:border-[#9B1B2E] transition">
               {uploading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-zinc-400" />
               ) : (

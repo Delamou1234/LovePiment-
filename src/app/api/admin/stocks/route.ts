@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { productService } from '@/modules/produits/services/product.service';
 import { adminUnauthorized, requireAdmin } from '@/modules/admin/lib/require-admin';
 import { revalidateBoutique } from '@/modules/produits/lib/revalidate-boutique';
+import { revalidateTag } from 'next/cache';
 
 /** GET /api/admin/stocks */
 export async function GET() {
@@ -60,6 +61,7 @@ export async function PATCH(request: NextRequest) {
         });
 
   revalidateBoutique();
+  revalidateTag('admin-stats', 'max');
 
   return NextResponse.json({ variant: { id: variant.id, stock: variant.stock } });
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   Banknote,
@@ -119,6 +120,9 @@ function ResumeCard({
 }
 
 export function AdminCommandesPage() {
+  const searchParams = useSearchParams();
+  const clientId = searchParams.get('clientId')?.trim() ?? '';
+  const clientNom = searchParams.get('clientNom')?.trim() ?? '';
   const [commandes, setCommandes] = useState<CommandeAdmin[]>([]);
   const [transporteurs, setTransporteurs] = useState<Transporteur[]>([]);
   const [resume, setResume] = useState<ResumeCommandes | null>(null);
@@ -140,6 +144,7 @@ export function AdminCommandesPage() {
         page: String(page),
         limit: '50',
       });
+      if (clientId) params.set('clientId', clientId);
       const [cmdRes, trRes] = await Promise.all([
         fetch(`/api/admin/commandes?${params}`),
         fetch('/api/admin/transporteurs'),
@@ -157,11 +162,19 @@ export function AdminCommandesPage() {
     } finally {
       setLoading(false);
     }
-  }, [filtre, page]);
+  }, [filtre, page, clientId]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    const openId = searchParams.get('open');
+    if (!openId || loading) return;
+    if (commandes.some((c) => c.id === openId)) {
+      setExpandedId(openId);
+    }
+  }, [searchParams, commandes, loading]);
 
   const changerFiltre = (next: FiltreCommandeAdmin) => {
     setFiltre(next);
@@ -220,6 +233,17 @@ export function AdminCommandesPage() {
           Actualiser
         </Button>
       </div>
+
+      {clientId && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-pink-200 bg-pink-50/80 px-4 py-3">
+          <p className="text-sm text-zinc-700">
+            Commandes du client <strong className="text-zinc-900">{clientNom || 'sélectionné'}</strong>
+          </p>
+          <Link href="/admin/commandes" className="text-sm font-semibold text-olive hover:text-olive-dark">
+            Voir toutes les commandes
+          </Link>
+        </div>
+      )}
 
       {resume && (
         <section className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-7">
@@ -532,7 +556,7 @@ export function AdminCommandesPage() {
                       <Link
                         href={`/suivi/${cmd.suiviToken}`}
                         target="_blank"
-                        className="text-xs text-[#4a5240] hover:underline mt-1 inline-block"
+                        className="text-xs text-[#9B1B2E] hover:underline mt-1 inline-block"
                       >
                         Voir suivi client →
                       </Link>
@@ -582,13 +606,13 @@ export function AdminCommandesPage() {
 
                 <div className="grid gap-3 sm:grid-cols-3">
                   {cmd.statut === 'LIVREE' ? (
-                    <div className="input-kabishop text-sm flex items-center bg-emerald-50 text-emerald-800 font-semibold">
+                    <div className="input-shop text-sm flex items-center bg-emerald-50 text-emerald-800 font-semibold">
                       LIVREE — confirmée par le livreur
                     </div>
                   ) : (
                     <select
                       defaultValue={cmd.statut}
-                      className="input-kabishop text-sm"
+                      className="input-shop text-sm"
                       onChange={(e) => mettreAJour(cmd.id, { statut: e.target.value })}
                       disabled={savingId === cmd.id}
                     >
@@ -601,7 +625,7 @@ export function AdminCommandesPage() {
                   )}
 
                   <select
-                    className="input-kabishop text-sm"
+                    className="input-shop text-sm"
                     defaultValue=""
                     onChange={(e) =>
                       mettreAJour(cmd.id, {
@@ -633,7 +657,7 @@ export function AdminCommandesPage() {
                     <input
                       name="numeroSuivi"
                       placeholder="N° colis"
-                      className="input-kabishop text-sm flex-1"
+                      className="input-shop text-sm flex-1"
                     />
                     <Button type="submit" size="sm" variant="outline" disabled={savingId === cmd.id}>
                       OK

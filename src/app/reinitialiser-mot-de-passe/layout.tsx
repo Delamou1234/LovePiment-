@@ -1,3 +1,3 @@
 export default function ReinitialiserMotDePasseLayout({ children }: { children: React.ReactNode }) {
-  return <div className="fixed inset-0 overflow-hidden">{children}</div>;
+  return <div className="min-h-dvh overflow-y-auto overflow-x-clip">{children}</div>;
 }

@@ -18,7 +18,7 @@ export default async function CompteShellLayout({ children }: { children: React.
 
   return (
     <BoutiqueProviders>
-      <div className="h-screen overflow-hidden bg-cream">{children}</div>
+      <div className="h-dvh overflow-hidden bg-cream">{children}</div>
     </BoutiqueProviders>
   );
 }

@@ -1,11 +1,11 @@
 /** Constantes session — sans dépendance Node (compatible Edge middleware). */
 
 /** Ancien cookie unique (lecture seule, migration automatique). */
-export const LEGACY_SESSION_COOKIE = 'kabishop_session';
+export const LEGACY_SESSION_COOKIE = 'lovepiment_session';
 
-export const CUSTOMER_SESSION_COOKIE = 'kabishop_customer_session';
-export const ADMIN_SESSION_COOKIE = 'kabishop_admin_session';
-export const COURIER_SESSION_COOKIE = 'kabishop_courier_session';
+export const CUSTOMER_SESSION_COOKIE = 'lovepiment_customer_session';
+export const ADMIN_SESSION_COOKIE = 'lovepiment_admin_session';
+export const COURIER_SESSION_COOKIE = 'lovepiment_courier_session';
 
 /** @deprecated Préférer CUSTOMER_SESSION_COOKIE / ADMIN_SESSION_COOKIE */
 export const SESSION_COOKIE = LEGACY_SESSION_COOKIE;

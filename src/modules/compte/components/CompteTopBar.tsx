@@ -30,6 +30,7 @@ type Props = {
   onProfilUpdate?: (profil: CustomerProfile) => void;
   onLogout?: () => void;
   onGoToSection?: (id: CompteSectionId) => void;
+  minimal?: boolean;
 };
 
 type MenuItem =
@@ -70,6 +71,7 @@ export function CompteTopBar({
   onProfilUpdate,
   onLogout,
   onGoToSection,
+  minimal = false,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
@@ -147,33 +149,35 @@ export function CompteTopBar({
   };
 
   return (
-    <header className="relative z-30 shrink-0 border-b border-beige-border/80 bg-white/80 px-4 py-2.5 backdrop-blur-md md:px-6 lg:px-8">
+    <header className={`relative z-30 shrink-0 border-b border-[#ead6de] bg-white/90 px-4 backdrop-blur-md md:px-6 lg:px-8 ${minimal ? 'py-2' : 'py-2.5'}`}>
       <div className="flex items-center gap-3 md:gap-4">
-        {/* Titre page */}
-        <div className="hidden min-w-0 shrink-0 md:block md:max-w-[140px] lg:max-w-[180px]">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
-            Mon espace
-          </p>
-          <h1 className="font-serif text-base font-bold text-zinc-900 truncate lg:text-lg">
-            {pageTitle}
-          </h1>
-        </div>
-
-        <div className="hidden h-8 w-px shrink-0 bg-beige-border/80 md:block" aria-hidden />
+        {!minimal && (
+          <>
+            <div className="hidden min-w-0 shrink-0 md:block md:max-w-[140px] lg:max-w-[180px]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
+                Mon espace
+              </p>
+              <h1 className="font-serif text-base font-bold text-zinc-900 truncate lg:text-lg">
+                {pageTitle}
+              </h1>
+            </div>
+            <div className="hidden h-8 w-px shrink-0 bg-[#ead6de] md:block" aria-hidden />
+          </>
+        )}
 
         {/* Recherche compacte */}
         <ProductSearchBar
           compact
           placeholder="Rechercher…"
-          className="w-[148px] shrink-0 sm:w-[180px] md:w-[200px] lg:w-[220px]"
+          className="min-w-0 flex-1 sm:flex-none sm:w-[160px] md:w-[200px] lg:w-[220px]"
           inputClassName="border-beige-border bg-cream/50 text-xs shadow-none focus:border-olive/40 focus:bg-white focus:ring-2 focus:ring-olive/10"
         />
 
-        <div className="flex-1 min-w-2" aria-hidden />
+        <div className="hidden min-w-2 flex-1 sm:block" aria-hidden />
 
         {/* Actions rapides */}
         <nav
-          className="flex items-center gap-1 sm:gap-1.5"
+          className="flex shrink-0 items-center gap-1 sm:gap-1.5"
           aria-label="Raccourcis"
         >
           <Link
@@ -186,7 +190,7 @@ export function CompteTopBar({
 
           <Link
             href="/produits"
-            className={QUICK_ACTION}
+            className={`${QUICK_ACTION} hidden sm:inline-flex`}
             title="Boutique"
           >
             <Store className="h-4 w-4" strokeWidth={1.75} />

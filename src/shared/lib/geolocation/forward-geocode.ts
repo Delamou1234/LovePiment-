@@ -10,7 +10,7 @@ export type NominatimSearchResult = {
 };
 
 const NOMINATIM_HEADERS = {
-  'User-Agent': 'KabiShop/1.0 (https://kabishop.vercel.app; contact@kabishop.com)',
+  'User-Agent': 'Love Piment&/1.0 (https://lovepiment.gn; contact@lovepiment.gn)',
 };
 
 /** Géocode une adresse texte (Conakry, Guinée). */

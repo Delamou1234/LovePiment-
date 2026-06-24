@@ -1,6 +1,6 @@
 'use client';
 
-export const AVATAR_UPDATED_EVENT = 'kabishop:avatar-updated';
+export const AVATAR_UPDATED_EVENT = 'lovepiment:avatar-updated';
 
 export function notifyAvatarUpdated(avatarUrl: string | null) {
   if (typeof window === 'undefined') return;

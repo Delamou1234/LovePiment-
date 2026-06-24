@@ -8,7 +8,7 @@ import {
 } from '../lib/catalog-context';
 import type { SuggestionIa } from '../types';
 
-const SYSTEM = `Tu es le moteur de suggestions KabiShop. À partir d'une requête client (français, parfois avec fautes),
+const SYSTEM = `Tu es le moteur de suggestions Love Piment&. À partir d'une requête client (français, parfois avec fautes),
 identifie les produits du catalogue les plus pertinents (sémantique, pas seulement mots exacts).
 Réponds en JSON: {"productIds":["id1","id2"]} — max 6 IDs, ordonnés par pertinence.`;
 

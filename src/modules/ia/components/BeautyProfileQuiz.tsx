@@ -18,7 +18,7 @@ import {
   isBeautyProfileComplete,
 } from '../lib/beauty-profile';
 
-const STEPS = ['Peau', 'Besoins', 'Univers', 'Parfum', 'Budget'] as const;
+const STEPS = ['Expérience', 'Envies', 'Univers', 'Ambiance', 'Budget'] as const;
 
 type Props = {
   initialDraft?: BeautyProfileDraft;
@@ -69,20 +69,20 @@ export function BeautyProfileQuiz({ initialDraft, onComplete, onCancel }: Props)
   };
 
   return (
-    <div className="rounded-2xl border border-[#ebe4d8] bg-white p-5 shadow-sm sm:p-8">
+    <div className="rounded-2xl border border-[#F2D4DC] bg-white p-5 shadow-sm sm:p-8">
       <div className="mb-6 space-y-3">
-        <div className="flex items-center justify-between gap-3 text-[11px] font-bold uppercase tracking-widest text-[#4a5240]">
+        <div className="flex items-center justify-between gap-3 text-[11px] font-bold uppercase tracking-widest text-[#9B1B2E]">
           <span className="inline-flex items-center gap-1.5">
             <Sparkles className="h-3.5 w-3.5" />
-            Quiz beauté
+            Quiz intime
           </span>
           <span>
             Étape {step + 1}/{STEPS.length}
           </span>
         </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-[#f0ebe3]">
+        <div className="h-1.5 overflow-hidden rounded-full bg-[#FCEEE8]">
           <div
-            className="h-full rounded-full bg-[#4a5240] transition-all duration-300"
+            className="h-full rounded-full bg-[#9B1B2E] transition-all duration-300"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -137,7 +137,7 @@ export function BeautyProfileQuiz({ initialDraft, onComplete, onCancel }: Props)
             <button
               type="button"
               onClick={() => setDraft((d) => ({ ...d, familleParfum: null }))}
-              className="text-sm font-medium text-zinc-500 underline-offset-2 hover:text-[#4a5240] hover:underline"
+              className="text-sm font-medium text-zinc-500 underline-offset-2 hover:text-[#9B1B2E] hover:underline"
             >
               Je ne sais pas / pas de préférence
             </button>
@@ -153,13 +153,13 @@ export function BeautyProfileQuiz({ initialDraft, onComplete, onCancel }: Props)
         )}
       </div>
 
-      <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[#ebe4d8]/80 pt-5">
+      <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-[#F2D4DC]/80 pt-5">
         <div className="flex gap-2">
           {onCancel && (
             <button
               type="button"
               onClick={onCancel}
-              className="rounded-full border border-[#ebe4d8] px-4 py-2 text-sm font-semibold text-zinc-600 hover:bg-[#faf7f2]"
+              className="rounded-full border border-[#F2D4DC] px-4 py-2 text-sm font-semibold text-zinc-600 hover:bg-[#FFF8F6]"
             >
               Annuler
             </button>
@@ -168,7 +168,7 @@ export function BeautyProfileQuiz({ initialDraft, onComplete, onCancel }: Props)
             <button
               type="button"
               onClick={() => setStep((s) => s - 1)}
-              className="inline-flex items-center gap-1.5 rounded-full border border-[#ebe4d8] px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-[#faf7f2]"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#F2D4DC] px-4 py-2 text-sm font-semibold text-zinc-700 hover:bg-[#FFF8F6]"
             >
               <ArrowLeft className="h-4 w-4" />
               Retour
@@ -180,7 +180,7 @@ export function BeautyProfileQuiz({ initialDraft, onComplete, onCancel }: Props)
           type="button"
           disabled={!canContinue()}
           onClick={goNext}
-          className="inline-flex items-center gap-2 rounded-full bg-[#4a5240] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#3d4436] disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex items-center gap-2 rounded-full bg-[#9B1B2E] px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#3d4436] disabled:cursor-not-allowed disabled:opacity-40"
         >
           {step === STEPS.length - 1 ? 'Voir mes recommandations' : 'Continuer'}
           <ArrowRight className="h-4 w-4" />
@@ -193,13 +193,13 @@ export function BeautyProfileQuiz({ initialDraft, onComplete, onCancel }: Props)
 function questionTitle(step: number) {
   switch (step) {
     case 0:
-      return 'Quel est votre type de peau ?';
+      return 'Quel est votre niveau d\'expérience ?';
     case 1:
-      return 'Quels sont vos besoins principaux ?';
+      return 'Quelles sont vos envies ?';
     case 2:
       return 'Quels univers vous intéressent ?';
     case 3:
-      return 'Quelle famille de parfum préférez-vous ?';
+      return 'Quelle ambiance recherchez-vous ?';
     default:
       return 'Quel est votre budget habituel ?';
   }
@@ -240,8 +240,8 @@ function OptionGrid({
             onClick={() => onSelect(option.id)}
             className={`rounded-xl border p-4 text-left transition ${
               active
-                ? 'border-[#4a5240] bg-[#f5f2eb] ring-1 ring-[#4a5240]/20'
-                : 'border-[#ebe4d8] bg-white hover:border-[#d8d0c4]'
+                ? 'border-[#9B1B2E] bg-[#f5f2eb] ring-1 ring-[#9B1B2E]/20'
+                : 'border-[#F2D4DC] bg-white hover:border-[#d8d0c4]'
             }`}
           >
             <p className="font-semibold text-zinc-900">{option.label}</p>
@@ -273,12 +273,12 @@ function MultiOptionGrid({
             onClick={() => onToggle(option.id)}
             className={`flex items-center justify-between rounded-xl border p-4 text-left transition ${
               active
-                ? 'border-[#4a5240] bg-[#f5f2eb] ring-1 ring-[#4a5240]/20'
-                : 'border-[#ebe4d8] bg-white hover:border-[#d8d0c4]'
+                ? 'border-[#9B1B2E] bg-[#f5f2eb] ring-1 ring-[#9B1B2E]/20'
+                : 'border-[#F2D4DC] bg-white hover:border-[#d8d0c4]'
             }`}
           >
             <span className="font-semibold text-zinc-900">{option.label}</span>
-            {active && <Check className="h-4 w-4 shrink-0 text-[#4a5240]" />}
+            {active && <Check className="h-4 w-4 shrink-0 text-[#9B1B2E]" />}
           </button>
         );
       })}

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
-import { Lock, ShieldCheck, Truck } from 'lucide-react';
+import { ShieldCheck, Sparkles, Truck } from 'lucide-react';
 import { LoginForm } from '@/modules/auth/components/LoginForm';
 import { AuthSplitLayout } from '@/modules/auth/components/AuthSplitLayout';
 import {
@@ -9,7 +9,6 @@ import {
   resolveAuthenticatedRedirect,
 } from '@/shared/lib/auth-redirect';
 import { isValidCustomerSession } from '@/shared/lib/auth/customer-session';
-import { getSocialAuthFlags } from '@/shared/lib/auth/social-auth-config';
 import { customerAuthRepository } from '@/modules/auth/repository/customer-auth.repository';
 import {
   getAdminSession,
@@ -20,16 +19,16 @@ import { redirectUrlApresSessionExpiree } from '@/shared/lib/auth/stale-session'
 
 export const metadata: Metadata = {
   title: 'Connexion',
-  description: 'Connexion KabiShop — client, administration ou espace livreur.',
+  description: 'Connectez-vous à votre compte Love Piment& pour découvrir nos produits exclusifs.',
   robots: { index: false, follow: false },
 };
 
 type SearchParams = Promise<{ redirect?: string; error?: string }>;
 
-const TRUST = [
-  { icon: Truck, label: 'Livraison 24–48h' },
-  { icon: Lock, label: 'Paiement sécurisé' },
-  { icon: ShieldCheck, label: 'Produits authentiques' },
+const PANEL_TRUST = [
+  { icon: ShieldCheck, label: 'Paiement 100 % sécurisé', desc: 'Vos transactions sont protégées.' },
+  { icon: Truck, label: 'Livraison discrète', desc: 'Emballage neutre et confidentiel.' },
+  { icon: Sparkles, label: 'Produits de qualité', desc: 'Sélection rigoureuse et testée.' },
 ];
 
 export default async function ConnexionPage({
@@ -65,23 +64,17 @@ export default async function ConnexionPage({
   }
 
   const isCheckout = isCheckoutRedirect(redirectParam);
-  const social = getSocialAuthFlags();
 
   return (
     <AuthSplitLayout
-      panelTitle={
-        isCheckout
-          ? 'Plus qu’une étape avant votre commande'
-          : 'Bienvenue chez KabiShop'
-      }
-      panelSubtitle="Une seule connexion pour clients, équipe admin et livreurs."
-      trustPoints={TRUST}
+      variant="connexion"
+      panelTitle="Votre plaisir, votre bien-être,"
+      panelAccent="votre pouvoir"
+      panelSubtitle="Connectez-vous à votre compte pour découvrir nos produits exclusifs et profiter d'une expérience personnalisée."
+      trustPoints={PANEL_TRUST}
     >
-      <Suspense fallback={<div className="skeleton h-64 w-full rounded-xl" />}>
+      <Suspense fallback={<div className="auth-connexion-card skeleton h-80 w-full rounded-2xl" />}>
         <LoginForm
-          googleEnabled={social.google}
-          facebookEnabled={social.facebook}
-          appleEnabled={social.apple}
           isCheckout={isCheckout}
           initialError={
             error === 'session_expired'

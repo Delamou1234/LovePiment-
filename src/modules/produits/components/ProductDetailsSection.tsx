@@ -7,12 +7,14 @@ import { usePanier, creerItemPanier } from '@/store/panier';
 import { trackEvent } from '@/shared/hooks/useTracking';
 import { trackViewedProduct } from '@/shared/hooks/useViewedProducts';
 import { getAppUrl } from '@/shared/lib/app-url';
+import { getShopTelHref, getShopWhatsAppHref } from '@/shared/lib/shop-contact';
 import { CartToast } from '@/shared/components/CartToast';
 import { ProductImageGallery, type RelatedProductThumb } from './ProductImageGallery';
 import { useProductStock } from '../hooks/useProductStock';
 import {
   ShoppingCart,
   MessageCircle,
+  Phone,
   AlertTriangle,
   Truck,
   ShieldCheck,
@@ -166,7 +168,7 @@ export default function ProductDetailsSection({ product, avisStats, similaires =
   const getWhatsAppLink = () => {
     const prixLabel = `${prixAffiche.toLocaleString('fr-FR')} GN`;
     const message =
-      `Bonjour KabiShop ! Je souhaite commander :\n\n` +
+      `Bonjour Love Piment& ! Je souhaite commander :\n\n` +
       `• *${product.nom}*\n` +
       (selectedCapacite ? `• Capacité : ${selectedCapacite}\n` : '') +
       (selectedTaille ? `• Taille : ${selectedTaille}\n` : '') +
@@ -175,13 +177,12 @@ export default function ProductDetailsSection({ product, avisStats, similaires =
       `• Prix : ${prixLabel}\n\n` +
       `${getAppUrl()}/produits/${product.slug}`;
 
-    const num = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '224620000000';
-    return `https://wa.me/${num.replace(/[\s+\-()]/g, '')}?text=${encodeURIComponent(message)}`;
+    return getShopWhatsAppHref(message);
   };
 
   const promoBadge =
     enPromo && remisePct > 0 ? (
-      <span className="absolute top-4 left-4 z-10 rounded-full bg-olive px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white shadow-lg">
+      <span className="product-promo-badge">
         −{remisePct}%
       </span>
     ) : null;
@@ -207,6 +208,13 @@ export default function ProductDetailsSection({ product, avisStats, similaires =
         <MessageCircle className="h-4 w-4" />
         Commander via WhatsApp
       </a>
+      <a
+        href={getShopTelHref()}
+        className="product-cta-call hidden lg:flex"
+      >
+        <Phone className="h-4 w-4" />
+        Appeler la boutique
+      </a>
     </>
   ) : (
     <div className="flex gap-3 rounded-xl border border-amber-200/70 bg-amber-50/60 p-4">
@@ -224,6 +232,13 @@ export default function ProductDetailsSection({ product, avisStats, similaires =
         >
           <MessageCircle className="h-3.5 w-3.5" />
           Écrire sur WhatsApp
+        </a>
+        <a
+          href={getShopTelHref()}
+          className="mt-2 ml-0 inline-flex items-center gap-1.5 text-xs font-semibold text-[#9B1B2E] hover:underline"
+        >
+          <Phone className="h-3.5 w-3.5" />
+          Appeler la boutique
         </a>
       </div>
     </div>
@@ -255,7 +270,7 @@ export default function ProductDetailsSection({ product, avisStats, similaires =
                   <StarRating value={avisStats.moyenne} size="sm" showValue />
                   <a
                     href="#avis-clients"
-                    className="text-xs text-zinc-400 underline-offset-2 transition hover:text-olive hover:underline"
+                    className="text-xs text-zinc-500 underline-offset-2 transition hover:text-[#e91e8c] hover:underline"
                   >
                     {avisStats.total} avis vérifié{avisStats.total > 1 ? 's' : ''}
                   </a>
@@ -406,7 +421,9 @@ export default function ProductDetailsSection({ product, avisStats, similaires =
               )}
             </div>
 
-            {actionButtons}
+            <div className="product-buy-panel">
+              {actionButtons}
+            </div>
 
             <div className="product-trust-strip">
               {TRUST_ITEMS.map(({ icon: Icon, label, sub }) => (

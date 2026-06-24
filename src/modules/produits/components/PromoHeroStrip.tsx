@@ -18,8 +18,8 @@ export function PromoHeroStrip({ produits }: { produits: PromoStripItem[] }) {
   const featured = produits.slice(0, 4);
 
   return (
-    <div className="border-b border-white/10 bg-[#3d4534]">
-      <div className="container-kabishop py-4 md:py-5">
+    <div className="border-b border-white/10 bg-primary">
+      <div className="container-shop py-4 md:py-5">
         <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/50 mb-3">
           Sélection en promotion
         </p>

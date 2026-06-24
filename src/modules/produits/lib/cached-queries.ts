@@ -123,15 +123,13 @@ export const getCachedCategoriesApi = unstable_cache(
   { revalidate: 300, tags: ['products', 'categories'] },
 );
 
-export const getCachedPromosPage = unstable_cache(
-  async () => {
-    const [categories, stats, produits] = await Promise.all([
-      productService.listerCategories(),
-      productService.obtenirStatsPromos(),
-      productService.listerPromotionsActives(),
-    ]);
-    return { categories, stats, produits };
-  },
-  ['promos-page'],
-  { revalidate: 60, tags: ['products', 'promos'] },
-);
+export async function getCachedPromosPage(categorieSlug?: string) {
+  return unstable_cache(
+    async () => {
+      const { promosPageService } = await import('@/modules/produits/services/promos-page.service');
+      return promosPageService.charger(categorieSlug || undefined);
+    },
+    ['promos-page-v2', categorieSlug ?? 'all'],
+    { revalidate: 60, tags: ['products', 'promos'] },
+  )();
+}

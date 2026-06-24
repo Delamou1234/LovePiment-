@@ -16,6 +16,19 @@ export class MarketingRepository {
     return prisma.coupon.findMany({ orderBy: { createdAt: 'desc' } });
   }
 
+  async listerCouponsActifsPublics(limit = 6) {
+    const now = new Date();
+    return prisma.coupon.findMany({
+      where: {
+        actif: true,
+        OR: [{ debut: null }, { debut: { lte: now } }],
+        AND: [{ OR: [{ fin: null }, { fin: { gte: now } }] }],
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+    });
+  }
+
   async creerCoupon(dto: CreerCouponDto) {
     return prisma.coupon.create({
       data: {

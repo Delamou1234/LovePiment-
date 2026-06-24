@@ -1,21 +1,21 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: kabishop-postgres
+    container_name: lovepiment-postgres
     restart: unless-stopped
     ports:
       - '5432:5432'
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: kabishop_dev
+      POSTGRES_DB: lovepiment_dev
     volumes:
-      - kabishop_pg_data:/var/lib/postgresql/data
+      - lovepiment_pg_data:/var/lib/postgresql/data
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d kabishop_dev']
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d lovepiment_dev']
       interval: 5s
       timeout: 5s
       retries: 10
 
 volumes:
-  kabishop_pg_data:
+  lovepiment_pg_data:

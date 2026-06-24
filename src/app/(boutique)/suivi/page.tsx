@@ -29,7 +29,7 @@ export default function SuiviRecherchePage() {
   };
 
   return (
-    <div className="container-kabishop py-12 max-w-lg animate-fadeIn">
+    <div className="container-shop py-12 max-w-lg animate-fadeIn">
       <div className="flex items-center gap-1.5 text-xs text-zinc-500 mb-6">
         <Link href="/" className="hover:text-zinc-900 transition font-medium">
           Accueil
@@ -38,7 +38,7 @@ export default function SuiviRecherchePage() {
         <span className="text-zinc-800 font-bold">Suivi de commande</span>
       </div>
 
-      <div className="rounded-2xl border border-[#ebe4d8] bg-white p-8 shadow-sm">
+      <div className="rounded-2xl border border-[#F2D4DC] bg-white p-8 shadow-sm">
         <h1 className="font-serif text-2xl font-bold text-zinc-900 mb-2">
           Suivre ma commande
         </h1>
@@ -57,7 +57,7 @@ export default function SuiviRecherchePage() {
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 placeholder="Ex: clxx…"
-                className="input-kabishop pr-10"
+                className="input-shop pr-10"
               />
               <Search className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
             </div>

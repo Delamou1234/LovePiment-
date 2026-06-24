@@ -2,9 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Home, LogOut, RefreshCw, Store, Truck } from 'lucide-react';
+import { Home, LogOut, Package, RefreshCw, Store, Truck } from 'lucide-react';
 import { initialesNom } from '@/modules/compte/types';
 import type { CourierProfil } from './livreur-ui';
+import type { CourierTotauxDto } from '@/modules/livraison/services/courier-order.service';
+import { TOTAUX_LIVREUR_VIDES } from './CourierTotalsBanner';
 
 const QUICK_ACTION =
   'relative flex h-9 w-9 items-center justify-center rounded-xl border border-beige-border bg-white text-zinc-500 shadow-sm transition hover:border-olive/30 hover:text-olive hover:shadow-md';
@@ -16,6 +18,7 @@ type Props = {
   tourneesCount: number;
   arretsCount: number;
   especesTotal: number;
+  totaux?: CourierTotauxDto;
   onLogout: () => void;
   onRefresh: () => void;
   refreshing?: boolean;
@@ -28,6 +31,7 @@ export function CourierTopBar({
   tourneesCount,
   arretsCount,
   especesTotal,
+  totaux = TOTAUX_LIVREUR_VIDES,
   onLogout,
   onRefresh,
   refreshing,
@@ -60,15 +64,19 @@ export function CourierTopBar({
         <div className="hidden h-8 w-px shrink-0 bg-beige-border/80 md:block" aria-hidden />
 
         <div className="hidden sm:flex items-center gap-2 text-xs">
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 font-semibold text-emerald-900">
+            <Package className="inline h-3 w-3 mr-1 -mt-px" />
+            {totaux.montantTermineGn.toLocaleString('fr-FR')} GN livrés
+          </span>
           <span className="rounded-full border border-beige-border bg-cream/80 px-2.5 py-1 font-semibold text-zinc-700">
             {tourneesCount} tournée{tourneesCount > 1 ? 's' : ''}
           </span>
           <span className="rounded-full border border-olive/25 bg-olive/5 px-2.5 py-1 font-semibold text-olive">
             {arretsCount} arrêt{arretsCount > 1 ? 's' : ''}
           </span>
-          {especesTotal > 0 && (
+          {(especesTotal > 0 || totaux.especesAEncaisserGn > 0) && (
             <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 font-semibold text-amber-900">
-              {especesTotal.toLocaleString('fr-FR')} GN espèces
+              {(especesTotal || totaux.especesAEncaisserGn).toLocaleString('fr-FR')} GN espèces
             </span>
           )}
         </div>

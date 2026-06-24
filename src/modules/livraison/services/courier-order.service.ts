@@ -41,6 +41,15 @@ export type CourierHistoriqueDto = CourierOrderPublicDto & {
   livreurPaiementRecu: boolean | null;
 };
 
+export type CourierTotauxDto = {
+  livraisonsTerminees: number;
+  montantTermineGn: number;
+  especesEncaisseesGn: number;
+  livraisonsEnCours: number;
+  montantEnCoursGn: number;
+  especesAEncaisserGn: number;
+};
+
 export type CourierTourneeDto = {
   id: string;
   label: string;
@@ -239,6 +248,64 @@ export class CourierOrderService {
     );
 
     return { livraisons, total };
+  }
+
+  async obtenirTotauxLivreur(courierId: string): Promise<CourierTotauxDto> {
+    const [terminees, enCours, aggTermine, aggEnCours] = await Promise.all([
+      prisma.order.findMany({
+        where: { courierId, statut: 'LIVREE' },
+        select: {
+          montantTotal: true,
+          modePaiement: true,
+          statutPaiement: true,
+          livreurPaiementRecu: true,
+        },
+      }),
+      prisma.order.findMany({
+        where: {
+          courierId,
+          statut: { in: ['PAYEE', 'EN_PREPARATION', 'EXPEDIEE'] },
+        },
+        select: { montantTotal: true, modePaiement: true, statutPaiement: true },
+      }),
+      prisma.order.aggregate({
+        where: { courierId, statut: 'LIVREE' },
+        _sum: { montantTotal: true },
+        _count: true,
+      }),
+      prisma.order.aggregate({
+        where: {
+          courierId,
+          statut: { in: ['PAYEE', 'EN_PREPARATION', 'EXPEDIEE'] },
+        },
+        _sum: { montantTotal: true },
+        _count: true,
+      }),
+    ]);
+
+    const especesEncaisseesGn = terminees
+      .filter(
+        (o) =>
+          o.modePaiement === 'PAIEMENT_LIVRAISON' &&
+          (o.livreurPaiementRecu === true || o.statutPaiement === 'REUSSIE'),
+      )
+      .reduce((s, o) => s + Number(o.montantTotal), 0);
+
+    const especesAEncaisserGn = enCours
+      .filter(
+        (o) =>
+          o.modePaiement === 'PAIEMENT_LIVRAISON' && o.statutPaiement === 'EN_ATTENTE',
+      )
+      .reduce((s, o) => s + Number(o.montantTotal), 0);
+
+    return {
+      livraisonsTerminees: aggTermine._count,
+      montantTermineGn: Number(aggTermine._sum.montantTotal ?? 0),
+      especesEncaisseesGn,
+      livraisonsEnCours: aggEnCours._count,
+      montantEnCoursGn: Number(aggEnCours._sum.montantTotal ?? 0),
+      especesAEncaisserGn,
+    };
   }
 
   async obtenirPourLivreur(courierId: string, orderId: string) {

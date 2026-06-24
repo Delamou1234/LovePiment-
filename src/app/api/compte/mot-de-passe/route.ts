@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
 
   if (result === 'no_password') {
     return NextResponse.json(
-      { message: 'Compte Google — mot de passe non modifiable ici' },
+      { message: 'Aucun mot de passe défini. Utilisez « Mot de passe oublié » pour en créer un.' },
       { status: 400 },
     );
   }

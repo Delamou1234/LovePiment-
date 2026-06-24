@@ -16,6 +16,7 @@ export async function GET() {
 
   const { tournees, livraisonsIsoles } =
     await courierOrderService.listerTourneesPourLivreur(session.id);
+  const totaux = await courierOrderService.obtenirTotauxLivreur(session.id);
 
   return NextResponse.json({
     profil: {
@@ -29,5 +30,6 @@ export async function GET() {
     },
     tournees,
     livraisonsIsoles,
+    totaux,
   });
 }

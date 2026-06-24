@@ -15,6 +15,11 @@ import type { Pagination } from '@/types';
 import { normaliserRecherche } from '@/shared/lib/search';
 import { wherePromoActive } from '../lib/promo';
 
+/** Produit visible boutique : au moins une variante en stock */
+const WHERE_PRODUIT_EN_STOCK = {
+  variantes: { some: { stock: { gt: 0 } } },
+} as const;
+
 export class ProductRepository {
   async trouverTous(
     filtres: FiltresProduits = {},
@@ -77,7 +82,7 @@ export class ProductRepository {
   async trouverParIds(ids: string[]): Promise<ProduitAvecCategorie[]> {
     if (ids.length === 0) return [];
     return prisma.product.findMany({
-      where: { id: { in: ids }, actif: true },
+      where: { id: { in: ids }, actif: true, ...WHERE_PRODUIT_EN_STOCK },
       include: {
         categorie: true,
         variantes: {
@@ -94,6 +99,7 @@ export class ProductRepository {
     const produits = await prisma.product.findMany({
       where: {
         actif: true,
+        ...WHERE_PRODUIT_EN_STOCK,
         ...wherePromoActive(now),
         ...(filtres.categorieSlug && { categorie: { slug: filtres.categorieSlug } }),
       },
@@ -112,7 +118,7 @@ export class ProductRepository {
 
   async compterPromotionsActives(): Promise<number> {
     return prisma.product.count({
-      where: { actif: true, ...wherePromoActive() },
+      where: { actif: true, ...WHERE_PRODUIT_EN_STOCK, ...wherePromoActive() },
     });
   }
 
@@ -122,6 +128,7 @@ export class ProductRepository {
         categorieId,
         actif: true,
         id: { not: productId },
+        ...WHERE_PRODUIT_EN_STOCK,
       },
       include: {
         categorie: true,
@@ -181,6 +188,7 @@ export class ProductRepository {
       prisma.product.findMany({
         where: {
           actif: true,
+          ...WHERE_PRODUIT_EN_STOCK,
           OR: [
             { nom: { contains: query, mode: 'insensitive' } },
             { description: { contains: query, mode: 'insensitive' } },
@@ -539,8 +547,19 @@ export class ProductRepository {
   }
 
   private construireWhere(filtres: FiltresProduits) {
-    const variantFiltres =
-      filtres.taille || filtres.couleur || filtres.enStock
+    const catalogueClient = filtres.actif !== false;
+
+    const variantFiltres = catalogueClient
+      ? {
+          variantes: {
+            some: {
+              stock: { gt: 0 },
+              ...(filtres.taille && { taille: filtres.taille }),
+              ...(filtres.couleur && { couleur: filtres.couleur }),
+            },
+          },
+        }
+      : filtres.taille || filtres.couleur || filtres.enStock
         ? {
             variantes: {
               some: {

@@ -16,9 +16,11 @@ export async function GET(request: NextRequest) {
     session.id,
     { page, limit },
   );
+  const totaux = await courierOrderService.obtenirTotauxLivreur(session.id);
 
   return NextResponse.json({
     livraisons,
+    totaux,
     pagination: {
       page,
       limit,

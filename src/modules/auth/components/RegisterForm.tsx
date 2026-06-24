@@ -6,13 +6,11 @@ import { useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { ArrowRight, Loader2, Lock, Mail, Phone, User, Users } from 'lucide-react';
+import { Heart, Loader2, Lock, Mail, Phone, User, UserPlus, Users } from 'lucide-react';
 import { getSafeRedirect } from '@/shared/lib/auth-redirect';
 import { PARRAINAGE_SESSION_KEY } from '@/modules/marketing/lib/referral-code';
 import { useFeatureFlags } from '@/shared/hooks/useFeatureFlags';
 import { AuthField } from './AuthField';
-import { authInputClass, authSubmitClass } from './auth-styles';
-import { SocialLoginButtons, SocialLoginDivider } from './SocialLoginButtons';
 import { PasswordInput } from '@/shared/components/PasswordInput';
 
 const registerSchema = z
@@ -37,17 +35,9 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 interface RegisterFormProps {
   isCheckout?: boolean;
-  googleEnabled?: boolean;
-  facebookEnabled?: boolean;
-  appleEnabled?: boolean;
 }
 
-export function RegisterForm({
-  isCheckout = false,
-  googleEnabled = false,
-  facebookEnabled = false,
-  appleEnabled = false,
-}: RegisterFormProps) {
+export function RegisterForm({ isCheckout = false }: RegisterFormProps) {
   const { parrainageActif } = useFeatureFlags();
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get('redirect');
@@ -100,7 +90,6 @@ export function RegisterForm({
       }
       const target = data.redirect ?? safeRedirect;
       window.location.assign(target);
-      return;
     } catch {
       setErrorMsg('Erreur réseau. Réessayez.');
     } finally {
@@ -109,142 +98,128 @@ export function RegisterForm({
   };
 
   return (
-    <div className="space-y-5">
+    <div className="auth-connexion-card auth-connexion-card--register">
       {isCheckout && (
-        <div className="inline-flex items-center gap-2 rounded-full bg-[#eef0eb] border border-[#4a5240]/15 px-3 py-1.5">
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#4a5240] text-[9px] font-bold text-white">
-            2
-          </span>
-          <span className="text-[11px] font-semibold text-[#4a5240]">Créez votre compte client</span>
+        <div className="auth-connexion-checkout-badge">
+          <span className="auth-connexion-checkout-step">2</span>
+          <span>Créez votre compte client</span>
         </div>
       )}
 
-      <div>
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#4a5240] mb-2">
-          Inscription
-        </p>
-        <h1 className="font-serif text-2xl font-bold text-zinc-900 leading-tight">
-          Créer mon compte
-        </h1>
-        <p className="mt-2 text-sm text-zinc-500 leading-snug">
-          {isCheckout
-            ? 'Quelques infos pour finaliser votre commande et suivre votre livraison.'
-            : 'Rejoignez KabiShop en moins d’une minute.'}
-        </p>
+      <div className="auth-connexion-card-header auth-connexion-card-header--compact">
+        <div className="auth-connexion-avatar auth-connexion-avatar--compact">
+          <UserPlus className="h-5 w-5 text-[#e91e8c]" strokeWidth={1.5} />
+        </div>
+        <div className="min-w-0">
+          <h1 className="auth-connexion-title">Inscription</h1>
+          <p className="auth-connexion-subtitle">
+            {isCheckout ? (
+              'Finalisez votre commande'
+            ) : (
+              <>
+                Bienvenue chez Love Piment& !
+                <Heart className="inline-block h-3 w-3 text-[#e91e8c] fill-[#fce7f3] ml-1 -mt-0.5" strokeWidth={1.75} />
+              </>
+            )}
+          </p>
+        </div>
       </div>
 
-      {errorMsg && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {errorMsg}
-        </div>
-      )}
+      {errorMsg && <div className="auth-connexion-error auth-connexion-error--compact">{errorMsg}</div>}
 
-      {(googleEnabled || facebookEnabled || appleEnabled) && (
-        <>
-          <SocialLoginButtons
-            redirect={safeRedirect}
-            googleEnabled={googleEnabled}
-            facebookEnabled={facebookEnabled}
-            appleEnabled={appleEnabled}
-          />
-          <SocialLoginDivider />
-        </>
-      )}
+      <form onSubmit={handleSubmit(onSubmit)} className="auth-connexion-form auth-connexion-form--register">
+        <div className="auth-connexion-form-grid">
+          <AuthField label="Nom complet" error={errors.nom?.message} variant="light" className="auth-connexion-field--compact">
+            <User className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="text"
+              autoComplete="name"
+              placeholder="Nom complet"
+              className="auth-connexion-input auth-connexion-input--compact"
+              {...register('nom')}
+            />
+          </AuthField>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-3.5">
-        <AuthField label="Nom complet" error={errors.nom?.message}>
-          <User className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-          <input
-            type="text"
-            autoComplete="name"
-            placeholder="Ex : Diallo Mamadou"
-            className={authInputClass}
-            {...register('nom')}
-          />
-        </AuthField>
+          <AuthField label="Téléphone" error={errors.telephone?.message} variant="light" className="auth-connexion-field--compact">
+            <Phone className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="tel"
+              autoComplete="tel"
+              placeholder="620 00 00 00"
+              className="auth-connexion-input auth-connexion-input--compact"
+              {...register('telephone')}
+            />
+          </AuthField>
 
-        <AuthField label="Téléphone" error={errors.telephone?.message}>
-          <Phone className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-          <input
-            type="tel"
-            autoComplete="tel"
-            placeholder="Ex : 620 00 00 00"
-            className={authInputClass}
-            {...register('telephone')}
-          />
-        </AuthField>
+          <AuthField
+            label="Adresse e-mail"
+            error={errors.email?.message}
+            variant="light"
+            className="auth-connexion-field--compact auth-connexion-field--full"
+          >
+            <Mail className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
+            <input
+              type="email"
+              autoComplete="email"
+              placeholder="Entrez votre adresse e-mail"
+              className="auth-connexion-input auth-connexion-input--compact"
+              {...register('email')}
+            />
+          </AuthField>
 
-        <AuthField label="E-mail" error={errors.email?.message}>
-          <Mail className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-          <input
-            type="email"
-            autoComplete="email"
-            placeholder="vous@exemple.com"
-            className={authInputClass}
-            {...register('email')}
-          />
-        </AuthField>
+          {parrainageActif && (
+            <AuthField
+              label="Code parrainage (optionnel)"
+              error={errors.codeParrainage?.message}
+              variant="light"
+              className="auth-connexion-field--compact auth-connexion-field--full"
+            >
+              <Users className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
+              <input
+                type="text"
+                placeholder="Ex : KABI4X2YZ"
+                className="auth-connexion-input auth-connexion-input--compact uppercase"
+                {...register('codeParrainage')}
+              />
+            </AuthField>
+          )}
 
-        {parrainageActif && (
-        <AuthField
-          label="Code parrainage (optionnel)"
-          error={errors.codeParrainage?.message}
-        >
-          <Users className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-          <input
-            type="text"
-            placeholder="Ex : KABI4X2YZ"
-            className={`${authInputClass} uppercase`}
-            {...register('codeParrainage')}
-          />
-        </AuthField>
-        )}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          <AuthField label="Mot de passe" error={errors.password?.message}>
-            <Lock className="pointer-events-none absolute left-3.5 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <AuthField label="Mot de passe" error={errors.password?.message} variant="light" className="auth-connexion-field--compact">
+            <Lock className="pointer-events-none absolute left-3 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
             <PasswordInput
               autoComplete="new-password"
-              placeholder="6+ car."
-              className={authInputClass}
+              placeholder="6 car. min."
+              className="auth-connexion-input auth-connexion-input--compact"
               {...register('password')}
             />
           </AuthField>
 
-          <AuthField label="Confirmation" error={errors.confirmPassword?.message}>
-            <Lock className="pointer-events-none absolute left-3.5 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <AuthField label="Confirmation" error={errors.confirmPassword?.message} variant="light" className="auth-connexion-field--compact">
+            <Lock className="pointer-events-none absolute left-3 top-1/2 z-10 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
             <PasswordInput
               autoComplete="new-password"
               placeholder="Répéter"
-              className={authInputClass}
+              className="auth-connexion-input auth-connexion-input--compact"
               {...register('confirmPassword')}
             />
           </AuthField>
         </div>
 
-        <button type="submit" disabled={loading} className={authSubmitClass}>
+        <button type="submit" disabled={loading} className="auth-connexion-submit auth-connexion-submit--compact">
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
               Création…
             </>
           ) : (
-            <>
-              {isCheckout ? 'Créer mon compte et payer' : 'Créer mon compte'}
-              <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
-            </>
+            isCheckout ? 'Créer mon compte et payer' : 'Créer mon compte'
           )}
         </button>
       </form>
 
-      <p className="text-center text-sm text-zinc-500">
-        Déjà inscrit ?{' '}
-        <Link
-          href={loginHref}
-          className="font-semibold text-[#4a5240] hover:text-[#3d4534] underline-offset-2 hover:underline"
-        >
-          Se connecter
-        </Link>
+      <p className="auth-connexion-register auth-connexion-register--compact">
+        Déjà inscrite ?{' '}
+        <Link href={loginHref}>Se connecter</Link>
       </p>
     </div>
   );

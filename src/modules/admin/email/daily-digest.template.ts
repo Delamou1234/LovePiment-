@@ -19,7 +19,7 @@ function kpi(label: string, value: string, accent = '#4a5240') {
 }
 
 export function buildDailyDigestEmail(data: DailyDigestData) {
-  const subject = `KabiShop — Bilan du ${data.dateLabel}`;
+  const subject = `Love Piment& — Bilan du ${data.dateLabel}`;
 
   const topProduitsHtml =
     data.topProduits.length === 0
@@ -68,7 +68,7 @@ export function buildDailyDigestEmail(data: DailyDigestData) {
         <tr>
           <td style="background:#4a5240;padding:28px 32px;">
             <div style="color:#faf7f2;font-size:13px;opacity:0.85;margin-bottom:4px;">Rapport quotidien</div>
-            <div style="color:#fff;font-size:24px;font-weight:700;">KabiShop Admin</div>
+            <div style="color:#fff;font-size:24px;font-weight:700;">Love Piment& Admin</div>
             <div style="color:#d4d4d8;font-size:14px;margin-top:6px;">${data.dateLabel}</div>
           </td>
         </tr>
@@ -122,7 +122,7 @@ export function buildDailyDigestEmail(data: DailyDigestData) {
 </html>`;
 
   const text = [
-    `KabiShop — Bilan du ${data.dateLabel}`,
+    `Love Piment& — Bilan du ${data.dateLabel}`,
     '',
     "CHIFFRE D'AFFAIRES DU JOUR",
     `CA aujourd'hui : ${formatGn(data.caJour)}`,

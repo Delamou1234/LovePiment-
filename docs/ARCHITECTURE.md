@@ -1,4 +1,4 @@
-# KabiShop — Architecture du projet
+# Love Piment& — Architecture du projet
 
 Boutique e-commerce (Conakry) : catalogue, paiement CinetPay, compte client, admin, livreurs, livraisons groupées.
 
@@ -84,9 +84,9 @@ modules/admin/components/
 
 Trois rôles, trois cookies séparés (`shared/lib/auth/`) :
 
-- `kabishop_customer_session` — boutique / compte
-- `kabishop_admin_session` — `/admin`
-- `kabishop_courier_session` — `/livreur`
+- `lovepiment_customer_session` — boutique / compte
+- `lovepiment_admin_session` — `/admin`
+- `lovepiment_courier_session` — `/livreur`
 
 Middleware : `src/middleware.ts` + `shared/lib/auth/session-edge.ts`
 

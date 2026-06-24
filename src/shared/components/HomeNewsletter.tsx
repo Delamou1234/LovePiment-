@@ -4,20 +4,20 @@ import { Mail, Gift, ArrowRight } from 'lucide-react';
 
 export function HomeNewsletter() {
   return (
-    <section className="relative overflow-hidden bg-[#4a5240]">
-      <div className="absolute inset-0 opacity-20">
+    <section className="relative overflow-hidden bg-primary">
+      <div className="absolute inset-0 opacity-25">
         <Image
-          src="https://images.unsplash.com/photo-1615634260167-c8cdede054de?w=1200&q=80&auto=format&fit=crop"
+          src="/images/love-piment-secret.png"
           alt=""
           fill
-          className="object-cover"
+          className="object-cover object-center"
           sizes="100vw"
           aria-hidden
         />
       </div>
-      <div className="absolute inset-0 bg-gradient-to-r from-[#4a5240] via-[#4a5240]/95 to-[#3d4534]/90" />
+      <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/95 to-olive-dark/90" />
 
-      <div className="container-kabishop relative py-16 md:py-20">
+      <div className="container-shop relative py-16 md:py-20">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/60 mb-3">
@@ -27,7 +27,7 @@ export function HomeNewsletter() {
               -10% sur votre première commande
             </h2>
             <p className="mt-4 text-sm md:text-base text-white/75 leading-relaxed max-w-md">
-              Inscrivez-vous pour recevoir nos offres exclusives, nouveautés parfums & soins du corps.
+              Inscrivez-vous pour recevoir nos offres exclusives et nouveautés intimes en avant-première.
             </p>
             <div className="mt-6 flex flex-wrap gap-4 text-xs text-white/60">
               <span className="flex items-center gap-1.5">
@@ -48,9 +48,9 @@ export function HomeNewsletter() {
               />
               <button
                 type="button"
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-white py-3.5 text-sm font-bold text-[#4a5240] hover:bg-[#faf7f2] transition"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-olive py-3.5 text-sm font-bold text-white hover:bg-olive-dark transition"
               >
-                Rejoindre KabiShop
+                Rejoindre Love Piment&
                 <ArrowRight className="h-4 w-4" />
               </button>
             </form>

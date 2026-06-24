@@ -1,7 +1,9 @@
 import { prisma } from '@/shared/lib/prisma';
+import type { OrderStatus } from '@prisma/client';
 import { evaluerAnnulationCommande } from '@/modules/commandes/lib/order-cancel-rules';
 import { trackingService } from '@/modules/livraison/services/tracking.service';
 import { marketingService } from '@/modules/marketing/services/marketing.service';
+import { revalidateBoutique } from '@/modules/produits/lib/revalidate-boutique';
 import type { CustomerOrderDetail } from '@/modules/compte/types';
 
 function libelleVariante(v: {
@@ -15,7 +17,7 @@ function libelleVariante(v: {
 
 function serialiserDetail(order: {
   id: string;
-  statut: string;
+  statut: OrderStatus;
   statutPaiement: string;
   modePaiement: string;
   montantTotal: unknown;
@@ -116,13 +118,6 @@ export class CustomerOrderService {
     if (!annulation.peutAnnuler) return 'forbidden';
 
     await prisma.$transaction(async (tx) => {
-      for (const item of order.items) {
-        await tx.productVariant.update({
-          where: { id: item.variantId },
-          data: { stock: { increment: item.quantite } },
-        });
-      }
-
       await marketingService.annulerEffetsCommande(tx, order);
 
       const statutPaiement =
@@ -144,6 +139,8 @@ export class CustomerOrderService {
       message: 'Commande annulée à votre demande.',
       notifier: true,
     });
+
+    revalidateBoutique();
 
     return 'ok';
   }

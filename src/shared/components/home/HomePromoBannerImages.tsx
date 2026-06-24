@@ -72,7 +72,7 @@ export function HomePromoBannerImages({ slides }: Props) {
         aria-hidden
       />
       <div
-        className="absolute inset-0 z-[2] bg-gradient-to-r from-[#4a5240]/20 to-transparent pointer-events-none lg:hidden"
+        className="absolute inset-0 z-[2] bg-gradient-to-r from-[#9B1B2E]/20 to-transparent pointer-events-none lg:hidden"
         aria-hidden
       />
 

@@ -19,7 +19,7 @@ function normaliserTelephoneCinetPay(telephone: string): string {
 
 function decouperNomComplet(nomComplet: string): { prenom: string; nom: string } {
   const parties = nomComplet.trim().split(/\s+/).filter(Boolean);
-  if (parties.length === 0) return { prenom: 'Client', nom: 'KabiShop' };
+  if (parties.length === 0) return { prenom: 'Client', nom: 'Love Piment&' };
   if (parties.length === 1) return { prenom: parties[0], nom: parties[0] };
   return { prenom: parties[0], nom: parties.slice(1).join(' ') };
 }

@@ -16,10 +16,12 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CONTACT_SUJETS } from '@/modules/contact/types';
-
-const WHATSAPP = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '224629403019';
-const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? 'samakedelamou858@gmail.com';
-const CONTACT_PHONE = process.env.NEXT_PUBLIC_CONTACT_PHONE ?? '+224 629 40 30 19';
+import {
+  getShopPhoneDisplay,
+  getShopTelHref,
+  getShopWhatsAppHref,
+  SHOP_EMAIL,
+} from '@/shared/lib/shop-contact';
 
 const contactSchema = z.object({
   nom: z.string().min(2, 'Indiquez votre nom'),
@@ -32,7 +34,7 @@ const contactSchema = z.object({
 type ContactFormValues = z.infer<typeof contactSchema>;
 
 const inputClass =
-  'w-full rounded-xl border border-[#ebe4d8] bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-[#4a5240] focus:ring-2 focus:ring-[#4a5240]/10';
+  'w-full rounded-xl border border-[#F2D4DC] bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition focus:border-[#9B1B2E] focus:ring-2 focus:ring-[#9B1B2E]/10';
 
 export function ContactForm() {
   const [sent, setSent] = useState(false);
@@ -162,7 +164,7 @@ export function ContactForm() {
       <Button
         type="submit"
         disabled={isSubmitting}
-        className="w-full sm:w-auto bg-[#4a5240] hover:bg-[#3d4534] text-white px-8"
+        className="w-full sm:w-auto bg-[#9B1B2E] hover:bg-[#6E1020] text-white px-8"
       >
         {isSubmitting ? (
           <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -176,7 +178,9 @@ export function ContactForm() {
 }
 
 export function ContactInfoPanel() {
-  const waHref = `https://wa.me/${WHATSAPP.replace(/[\s+\-()]/g, '')}?text=${encodeURIComponent('Bonjour KabiShop, j\'ai une question.')}`;
+  const waHref = getShopWhatsAppHref("Bonjour Love Piment&, j'ai une question.");
+  const telHref = getShopTelHref();
+  const phoneDisplay = getShopPhoneDisplay();
 
   return (
     <div className="space-y-6">
@@ -190,48 +194,62 @@ export function ContactInfoPanel() {
 
       <ul className="space-y-4">
         <li className="flex gap-3">
-          <MapPin className="h-5 w-5 shrink-0 text-[#4a5240]" />
+          <MapPin className="h-5 w-5 shrink-0 text-[#9B1B2E]" />
           <div>
             <p className="text-sm font-medium text-zinc-900">Adresse</p>
             <p className="text-sm text-zinc-600">Conakry, Guinée</p>
           </div>
         </li>
         <li className="flex gap-3">
-          <Mail className="h-5 w-5 shrink-0 text-[#4a5240]" />
+          <Mail className="h-5 w-5 shrink-0 text-[#9B1B2E]" />
           <div>
             <p className="text-sm font-medium text-zinc-900">E-mail</p>
             <a
-              href={`mailto:${CONTACT_EMAIL}`}
-              className="text-sm text-[#4a5240] hover:underline break-all"
+              href={`mailto:${SHOP_EMAIL}`}
+              className="text-sm text-[#9B1B2E] hover:underline break-all"
             >
-              {CONTACT_EMAIL}
+              {SHOP_EMAIL}
             </a>
           </div>
         </li>
         <li className="flex gap-3">
-          <Phone className="h-5 w-5 shrink-0 text-[#4a5240]" />
+          <Phone className="h-5 w-5 shrink-0 text-[#9B1B2E]" />
           <div>
             <p className="text-sm font-medium text-zinc-900">Téléphone / WhatsApp</p>
-            <p className="text-sm text-zinc-600">{CONTACT_PHONE}</p>
             <a
-              href={waHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 text-sm text-[#4a5240] hover:underline inline-flex items-center gap-1"
+              href={telHref}
+              className="text-sm text-[#9B1B2E] hover:underline font-medium"
             >
-              <MessageCircle className="h-3.5 w-3.5" />
-              Discuter maintenant
+              {phoneDisplay}
             </a>
+            <div className="mt-2 flex flex-wrap gap-3">
+              <a
+                href={telHref}
+                className="text-sm text-[#9B1B2E] hover:underline inline-flex items-center gap-1 font-medium"
+              >
+                <Phone className="h-3.5 w-3.5" />
+                Appeler
+              </a>
+              <a
+                href={waHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-[#9B1B2E] hover:underline inline-flex items-center gap-1"
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                WhatsApp
+              </a>
+            </div>
           </div>
         </li>
       </ul>
 
-      <div className="rounded-xl bg-[#faf7f2] border border-[#ebe4d8] p-5 text-sm text-zinc-600">
+      <div className="rounded-xl bg-[#FFF8F6] border border-[#F2D4DC] p-5 text-sm text-zinc-600">
         <p className="font-medium text-zinc-900 mb-1">Horaires de réponse</p>
         <p>Lun – Sam : 9h – 19h (GMT)</p>
         <p className="mt-3">
           Besoin d&apos;une réponse immédiate ?{' '}
-          <Link href="/messages" className="text-[#4a5240] font-medium hover:underline">
+          <Link href="/messages" className="text-[#9B1B2E] font-medium hover:underline">
             Messagerie instantanée
           </Link>
         </p>

@@ -8,14 +8,14 @@ import { getCustomerSession } from '@/shared/lib/auth/session';
 
 export const metadata: Metadata = {
   title: 'Mot de passe oublié',
-  description: 'Réinitialisez votre mot de passe KabiShop.',
+  description: 'Réinitialisez votre mot de passe Love Piment&.',
   robots: { index: false, follow: false },
 };
 
-const TRUST = [
-  { icon: Mail, label: 'Code envoyé par e-mail' },
-  { icon: KeyRound, label: 'Code valide 15 min' },
-  { icon: Lock, label: 'Connexion sécurisée' },
+const PANEL_TRUST = [
+  { icon: Mail, label: 'Code envoyé par e-mail', desc: 'Vérifiez aussi vos spams.' },
+  { icon: KeyRound, label: 'Code valide 15 min', desc: 'Saisissez-le rapidement.' },
+  { icon: Lock, label: 'Connexion sécurisée', desc: 'Choisissez un nouveau mot de passe.' },
 ];
 
 export default async function MotDePasseOubliePage() {
@@ -26,11 +26,13 @@ export default async function MotDePasseOubliePage() {
 
   return (
     <AuthSplitLayout
-      panelTitle="Retrouvez l'accès à votre compte"
+      variant="connexion"
+      panelTitle="Retrouvez l'accès,"
+      panelAccent="en quelques minutes"
       panelSubtitle="Nous vous enverrons un code à 8 chiffres par e-mail pour définir un nouveau mot de passe."
-      trustPoints={TRUST}
+      trustPoints={PANEL_TRUST}
     >
-      <Suspense fallback={<div className="skeleton h-56 w-full rounded-xl" />}>
+      <Suspense fallback={<div className="auth-connexion-card skeleton h-80 w-full rounded-2xl" />}>
         <ForgotPasswordForm />
       </Suspense>
     </AuthSplitLayout>

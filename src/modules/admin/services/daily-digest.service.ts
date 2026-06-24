@@ -4,8 +4,9 @@ import { buildDailyDigestEmail } from '@/modules/admin/email/daily-digest.templa
 import { getAdminEmail, getAppBaseUrl, getCronTimezone } from '@/shared/lib/email/env';
 import { sendEmail } from '@/shared/lib/email/mailer';
 
+import { STOCK_FAIBLE_SEUIL } from '@/modules/admin/lib/stock-threshold';
+
 const STATUTS_CA = ['PAYEE', 'EN_PREPARATION', 'EXPEDIEE', 'LIVREE'] as const;
-const STOCK_FAIBLE_SEUIL = 5;
 
 export type DailyDigestData = {
   dateLabel: string;

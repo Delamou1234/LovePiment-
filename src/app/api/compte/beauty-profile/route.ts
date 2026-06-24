@@ -10,7 +10,7 @@ const profileSchema = z.object({
     .array(z.enum(['hydratation', 'parfum', 'cheveux', 'eclat', 'souplesse', 'relaxation']))
     .min(1),
   univers: z
-    .array(z.enum(['parfums', 'huiles-corps', 'huiles-cheveux', 'cremes']))
+    .array(z.enum(['sextoys', 'lingerie', 'lubrifiants', 'accessoires']))
     .min(1),
   familleParfum: z
     .enum(['floral', 'boise', 'fruite', 'oriental', 'frais'])
@@ -64,5 +64,5 @@ export async function PUT(request: NextRequest) {
   }
 
   await customerAuthRepository.mettreAJourProfilBeaute(session.id, profile);
-  return NextResponse.json({ profile, message: 'Profil beauté enregistré' });
+  return NextResponse.json({ profile, message: 'Profil intime enregistré' });
 }

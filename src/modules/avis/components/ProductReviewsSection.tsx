@@ -182,7 +182,7 @@ export function ProductReviewsSection({
                   {a.photos.map((url) => (
                     <div
                       key={url}
-                      className="relative h-20 w-20 rounded-lg overflow-hidden border border-[#ebe4d8]"
+                      className="relative h-20 w-20 rounded-lg overflow-hidden border border-[#F2D4DC]"
                     >
                       <Image
                         src={url}

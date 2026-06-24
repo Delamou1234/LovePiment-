@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   }
 
   return NextResponse.json({
-    infos: formaterInfosBoutiquePourPrompt(),
+    infos: await formaterInfosBoutiquePourPrompt(),
     url: process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
     whatsapp: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '224625617377',
   });

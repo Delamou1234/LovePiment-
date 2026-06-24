@@ -36,3 +36,23 @@ export async function PATCH(request: NextRequest) {
   revalidateBoutique({ reviews: true });
   return NextResponse.json({ ok: true });
 }
+
+const deleteSchema = z.object({
+  id: z.string(),
+});
+
+/** DELETE /api/admin/avis */
+export async function DELETE(request: NextRequest) {
+  const user = await requireAdmin();
+  if (!user) return adminUnauthorized();
+
+  const body = await request.json();
+  const parsed = deleteSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ message: 'Données invalides' }, { status: 400 });
+  }
+
+  await avisService.supprimer(parsed.data.id);
+  revalidateBoutique({ reviews: true });
+  return NextResponse.json({ ok: true });
+}

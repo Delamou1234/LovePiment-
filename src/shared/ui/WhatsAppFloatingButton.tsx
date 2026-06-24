@@ -29,7 +29,7 @@ export function WhatsAppFloatingButton({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      aria-label="Contacter KabiShop sur WhatsApp"
+      aria-label="Contacter Love Piment& sur WhatsApp"
       className={`whatsapp-float ${className ?? ''}`}
       id="whatsapp-floating-btn"
     >

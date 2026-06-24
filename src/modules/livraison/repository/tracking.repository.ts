@@ -3,6 +3,8 @@ import {
   calculerLivraisonEstimee,
   messageNotification,
 } from '@/shared/lib/delivery-tracking';
+import { restaurerStockPourArticles } from '@/modules/produits/lib/order-stock';
+import { revalidateBoutique } from '@/modules/produits/lib/revalidate-boutique';
 import type { OrderStatus, OrderSatisfaction, TrackingEventType } from '@prisma/client';
 
 const orderInclude = {
@@ -113,9 +115,11 @@ export class TrackingRepository {
   ) {
     const existing = await prisma.order.findUnique({
       where: { id: orderId },
-      include: { carrier: true },
+      include: { carrier: true, items: true },
     });
     if (!existing) throw new Error('Commande introuvable');
+
+    const doitRestaurerStock = statut === 'ANNULEE' && existing.statut !== 'ANNULEE';
 
     const carrierId =
       options.carrierId !== undefined ? options.carrierId : existing.carrierId;
@@ -135,17 +139,27 @@ export class TrackingRepository {
       options.message ??
       messageNotification(statut, options.numeroSuivi ?? existing.numeroSuivi, carrier?.nom);
 
-    const order = await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        statut,
-        carrierId,
-        numeroSuivi: options.numeroSuivi ?? existing.numeroSuivi,
-        livraisonEstimee,
-        livreeLe,
-      },
-      include: orderInclude,
+    const order = await prisma.$transaction(async (tx) => {
+      if (doitRestaurerStock) {
+        await restaurerStockPourArticles(tx, existing.items);
+      }
+
+      return tx.order.update({
+        where: { id: orderId },
+        data: {
+          statut,
+          carrierId,
+          numeroSuivi: options.numeroSuivi ?? existing.numeroSuivi,
+          livraisonEstimee,
+          livreeLe,
+        },
+        include: orderInclude,
+      });
     });
+
+    if (doitRestaurerStock) {
+      revalidateBoutique();
+    }
 
     await this.creerEvenement({
       orderId,

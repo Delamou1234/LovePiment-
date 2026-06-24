@@ -22,7 +22,7 @@ export function SocialLoginButtons({
       {googleEnabled && (
         <a
           href={`/api/auth/google?${q}`}
-          className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#ebe4d8] bg-white px-4 py-3 text-sm font-semibold text-zinc-800 shadow-sm transition hover:border-zinc-300"
+          className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#F2D4DC] bg-white px-4 py-3 text-sm font-semibold text-zinc-800 shadow-sm transition hover:border-zinc-300"
         >
           <GoogleIcon />
           Continuer avec Google
@@ -31,7 +31,7 @@ export function SocialLoginButtons({
       {facebookEnabled && (
         <a
           href={`/api/auth/facebook?${q}`}
-          className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#ebe4d8] bg-[#1877F2] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#166fe5]"
+          className="flex w-full items-center justify-center gap-3 rounded-xl border border-[#F2D4DC] bg-[#1877F2] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#166fe5]"
         >
           <FacebookIcon />
           Continuer avec Facebook
@@ -53,11 +53,11 @@ export function SocialLoginButtons({
 export function SocialLoginDivider() {
   return (
     <div className="flex items-center gap-3">
-      <span className="h-px flex-1 bg-[#ebe4d8]" />
+      <span className="h-px flex-1 bg-[#F2D4DC]" />
       <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-400">
         ou e-mail
       </span>
-      <span className="h-px flex-1 bg-[#ebe4d8]" />
+      <span className="h-px flex-1 bg-[#F2D4DC]" />
     </div>
   );
 }

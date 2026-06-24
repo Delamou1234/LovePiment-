@@ -219,7 +219,7 @@ export function ChatInput({ disabled, onSendText, onUpload, onTyping }: ChatInpu
                 value={imageCaption}
                 onChange={(e) => setImageCaption(e.target.value)}
                 placeholder="Ajouter une légende (optionnel)…"
-                className="input-kabishop w-full text-sm py-2"
+                className="input-shop w-full text-sm py-2"
                 disabled={sending}
               />
               <div className="flex gap-2">
@@ -355,7 +355,7 @@ export function ChatInput({ disabled, onSendText, onUpload, onTyping }: ChatInpu
               rows={1}
               disabled={disabled || sending}
               placeholder="Message…"
-              className="input-kabishop min-h-[44px] max-h-32 flex-1 resize-none rounded-2xl border-beige-border bg-cream/30 py-3 text-[15px]"
+              className="input-shop min-h-[44px] max-h-32 flex-1 resize-none rounded-2xl border-beige-border bg-cream/30 py-3 text-[15px]"
             />
 
             {text.trim() ? (

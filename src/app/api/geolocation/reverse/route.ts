@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
   try {
     const res = await fetch(url.toString(), {
       headers: {
-        'User-Agent': 'KabiShop/1.0 (https://kabishop.vercel.app; contact@kabishop.com)',
+        'User-Agent': 'Love Piment&/1.0 (https://lovepiment.gn; contact@lovepiment.gn)',
       },
       next: { revalidate: 3600 },
     });

@@ -13,7 +13,7 @@ type Props = {
 export function HomeTrustStrip({ items }: Props) {
   return (
     <section className="border-y border-beige-border/50 bg-white/80 backdrop-blur-sm">
-      <div className="container-kabishop">
+      <div className="container-shop">
         <ul className="grid grid-cols-2 lg:grid-cols-4 divide-x divide-y lg:divide-y-0 divide-beige-border/60">
           {items.map(({ icon: Icon, title, desc }) => (
             <li

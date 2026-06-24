@@ -210,12 +210,14 @@ export async function construireContexteAgent(params: {
           )
           .join('\n');
 
+  const infosBoutique = await formaterInfosBoutiquePourPrompt();
+
   const contexteTexte = [
-    formaterInfosBoutiquePourPrompt(),
+    infosBoutique,
     '',
     `MESSAGE CLIENT WHATSAPP:\n${message || '(vide)'}`,
     '',
-    'PRODUITS PERTINENTS (base KabiShop en temps réel):',
+    'PRODUITS PERTINENTS (base Love Piment& en temps réel):',
     produitsTexte,
     '',
     params.telephone ? `COMMANDES RÉCENTES (${params.telephone}):` : '',

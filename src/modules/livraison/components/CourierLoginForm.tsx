@@ -57,7 +57,7 @@ export function CourierLoginForm() {
         type="email"
         required
         placeholder="E-mail"
-        className="input-kabishop w-full"
+        className="input-shop w-full"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
       />
@@ -65,7 +65,7 @@ export function CourierLoginForm() {
         type="password"
         required
         placeholder="Mot de passe"
-        className="input-kabishop w-full"
+        className="input-shop w-full"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />

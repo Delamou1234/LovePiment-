@@ -1,7 +1,6 @@
 import { unstable_cache } from 'next/cache';
 import { prisma } from '@/shared/lib/prisma';
-
-const STOCK_FAIBLE_SEUIL = 5;
+import { STOCK_FAIBLE_SEUIL } from '@/modules/admin/lib/stock-threshold';
 
 export type AdminDashboardStats = {
   produitsActifs: number;

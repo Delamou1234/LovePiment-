@@ -42,7 +42,7 @@ export default async function ConfirmationPage({
 
   if (!order) {
     return (
-      <div className="container-kabishop py-16 text-center space-y-6">
+      <div className="container-shop py-16 text-center space-y-6">
         <div className="rounded-full bg-red-100 p-4 text-red-600 inline-block">
           <AlertCircle className="h-12 w-12" />
         </div>
@@ -75,7 +75,7 @@ export default async function ConfirmationPage({
     )
     .join('\n');
 
-  const waMessage = `Bonjour KabiShop ! Je viens de passer une commande sur votre site internet.\n\n` +
+  const waMessage = `Bonjour Love Piment& ! Je viens de passer une commande sur votre site internet.\n\n` +
     `*Référence de commande* : #${order.id}\n` +
     `*Client* : ${order.clientNom}\n` +
     `*Téléphone* : ${order.clientTelephone}\n` +
@@ -90,7 +90,7 @@ export default async function ConfirmationPage({
   const waLink = `https://wa.me/${whatsappNum}?text=${encodeURIComponent(waMessage)}`;
 
   return (
-    <div className="container-kabishop py-8 space-y-8 max-w-3xl animate-fadeIn">
+    <div className="container-shop py-8 space-y-8 max-w-3xl animate-fadeIn">
       {/* ─── BREADCRUMB ────────────────────────────────────────────────── */}
       <div className="flex items-center gap-1.5 text-xs text-zinc-500">
         <Link href="/" className="hover:text-primary transition font-medium">Accueil</Link>
@@ -123,7 +123,7 @@ export default async function ConfirmationPage({
           {order.suiviToken && (
             <Link
               href={`/suivi/${order.suiviToken}`}
-              className="mt-4 inline-flex w-full items-center justify-center rounded-full border border-[#ebe4d8] bg-[#faf7f2] py-3 text-sm font-semibold text-zinc-800 hover:bg-[#f5f0e8] transition"
+              className="mt-4 inline-flex w-full items-center justify-center rounded-full border border-[#F2D4DC] bg-[#FFF8F6] py-3 text-sm font-semibold text-zinc-800 hover:bg-[#FCEEE8] transition"
             >
               Suivre ma commande en temps réel
             </Link>

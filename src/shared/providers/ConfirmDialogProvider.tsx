@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertTriangle, CheckCircle2, LogOut } from 'lucide-react';
+import { CheckCircle2, LogOut, Trash2 } from 'lucide-react';
 import {
   confirmAction as confirmActionFn,
   registerConfirmAction,
@@ -65,18 +65,18 @@ function ConfirmModal({
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
 
-  const Icon = isLogout ? LogOut : isDanger ? AlertTriangle : CheckCircle2;
+  const Icon = isLogout ? LogOut : isDanger ? Trash2 : CheckCircle2;
   const iconClass = isLogout
-    ? 'bg-olive/10 text-olive'
+    ? 'bg-[#fce7f3] text-[#e91e8c]'
     : isDanger
-      ? 'bg-amber-50 text-amber-700'
+      ? 'bg-[#fce7f3] text-[#9b1b2e]'
       : 'bg-emerald-50 text-emerald-700';
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+    <div className="confirm-dialog-root">
       <button
         type="button"
-        className="absolute inset-0 bg-zinc-900/45 backdrop-blur-[2px] animate-fadeIn"
+        className="confirm-dialog-backdrop"
         aria-label={cancelLabel}
         onClick={() => onClose(false)}
       />
@@ -85,32 +85,27 @@ function ConfirmModal({
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-desc"
-        className="relative w-full max-w-md rounded-2xl border border-beige-border bg-white p-6 shadow-[0_24px_60px_rgba(0,0,0,0.18)] animate-fadeIn"
+        className={`confirm-dialog-panel${isDanger ? ' confirm-dialog-panel--danger' : ''}`}
       >
-        <div className="flex flex-col items-center text-center sm:flex-row sm:items-start sm:text-left gap-4">
-          <div
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${iconClass}`}
-          >
+        <div className="confirm-dialog-icon-wrap">
+          <div className={`confirm-dialog-icon ${iconClass}`}>
             <Icon className="h-5 w-5" strokeWidth={1.75} />
           </div>
-          <div className="min-w-0 flex-1">
-            <h2
-              id="confirm-dialog-title"
-              className="font-serif text-xl font-bold text-zinc-900 tracking-tight"
-            >
-              {title}
-            </h2>
-            <p id="confirm-dialog-desc" className="mt-2 text-sm text-zinc-500 leading-relaxed">
-              {message}
-            </p>
-          </div>
+        </div>
+        <div className="confirm-dialog-content">
+          <h2 id="confirm-dialog-title" className="confirm-dialog-title">
+            {title}
+          </h2>
+          <p id="confirm-dialog-desc" className="confirm-dialog-message">
+            {message}
+          </p>
         </div>
 
-        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <div className="confirm-dialog-actions">
           <button
             type="button"
             onClick={() => onClose(false)}
-            className="inline-flex h-11 items-center justify-center rounded-xl border border-beige-border bg-white px-5 text-sm font-semibold text-zinc-700 transition hover:bg-cream"
+            className="confirm-dialog-btn confirm-dialog-btn--cancel"
           >
             {cancelLabel}
           </button>
@@ -118,8 +113,8 @@ function ConfirmModal({
             type="button"
             autoFocus
             onClick={() => onClose(true)}
-            className={`inline-flex h-11 items-center justify-center gap-2 rounded-xl px-5 text-sm font-semibold text-white transition ${
-              isDanger ? 'bg-amber-700 hover:bg-amber-800' : 'bg-olive hover:bg-olive-dark'
+            className={`confirm-dialog-btn confirm-dialog-btn--confirm${
+              isDanger ? ' confirm-dialog-btn--danger' : isLogout ? ' confirm-dialog-btn--logout' : ''
             }`}
           >
             <Icon className="h-4 w-4" />

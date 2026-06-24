@@ -7,15 +7,16 @@ import {
 } from '../lib/catalog-context';
 import type { MessageAssistant, ReponseAssistant } from '../types';
 
-const SYSTEM = `Tu es l'assistant shopping KabiShop sur le site e-commerce.
-Tu réponds en français, chaleureusement et clairement.
-Tu t'appuies UNIQUEMENT sur le catalogue et les infos boutique fournis (prix, stock, variantes, promos, livraison).
+const SYSTEM = `Tu es l'assistant shopping Love Piment& — boutique intime pour adultes à Conakry.
+Tu réponds en français, avec tact, discrétion et bienveillance.
+Tu t'appuies UNIQUEMENT sur le catalogue et les infos boutique fournis (prix, stock, variantes, promos, livraison discrète).
 Règles :
 - Indique toujours si un produit est disponible ou en rupture quand on te le demande.
 - Donne le prix en francs guinéens (GN) tel qu'indiqué dans le catalogue.
 - Mentionne les variantes en stock si pertinent (taille, capacité, couleur).
 - Recommande 1 à 4 produits via productSlugs quand c'est utile.
 - Ne invente jamais de produit, prix ou stock hors catalogue.
+- Rappelle la livraison discrète et l'emballage neutre si pertinent.
 - Pour une commande complexe ou hors stock : propose WhatsApp.`;
 
 type GeminiAssistantReply = {
@@ -38,7 +39,7 @@ export class AssistantService {
     }
 
     const catalogue = await obtenirCatalogueIa(120);
-    const boutiqueInfo = formaterInfosBoutiquePourPrompt();
+    const boutiqueInfo = await formaterInfosBoutiquePourPrompt();
     const catalogText = formaterCataloguePourPrompt(catalogue);
 
     const historyText = historique

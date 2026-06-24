@@ -207,7 +207,7 @@ export function ChatPanel({
     >
       <div className="flex items-center gap-3 border-b border-beige-border/80 bg-white px-4 py-3 shrink-0 relative shadow-sm">
         {onBack && (
-          <button type="button" onClick={onBack} className="rounded-full p-1.5 hover:bg-cream">
+          <button type="button" onClick={onBack} className="rounded-full p-1.5 hover:bg-cream lg:hidden">
             <ArrowLeft className="h-4 w-4" />
           </button>
         )}
@@ -233,7 +233,7 @@ export function ChatPanel({
           <VoiceCallControls
             conversationId={conversationId}
             mode={mode}
-            peerLabel={mode === 'client' ? 'Support KabiShop' : conversation.clientNom}
+            peerLabel={mode === 'client' ? 'Support Love Piment&' : conversation.clientNom}
           />
         )}
       </div>
@@ -258,7 +258,7 @@ export function ChatPanel({
           mode={mode}
           isTyping={isTyping}
           typingLabel={
-            mode === 'client' ? "L'équipe KabiShop écrit…" : `${conversation.clientNom} écrit…`
+            mode === 'client' ? "L'équipe Love Piment& écrit…" : `${conversation.clientNom} écrit…`
           }
           bottomRef={bottomRef}
         />

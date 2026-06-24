@@ -1,19 +1,31 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { adminCatalogService, type FiltreProduitAdmin } from '@/modules/admin/services/admin-catalog.service';
 import { productService } from '@/modules/produits/services/product.service';
 import { adminUnauthorized, requireAdmin } from '@/modules/admin/lib/require-admin';
 import { revalidateBoutique } from '@/modules/produits/lib/revalidate-boutique';
+import { revalidateTag } from 'next/cache';
 
-function serializeProduct(p: Awaited<ReturnType<typeof productService.listerPourAdmin>>[number]) {
-  return {
-    ...p,
-    prix: Number(p.prix),
-    prixPromo: p.prixPromo ? Number(p.prixPromo) : null,
-    variantes: p.variantes.map((v) => ({
-      ...v,
-      prix: v.prix ? Number(v.prix) : null,
-    })),
-  };
+const FILTRES: FiltreProduitAdmin[] = ['', 'actif', 'inactif', 'stock-faible', 'rupture', 'vedette'];
+
+function parseFiltre(value: string | null): FiltreProduitAdmin {
+  if (FILTRES.includes(value as FiltreProduitAdmin)) {
+    return value as FiltreProduitAdmin;
+  }
+  return '';
+}
+
+/** GET /api/admin/produits?q=&filtre= */
+export async function GET(request: NextRequest) {
+  const user = await requireAdmin();
+  if (!user) return adminUnauthorized();
+
+  const q = request.nextUrl.searchParams.get('q') ?? '';
+  const filtre = parseFiltre(request.nextUrl.searchParams.get('filtre'));
+
+  const data = await adminCatalogService.lister({ q, filtre });
+
+  return NextResponse.json(data, { headers: { 'Cache-Control': 'no-store' } });
 }
 
 const createSchema = z.object({
@@ -42,27 +54,16 @@ const createSchema = z.object({
     .optional(),
 });
 
-/** GET /api/admin/produits */
-export async function GET() {
-  const user = await requireAdmin();
-  if (!user) return adminUnauthorized();
-
-  const [produits, categories] = await Promise.all([
-    productService.listerPourAdmin(),
-    productService.listerCategoriesAdmin(),
-  ]);
-
-  return NextResponse.json({
-    produits: produits.map(serializeProduct),
-    categories: categories.map((c) => ({
-      id: c.id,
-      nom: c.nom,
-      slug: c.slug,
-      actif: c.actif,
-      parentId: c.parentId,
-      parentNom: c.parent?.nom ?? null,
+function serializeProduct(p: Awaited<ReturnType<typeof productService.listerPourAdmin>>[number]) {
+  return {
+    ...p,
+    prix: Number(p.prix),
+    prixPromo: p.prixPromo ? Number(p.prixPromo) : null,
+    variantes: p.variantes.map((v) => ({
+      ...v,
+      prix: v.prix ? Number(v.prix) : null,
     })),
-  });
+  };
 }
 
 /** POST /api/admin/produits */
@@ -83,6 +84,7 @@ export async function POST(request: NextRequest) {
   });
 
   revalidateBoutique({ productSlug: produit.slug });
+  revalidateTag('admin-stats', 'max');
 
   return NextResponse.json({ produit: serializeProduct(produit as never) }, { status: 201 });
 }

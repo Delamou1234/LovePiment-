@@ -75,7 +75,7 @@ export class ConversationRepository {
       });
     }
     return prisma.conversation.findFirst({
-      where: { clientSessionId, sujet: 'Support KabiShop' },
+      where: { clientSessionId, sujet: 'Support Love Piment&' },
       orderBy: { createdAt: 'asc' },
     });
   }

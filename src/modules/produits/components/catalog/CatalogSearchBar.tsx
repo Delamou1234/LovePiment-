@@ -119,7 +119,7 @@ export function CatalogSearchBar({ currentParams, defaultQuery = '', className }
           }}
           onFocus={() => suggestions.length > 0 && setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder="Rechercher un parfum, une huile, une crème..."
+          placeholder="Rechercher un sextoy, lingerie, lubrifiant..."
           className="catalog-search"
           autoComplete="off"
         />

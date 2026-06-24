@@ -14,7 +14,7 @@ const prisma = new PrismaClient({
 });
 
 async function main() {
-  console.log('🌱 Seeding KabiShop (parfums & huiles)...');
+  console.log('🌱 Seeding Love Piment& (boutique intime)...');
 
   const { ensureDefaultAdmin } = await import('./ensure-admin');
   await ensureDefaultAdmin(prisma);
@@ -26,31 +26,55 @@ async function main() {
   await ensureDemoCourier(prisma);
 
   await prisma.storeSettings.upsert({
-    where: { id: 'kabishop-settings' },
+    where: { id: 'lovepiment-settings' },
     update: {
       metaDescription:
-        'Parfums, huiles pour la peau et crèmes corporelles à Conakry, Guinée. Paiement Mobile Money et livraison rapide.',
+        'Boutique intime pour adultes à Conakry : sextoys, lingerie, lubrifiants. Livraison discrète, paiement Mobile Money.',
+      newsletterActif: true,
+      newsletterTitre: 'Offre de bienvenue !',
+      newsletterDescription: 'Inscrivez-vous et recevez des offres exclusives 🧡',
+      newsletterImageUrl: '/images/love-piment-secret.png',
+      newsletterRemisePct: 10,
+      newsletterCouponCode: 'BIENVENUE10',
+      livraisonTarifConakry: 15_000,
+      livraisonTarifHorsConakry: 25_000,
+      livraisonSeuilGratuit: 500_000,
+      livraisonVilleParDefaut: 'Conakry',
+      livraisonGratuiteActive: true,
+      livraisonDelaiLabel: '24–48 h',
     },
     create: {
-      id: 'kabishop-settings',
-      nomBoutique: 'KabiShop',
+      id: 'lovepiment-settings',
+      nomBoutique: 'Love Piment&',
       telephone: '+224 620 00 00 00',
       adresse: 'Conakry, Guinée',
       ville: 'Conakry',
       pays: 'Guinée',
       whatsappNumber: '224625617377',
-      facebookUrl: 'https://www.facebook.com/kabishop',
+      facebookUrl: 'https://www.facebook.com/lovepiment',
       parrainageActif: true,
       appelsActifs: true,
+      newsletterActif: true,
+      newsletterTitre: 'Offre de bienvenue !',
+      newsletterDescription: 'Inscrivez-vous et recevez des offres exclusives 🧡',
+      newsletterImageUrl: '/images/love-piment-secret.png',
+      newsletterRemisePct: 10,
+      newsletterCouponCode: 'BIENVENUE10',
+      livraisonTarifConakry: 15_000,
+      livraisonTarifHorsConakry: 25_000,
+      livraisonSeuilGratuit: 500_000,
+      livraisonVilleParDefaut: 'Conakry',
+      livraisonGratuiteActive: true,
+      livraisonDelaiLabel: '24–48 h',
       metaDescription:
-        'Parfums, huiles pour la peau et crèmes corporelles à Conakry, Guinée. Paiement Mobile Money et livraison rapide.',
+        'Boutique intime pour adultes à Conakry : sextoys, lingerie, lubrifiants. Livraison discrète, paiement Mobile Money.',
     },
   });
 
   const carriers = [
     {
-      slug: 'kabishop-express',
-      nom: 'KabiShop Express',
+      slug: 'lovepiment-express',
+      nom: 'Love Piment& Express',
       telephone: '+224 620 00 00 00',
       delaiMinHeures: 24,
       delaiMaxHeures: 48,
@@ -84,46 +108,34 @@ async function main() {
 
   const categoryDefs = [
     {
-      slug: 'parfums',
-      nom: 'Parfums',
-      image: 'https://images.unsplash.com/photo-1541643600914-78b084683601?w=400&q=80',
+      slug: 'sextoys',
+      nom: 'Sextoys',
+      image: 'https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=400&q=80',
     },
     {
-      slug: 'huiles-corps',
-      nom: 'Huiles corporelles',
+      slug: 'lingerie',
+      nom: 'Lingerie sexy',
+      image: 'https://images.unsplash.com/photo-1490114537557-0eba90f68969?w=400&q=80',
+    },
+    {
+      slug: 'lubrifiants',
+      nom: 'Lubrifiants',
+      image: 'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=400&q=80',
+    },
+    {
+      slug: 'accessoires',
+      nom: 'Accessoires érotiques',
+      image: 'https://images.unsplash.com/photo-1615485927827-4c5b5d7cb3c7?w=400&q=80',
+    },
+    {
+      slug: 'bien-etre-intime',
+      nom: 'Bien-être intime',
       image: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=400&q=80',
     },
     {
-      slug: 'cremes-corporelles',
-      nom: 'Crèmes corporelles',
-      image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&q=80',
-    },
-    {
-      slug: 'huiles-capillaires',
-      nom: 'Huiles capillaires',
-      image: 'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&q=80',
-    },
-    {
-      slug: 'eaux-parfum',
-      nom: 'Eaux de parfum',
-      image: 'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=400&q=80',
-    },
-    {
-      slug: 'huiles-pures',
-      nom: 'Huiles pures',
-      image: 'https://images.unsplash.com/photo-1615634260167-c8cdede054de?w=400&q=80',
-    },
-    {
-      slug: 'pommades-baumes',
-      nom: 'Pommades & baumes',
-      image:
-        'https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=900&q=85&auto=format&fit=crop',
-    },
-    {
-      slug: 'gels-douche',
-      nom: 'Gels douche & savons',
-      image:
-        'https://images.unsplash.com/photo-1522335789203-aabd1fc54bc9?w=900&q=85&auto=format&fit=crop',
+      slug: 'cadeaux-couple',
+      nom: 'Cadeaux couple',
+      image: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=400&q=80',
     },
   ];
 
@@ -140,171 +152,150 @@ async function main() {
   const bySlug = Object.fromEntries(categories.map((c) => [c.slug, c]));
 
   const subCategoryDefs = [
-    { slug: 'parfums-orientaux', nom: 'Parfums orientaux', parentSlug: 'parfums' },
-    { slug: 'eaux-legere', nom: 'Eaux légères', parentSlug: 'eaux-parfum' },
-    { slug: 'huiles-nourrissantes', nom: 'Huiles nourrissantes', parentSlug: 'huiles-corps' },
-    { slug: 'cremes-hydratantes', nom: 'Crèmes hydratantes', parentSlug: 'cremes-corporelles' },
-    { slug: 'huiles-cheveux', nom: 'Soins cheveux', parentSlug: 'huiles-capillaires' },
+    { slug: 'vibrateurs', nom: 'Vibrateurs', parentSlug: 'sextoys' },
+    { slug: 'lingerie-dentelle', nom: 'Dentelle & satin', parentSlug: 'lingerie' },
+    { slug: 'lubrifiants-aqueux', nom: 'Gels aqueux', parentSlug: 'lubrifiants' },
+    { slug: 'menottes-masques', nom: 'Menottes & masques', parentSlug: 'accessoires' },
+    { slug: 'huiles-massage', nom: 'Huiles de massage', parentSlug: 'bien-etre-intime' },
   ];
 
   for (const sub of subCategoryDefs) {
     await prisma.category.upsert({
       where: { slug: sub.slug },
-      update: { nom: sub.nom, parentId: bySlug[sub.parentSlug].id },
-      create: { slug: sub.slug, nom: sub.nom, parentId: bySlug[sub.parentSlug].id },
+      update: { nom: sub.nom, parentId: bySlug[sub.parentSlug].id, actif: true },
+      create: { slug: sub.slug, nom: sub.nom, parentId: bySlug[sub.parentSlug].id, actif: true },
     });
   }
+
+  const validCategorySlugs = [
+    ...categoryDefs.map((c) => c.slug),
+    ...subCategoryDefs.map((c) => c.slug),
+  ];
+  await prisma.category.updateMany({
+    where: { slug: { notIn: validCategorySlugs } },
+    data: { actif: false },
+  });
 
   const promoFin = new Date();
   promoFin.setUTCDate(promoFin.getUTCDate() + 30);
 
   const produits = [
     {
-      nom: 'Parfum Oud Royal 100ml',
-      slug: 'parfum-oud-royal',
-      marque: 'Oud Collection',
+      nom: 'Vibrateur Silencieux Rose',
+      slug: 'vibrateur-silencieux-rose',
+      marque: 'Love Piment&',
       description:
-        "Fragrance orientale intense aux notes d'oud, de rose et d'ambre. Tenue longue durée, flacon élégant.",
+        'Vibrateur discret au design ergonomique. Silencieux, rechargeable USB, silicone médical doux.',
+      prix: 185000,
+      prixPromo: 148000,
+      promoFin,
+      images: ['/images/love-piment-secret.png'],
+      featured: true,
+      categorieId: bySlug['sextoys'].id,
+      variantes: [{ capacite: 'Standard', couleur: 'Rose', stock: 15, sku: 'STY-VIB-ROSE', codeBarre: '3761001001001' }],
+    },
+    {
+      nom: 'Lubrifiant Secret Love',
+      slug: 'lubrifiant-secret-love',
+      marque: 'Love Piment&',
+      description:
+        'Gel lubrifiant à base d\'eau, non collant, compatible préservatifs. Format discret 100ml.',
+      prix: 45000,
+      prixPromo: 36000,
+      promoFin,
+      images: ['/images/love-piment-secret.png'],
+      featured: true,
+      categorieId: bySlug['lubrifiants'].id,
+      variantes: [{ capacite: '100ml', couleur: 'Transparent', stock: 30, sku: 'LUB-SEC-100', codeBarre: '3761002001001' }],
+    },
+    {
+      nom: 'Nuisette Dentelle Noire',
+      slug: 'nuisette-dentelle-noire',
+      marque: 'Love Piment&',
+      description:
+        'Nuisette en dentelle fine avec bretelles réglables. Coupe ajustée, taille unique élastique.',
       prix: 95000,
       prixPromo: 76000,
       promoFin,
-      images: [
-        'https://images.unsplash.com/photo-1541643600914-78b084683601?w=600&q=80',
-        'https://images.unsplash.com/photo-1587017539504-67cfbddac569?w=600&q=80',
-      ],
+      images: ['https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=600&q=80'],
       featured: true,
-      categorieId: bySlug['parfums'].id,
-      variantes: [
-        {
-          capacite: '100ml',
-          couleur: 'Oud Royal',
-          stock: 20,
-          sku: 'PRF-OUD-100',
-          codeBarre: '3760001001001',
-        },
-        {
-          capacite: '50ml',
-          couleur: 'Oud Royal',
-          stock: 12,
-          sku: 'PRF-OUD-50',
-          codeBarre: '3760001001002',
-        },
-      ],
+      categorieId: bySlug['lingerie'].id,
+      variantes: [{ taille: 'TU', couleur: 'Noir', stock: 20, sku: 'LNG-NUI-NOIR', codeBarre: '3761003001001' }],
     },
     {
-      nom: 'Eau de Parfum Rose Ambre 50ml',
-      slug: 'eau-parfum-rose-ambre',
-      marque: 'KabiShop',
-      description:
-        'Notes florales de rose damascena et fond ambré chaud. Fraîcheur élégante pour le quotidien.',
-      prix: 75000,
-      prixPromo: 60000,
-      promoFin,
-      images: [
-        'https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?w=600&q=80',
-        'https://images.unsplash.com/photo-1541643600914-78b084683601?w=600&q=80',
-      ],
+      nom: 'Menottes Velours Doux',
+      slug: 'menottes-velours-doux',
+      marque: 'Love Piment&',
+      description: 'Menottes en velours avec fermeture à clip rapide. Confortables et réversibles.',
+      prix: 55000,
+      images: ['https://images.unsplash.com/photo-1615485927827-4c5b5d7cb3c7?w=600&q=80'],
       featured: true,
-      categorieId: bySlug['eaux-parfum'].id,
-      variantes: [
-        {
-          capacite: '50ml',
-          couleur: 'Rose Ambre',
-          stock: 15,
-          sku: 'EDP-RA-50',
-          codeBarre: '3760002001001',
-        },
-      ],
+      categorieId: bySlug['accessoires'].id,
+      variantes: [{ couleur: 'Rouge', stock: 18, sku: 'ACC-MEN-VEL', codeBarre: '3761004001001' }],
     },
     {
-      nom: 'Huile Corporelle Karité & Coco',
-      slug: 'huile-corps-karite-coco',
-      marque: 'KabiShop',
+      nom: 'Huile de Massage Sensuelle',
+      slug: 'huile-massage-sensuelle',
+      marque: 'Love Piment&',
       description:
-        'Huile hydratante au beurre de karité et huile de coco. Peau douce, satinée et délicatement parfumée.',
+        'Huile chauffante aux notes de vanille et ylang-ylang. Texture soyeuse, comestible.',
       prix: 65000,
       prixPromo: 52000,
       promoFin,
-      images: ['https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?w=600&q=80'],
+      images: ['https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600&q=80'],
       featured: true,
-      categorieId: bySlug['huiles-corps'].id,
-      variantes: [{ capacite: '200ml', couleur: 'Naturel', stock: 18, sku: 'HUI-KAR', codeBarre: '3760003001001' }],
+      categorieId: bySlug['bien-etre-intime'].id,
+      variantes: [{ capacite: '150ml', couleur: 'Vanille', stock: 22, sku: 'BEM-HUI-150', codeBarre: '3761005001001' }],
     },
     {
-      nom: 'Crème Corporelle Karité & Cacao',
-      slug: 'creme-corps-karite-cacao',
-      marque: 'KabiShop',
+      nom: 'Bullet Vibrant Discret',
+      slug: 'bullet-vibrant-discret',
+      marque: 'Love Piment&',
+      description: 'Mini vibromasseur compact, 10 modes de vibration. Étanche, parfait pour les déplacements.',
+      prix: 75000,
+      images: ['https://images.unsplash.com/photo-1490114537557-0eba90f68969?w=600&q=80'],
+      featured: false,
+      categorieId: bySlug['sextoys'].id,
+      variantes: [{ couleur: 'Noir', stock: 25, sku: 'STY-BUL-NOIR', codeBarre: '3761006001001' }],
+    },
+    {
+      nom: 'Coffret Couple Passion',
+      slug: 'coffret-couple-passion',
+      marque: 'Love Piment&',
       description:
-        'Crème riche au beurre de karité et beurre de cacao. Nourrit, adoucit et parfume la peau sans la graisser.',
-      prix: 58000,
-      prixPromo: 46400,
+        'Coffret cadeau : huile de massage, gel stimulant et accessoire surprise. Emballage cadeau discret.',
+      prix: 120000,
+      prixPromo: 96000,
       promoFin,
-      images: ['https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600&q=80'],
-      featured: true,
-      categorieId: bySlug['cremes-corporelles'].id,
-      variantes: [{ capacite: '250ml', couleur: 'Naturel', stock: 22, sku: 'CRM-KAR', codeBarre: '3760003002001' }],
+      images: ['https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=600&q=80'],
+      featured: false,
+      categorieId: bySlug['cadeaux-couple'].id,
+      variantes: [{ couleur: 'Rouge', stock: 10, sku: 'CAD-COF-PAS', codeBarre: '3761007001001' }],
     },
     {
-      nom: 'Huile Capillaire Croissance & Brillance',
-      slug: 'huile-capillaire-croissance',
-      marque: 'Afro Glow',
-      description:
-        'Formule enrichie en huiles nourrissantes pour stimuler la pousse et apporter brillance aux cheveux afro.',
-      prix: 55000,
-      images: ['https://images.unsplash.com/photo-1556228720-195a672e8a03?w=600&q=80'],
-      featured: true,
-      categorieId: bySlug['huiles-capillaires'].id,
-      variantes: [{ capacite: '150ml', couleur: 'Standard', stock: 25, sku: 'HUI-CAP', codeBarre: '3760004001001' }],
-    },
-    {
-      nom: 'Parfum Musk Blanc 100ml',
-      slug: 'parfum-musk-blanc',
-      marque: 'Oud Collection',
-      description:
-        'Musc blanc pur et enveloppant. Sillage discret et raffiné, idéal pour toutes occasions.',
+      nom: 'Body Rouge Satin',
+      slug: 'body-rouge-satin',
+      marque: 'Love Piment&',
+      description: 'Body en satin rouge avec décolleté plongeant. Fermeture pression à l\'entrejambe.',
       prix: 85000,
-      prixPromo: 68000,
-      promoFin,
-      images: ['https://images.unsplash.com/photo-1541643600914-78b084683601?w=600&q=80'],
-      featured: true,
-      categorieId: bySlug['parfums'].id,
-      variantes: [{ capacite: '100ml', couleur: 'Musk Blanc', stock: 12, sku: 'PRF-MUSK', codeBarre: '3760005001001' }],
+      images: ['https://images.unsplash.com/photo-1519699047748-de8e457a634e?w=600&q=80'],
+      featured: false,
+      categorieId: bySlug['lingerie'].id,
+      variantes: [
+        { taille: 'S', couleur: 'Rouge', stock: 8, sku: 'LNG-BOD-S', codeBarre: '3761008001001' },
+        { taille: 'M', couleur: 'Rouge', stock: 12, sku: 'LNG-BOD-M', codeBarre: '3761008001002' },
+      ],
     },
     {
-      nom: 'Huile de Nigelle Pure 100ml',
-      slug: 'huile-nigelle-pure',
-      marque: 'Pure Nature',
-      description:
-        'Huile de nigelle 100% pure. Traditionnellement utilisée pour la peau et les cheveux.',
+      nom: 'Gel Stimulant Intense',
+      slug: 'gel-stimulant-intense',
+      marque: 'Love Piment&',
+      description: 'Gel stimulant effet chaud-froid pour intensifier les sensations. Format voyage 50ml.',
       prix: 48000,
-      images: ['https://images.unsplash.com/photo-1615634260167-c8cdede054de?w=600&q=80'],
-      featured: false,
-      categorieId: bySlug['huiles-pures'].id,
-      variantes: [{ capacite: '100ml', couleur: 'Pure', stock: 30, sku: 'HUI-NIG', codeBarre: '3760006001001' }],
-    },
-    {
-      nom: 'Parfum Vanille Gourmande 50ml',
-      slug: 'parfum-vanille-gourmande',
-      marque: 'KabiShop',
-      description:
-        'Vanille bourbon, caramel doux et notes boisées. Un parfum gourmand et addictif.',
-      prix: 72000,
-      images: ['https://images.unsplash.com/photo-1587017539504-67cfbddac569?w=600&q=80'],
-      featured: false,
-      categorieId: bySlug['eaux-parfum'].id,
-      variantes: [{ capacite: '50ml', couleur: 'Vanille', stock: 14, sku: 'EDP-VAN', codeBarre: '3760007001001' }],
-    },
-    {
-      nom: 'Huile de Massage Ylang-Ylang',
-      slug: 'huile-massage-ylang',
-      marque: 'KabiShop',
-      description:
-        "Huile de massage relaxante aux essences d'ylang-ylang et d'amande douce. Texture soyeuse.",
-      prix: 58000,
       images: ['https://images.unsplash.com/photo-1596462502278-27bfdc403348?w=600&q=80'],
       featured: false,
-      categorieId: bySlug['huiles-corps'].id,
-      variantes: [{ capacite: '250ml', couleur: 'Ylang-Ylang', stock: 16, sku: 'HUI-YLA', codeBarre: '3760008001001' }],
+      categorieId: bySlug['lubrifiants'].id,
+      variantes: [{ capacite: '50ml', couleur: 'Transparent', stock: 28, sku: 'LUB-GEL-50', codeBarre: '3761009001001' }],
     },
   ];
 
@@ -356,6 +347,12 @@ async function main() {
     }
   }
 
+  const validProductSlugs = produits.map((p) => p.slug);
+  await prisma.product.updateMany({
+    where: { slug: { notIn: validProductSlugs } },
+    data: { actif: false },
+  });
+
   const flashProducts = await prisma.product.findMany({
     where: { featured: true, actif: true },
     take: 3,
@@ -392,14 +389,14 @@ async function main() {
   await prisma.flashSale.upsert({
     where: { slug: 'flash-semaine' },
     update: {
-      titre: 'Flash Semaine — Parfums & Huiles',
+      titre: 'Flash Semaine — Plaisir & Intimité',
       debut: flashDebut,
       fin: flashFin,
       actif: true,
       productIds: flashProducts.map((p) => p.id),
     },
     create: {
-      titre: 'Flash Semaine — Parfums & Huiles',
+      titre: 'Flash Semaine — Plaisir & Intimité',
       slug: 'flash-semaine',
       description: 'Sélection limitée à prix réduits',
       debut: flashDebut,

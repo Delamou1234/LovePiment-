@@ -13,7 +13,7 @@ export default async function SuiviCommandePage({ params }: { params: Params }) 
   if (!suivi) notFound();
 
   return (
-    <div className="container-kabishop py-8 max-w-2xl animate-fadeIn">
+    <div className="container-shop py-8 max-w-2xl animate-fadeIn">
       <div className="flex items-center gap-1.5 text-xs text-zinc-500 mb-6">
         <Link href="/" className="hover:text-zinc-900 transition font-medium">
           Accueil

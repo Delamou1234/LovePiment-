@@ -45,13 +45,13 @@ export function ConversationList({
               type="button"
               onClick={() => onSelect(conv.id)}
               className={`w-full text-left px-4 py-3 hover:bg-zinc-50 transition ${
-                active ? 'bg-[#f7f4ef] border-l-2 border-[#4a5240]' : ''
+                active ? 'bg-[#FFF0F3] border-l-2 border-[#9B1B2E]' : ''
               }`}
             >
               <div className="flex items-start justify-between gap-2">
                 <p className="font-medium text-sm text-zinc-900 truncate">{conv.clientNom}</p>
                 {unread > 0 && (
-                  <span className="shrink-0 rounded-full bg-[#4a5240] text-white text-[10px] font-bold px-1.5 py-0.5 min-w-[18px] text-center">
+                  <span className="shrink-0 rounded-full bg-[#9B1B2E] text-white text-[10px] font-bold px-1.5 py-0.5 min-w-[18px] text-center">
                     {unread}
                   </span>
                 )}

@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { Sparkles } from 'lucide-react';
+import { Phone, Sparkles } from 'lucide-react';
 import { genererMessageGeneral } from '@/modules/messagerie/providers/whatsapp.provider';
+import { getShopTelHref, getShopWhatsAppHref } from '@/shared/lib/shop-contact';
 
 interface FloatingContactButtonsProps {
   onOpenAssistant?: () => void;
+  className?: string;
 }
 
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -21,14 +23,13 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-export function FloatingContactButtons({ onOpenAssistant }: FloatingContactButtonsProps) {
-  const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '224620000000';
-  const num = whatsappNumber.replace(/[\s+\-()]/g, '');
-  const href = `https://wa.me/${num}?text=${encodeURIComponent(genererMessageGeneral())}`;
+export function FloatingContactButtons({ onOpenAssistant, className = 'safe-area-fab' }: FloatingContactButtonsProps) {
+  const waHref = getShopWhatsAppHref(genererMessageGeneral());
+  const telHref = getShopTelHref();
 
   return (
     <div
-      className="safe-area-fab fixed z-40 flex flex-col items-center gap-2.5"
+      className={`fixed z-40 flex flex-col items-center gap-2.5 ${className}`}
       aria-label="Actions rapides"
     >
       {onOpenAssistant && (
@@ -36,19 +37,28 @@ export function FloatingContactButtons({ onOpenAssistant }: FloatingContactButto
           type="button"
           onClick={onOpenAssistant}
           className="flex h-11 w-11 items-center justify-center rounded-full bg-zinc-900 text-white shadow-lg ring-1 ring-black/10 hover:bg-zinc-800 transition hover:scale-105"
-          aria-label="Assistant IA KabiShop"
+          aria-label="Assistant IA Love Piment&"
           title="Assistant shopping IA"
         >
           <Sparkles className="h-4 w-4" />
         </button>
       )}
 
+      <a
+        href={telHref}
+        className="flex h-11 w-11 items-center justify-center rounded-full bg-[#9B1B2E] text-white shadow-lg ring-1 ring-black/10 hover:bg-[#6E1020] transition hover:scale-105"
+        aria-label="Appeler Love Piment&"
+        title="Appeler"
+      >
+        <Phone className="h-5 w-5" />
+      </a>
+
       <Link
-        href={href}
+        href={waHref}
         target="_blank"
         rel="noopener noreferrer"
         className="flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg ring-1 ring-black/10 hover:bg-[#20bd5a] transition hover:scale-105"
-        aria-label="Contacter KabiShop sur WhatsApp"
+        aria-label="Contacter Love Piment& sur WhatsApp"
         title="WhatsApp"
         id="whatsapp-floating-btn"
       >

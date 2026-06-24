@@ -7,8 +7,8 @@ import { Loader2, Send, Sparkles, X } from 'lucide-react';
 import type { MessageAssistant, ReponseAssistant } from '@/modules/ia/types';
 
 const SUGGESTIONS = [
-  'Quel parfum pour un cadeau ?',
-  'Huile ou crème pour peau sèche ?',
+  'Quel cadeau couple me conseillez-vous ?',
+  'Quel lubrifiant choisir pour débuter ?',
   'Livraison à Conakry ?',
 ];
 
@@ -25,7 +25,7 @@ export function AssistantWidget({ open: openProp, onOpenChange }: AssistantWidge
     {
       role: 'assistant',
       content:
-        'Bonjour ! Je suis l\'assistant KabiShop. Je connais nos produits, prix et stocks en temps réel. Posez-moi vos questions !',
+        'Bonjour ! Je suis l\'assistant Love Piment&. Je connais nos produits, prix et stocks en temps réel. Posez-moi vos questions !',
     },
   ]);
   const [input, setInput] = useState('');
@@ -108,16 +108,16 @@ export function AssistantWidget({ open: openProp, onOpenChange }: AssistantWidge
                   key={p.id}
                   href={`/produits/${p.slug}`}
                   onClick={() => setOpen(false)}
-                  className="flex gap-2 rounded-xl border border-[#ebe4d8] bg-white p-2 hover:border-[#4a5240] transition"
+                  className="flex gap-2 rounded-xl border border-[#F2D4DC] bg-white p-2 hover:border-[#9B1B2E] transition"
                 >
-                  <div className="relative h-12 w-12 shrink-0 rounded-lg overflow-hidden bg-[#f5f0e8]">
+                  <div className="relative h-12 w-12 shrink-0 rounded-lg overflow-hidden bg-[#FCEEE8]">
                     {p.image && (
                       <Image src={p.image} alt="" fill className="object-cover" sizes="48px" />
                     )}
                   </div>
                   <div className="min-w-0">
                     <p className="text-[11px] font-semibold text-zinc-900 line-clamp-2">{p.nom}</p>
-                    <p className="text-[10px] font-bold text-[#4a5240]">
+                    <p className="text-[10px] font-bold text-[#9B1B2E]">
                       {p.prix.toLocaleString('fr-FR')} GN
                     </p>
                   </div>
@@ -137,8 +137,8 @@ export function AssistantWidget({ open: openProp, onOpenChange }: AssistantWidge
         <div
           className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
             isUser
-              ? 'bg-[#4a5240] text-white rounded-br-md'
-              : 'bg-[#f5f0e8] text-zinc-800 rounded-bl-md'
+              ? 'bg-[#9B1B2E] text-white rounded-br-md'
+              : 'bg-[#FCEEE8] text-zinc-800 rounded-bl-md'
           }`}
         >
           {msg.content}
@@ -152,15 +152,15 @@ export function AssistantWidget({ open: openProp, onOpenChange }: AssistantWidge
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-end p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:p-6 pointer-events-none">
           <div
-            className="pointer-events-auto flex h-[min(520px,calc(100dvh-5rem))] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-[#ebe4d8] bg-white shadow-2xl animate-fadeIn"
+            className="pointer-events-auto flex h-[min(520px,calc(100dvh-5rem))] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-[#F2D4DC] bg-white shadow-2xl animate-fadeIn"
             role="dialog"
-            aria-label="Assistant IA KabiShop"
+            aria-label="Assistant IA Love Piment&"
           >
-            <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3 shrink-0 bg-[#faf7f2]">
+            <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-3 shrink-0 bg-[#FFF8F6]">
               <div>
                 <p className="font-serif font-bold text-zinc-900 flex items-center gap-1.5">
-                  <Sparkles className="h-4 w-4 text-[#4a5240]" />
-                  Assistant KabiShop
+                  <Sparkles className="h-4 w-4 text-[#9B1B2E]" />
+                  Assistant Love Piment&
                 </p>
                 <p className="text-[10px] text-zinc-400">Propulsé par Gemini Flash</p>
               </div>
@@ -177,8 +177,8 @@ export function AssistantWidget({ open: openProp, onOpenChange }: AssistantWidge
               {messages.map((msg, i) => renderMessage(msg, i))}
               {loading && (
                 <div className="flex justify-start">
-                  <div className="rounded-2xl bg-[#f5f0e8] px-4 py-2.5">
-                    <Loader2 className="h-4 w-4 animate-spin text-[#4a5240]" />
+                  <div className="rounded-2xl bg-[#FCEEE8] px-4 py-2.5">
+                    <Loader2 className="h-4 w-4 animate-spin text-[#9B1B2E]" />
                   </div>
                 </div>
               )}
@@ -191,7 +191,7 @@ export function AssistantWidget({ open: openProp, onOpenChange }: AssistantWidge
                     key={s}
                     type="button"
                     onClick={() => sendMessage(s)}
-                    className="text-[10px] rounded-full border border-[#ebe4d8] px-2.5 py-1 text-zinc-600 hover:bg-[#faf7f2] hover:border-[#4a5240]"
+                    className="text-[10px] rounded-full border border-[#F2D4DC] px-2.5 py-1 text-zinc-600 hover:bg-[#FFF8F6] hover:border-[#9B1B2E]"
                   >
                     {s}
                   </button>
@@ -211,12 +211,12 @@ export function AssistantWidget({ open: openProp, onOpenChange }: AssistantWidge
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Posez votre question…"
                 disabled={loading}
-                className="input-kabishop flex-1 text-sm"
+                className="input-shop flex-1 text-sm"
               />
               <button
                 type="submit"
                 disabled={loading || !input.trim()}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#4a5240] text-white disabled:opacity-50"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#9B1B2E] text-white disabled:opacity-50"
                 aria-label="Envoyer"
               >
                 <Send className="h-4 w-4" />

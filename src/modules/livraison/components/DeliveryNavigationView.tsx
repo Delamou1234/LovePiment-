@@ -305,7 +305,7 @@ export function DeliveryNavigationView({ token, initialData }: Props) {
 
       <p className="text-center text-xs text-zinc-400">
         <Link href="/" className="hover:text-zinc-600">
-          KabiShop
+          Love Piment&
         </Link>
         {' · '}
         Lien réservé au livreur

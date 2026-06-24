@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Bell, ThumbsDown, ThumbsUp, X } from 'lucide-react';
+import { ADMIN_TOPBAR_BELL, ADMIN_TOPBAR_LIVE } from '../admin-ui';
 import { formaterDate } from '@/shared/lib/delivery-tracking';
 
 type SatisfactionNotification = {
@@ -87,26 +88,23 @@ export function AdminNotificationBell() {
     return () => es.close();
   }, [handleIncoming]);
 
-  const unreadCount = notifications.filter((n) => !seenIds.current.has(n.id)).length;
-
   return (
     <>
       <div className="relative">
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="relative inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#ebe4d8] bg-white text-zinc-600 hover:text-zinc-900 hover:bg-[#faf7f2] transition"
-          aria-label="Notifications"
+          className={ADMIN_TOPBAR_BELL}
+          aria-label="Notifications avis clients"
+          aria-expanded={open}
         >
-          <Bell className="h-4 w-4" />
-          {connected && (
-            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-emerald-500" />
-          )}
+          <Bell className="h-4 w-4" strokeWidth={1.75} />
+          {connected && <span className={ADMIN_TOPBAR_LIVE} aria-hidden />}
         </button>
 
         {open && (
-          <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-[#ebe4d8] bg-white shadow-lg">
-            <div className="flex items-center justify-between border-b border-[#ebe4d8] px-4 py-3">
+          <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-[#F2D4DC] bg-white shadow-lg">
+            <div className="flex items-center justify-between border-b border-[#F2D4DC] px-4 py-3">
               <p className="text-sm font-semibold text-zinc-900">Avis clients</p>
               <span className="text-[11px] text-zinc-400">
                 {connected ? 'Temps réel' : 'Hors ligne'}
@@ -118,11 +116,11 @@ export function AdminNotificationBell() {
                   Aucun avis pour le moment.
                 </p>
               ) : (
-                <ul className="divide-y divide-[#ebe4d8]">
+                <ul className="divide-y divide-[#F2D4DC]">
                   {notifications.map((n) => {
                     const positif = n.satisfaction === 'SATISFAIT';
                     return (
-                      <li key={n.id} className="px-4 py-3 hover:bg-[#faf7f2]">
+                      <li key={n.id} className="px-4 py-3 hover:bg-[#FFF8F6]">
                         <div className="flex items-start gap-2">
                           {positif ? (
                             <ThumbsUp className="h-4 w-4 text-emerald-600 shrink-0 mt-0.5" />
@@ -142,7 +140,7 @@ export function AdminNotificationBell() {
                             </p>
                             <Link
                               href="/admin/commandes"
-                              className="text-[11px] text-[#4a5240] hover:underline mt-1 inline-block"
+                              className="text-[11px] text-[#9B1B2E] hover:underline mt-1 inline-block"
                               onClick={() => setOpen(false)}
                             >
                               Voir commandes →
@@ -165,7 +163,7 @@ export function AdminNotificationBell() {
           return (
             <div
               key={n.id}
-              className="pointer-events-auto flex items-start gap-3 rounded-xl border border-[#ebe4d8] bg-white px-4 py-3 shadow-lg max-w-sm animate-in slide-in-from-right"
+              className="pointer-events-auto flex items-start gap-3 rounded-xl border border-[#F2D4DC] bg-white px-4 py-3 shadow-lg max-w-sm animate-in slide-in-from-right"
             >
               {positif ? (
                 <ThumbsUp className="h-5 w-5 text-emerald-600 shrink-0" />

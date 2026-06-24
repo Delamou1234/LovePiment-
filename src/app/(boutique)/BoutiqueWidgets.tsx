@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { FloatingContactButtons } from '@/shared/ui/FloatingContactButtons';
 
@@ -14,8 +15,14 @@ const AssistantWidget = dynamic(
 
 /** Widgets lourds chargés après le contenu principal (IA, WhatsApp, panier). */
 export function BoutiqueWidgets() {
+  const pathname = usePathname();
   const [assistantOpen, setAssistantOpen] = useState(false);
   const [deferSocial, setDeferSocial] = useState(false);
+
+  const isProductDetail =
+    pathname.startsWith('/produits/') && pathname !== '/produits';
+  const isCartPage = pathname === '/panier';
+  const fabClassName = isProductDetail || isCartPage ? 'safe-area-fab safe-area-fab--above-bar' : 'safe-area-fab';
 
   useEffect(() => {
     const enable = () => setDeferSocial(true);
@@ -33,7 +40,10 @@ export function BoutiqueWidgets() {
     <>
       {deferSocial && (
         <>
-          <FloatingContactButtons onOpenAssistant={() => setAssistantOpen(true)} />
+          <FloatingContactButtons
+            onOpenAssistant={() => setAssistantOpen(true)}
+            className={fabClassName}
+          />
           <AssistantWidget open={assistantOpen} onOpenChange={setAssistantOpen} />
         </>
       )}

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { Loader2, Plus, Trash2, X, ImageIcon } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 export type VarianteForm = {
   id?: string;
@@ -139,166 +138,182 @@ export function AdminProductEditor({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 p-4">
-      <div className="my-4 w-full max-w-4xl rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
-          <h2 className="text-lg font-bold text-zinc-900">{title}</h2>
-          <button type="button" onClick={onClose} className="rounded-lg p-2 hover:bg-zinc-100">
+    <div className="admin-product-editor-backdrop">
+      <div className="admin-product-editor" role="dialog" aria-modal aria-labelledby="product-editor-title">
+        <div className="admin-product-editor-head">
+          <h2 id="product-editor-title" className="admin-product-editor-title">
+            {title}
+          </h2>
+          <button type="button" onClick={onClose} className="admin-product-editor-close" aria-label="Fermer">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="max-h-[75vh] space-y-6 overflow-y-auto px-6 py-5">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <input
-              className="input-kabishop sm:col-span-2"
-              placeholder="Nom du produit *"
-              value={form.nom}
-              onChange={(e) => setForm({ ...form, nom: e.target.value })}
-            />
-            <input
-              className="input-kabishop"
-              placeholder="Marque"
-              value={form.marque}
-              onChange={(e) => setForm({ ...form, marque: e.target.value })}
-            />
-            <input
-              className="input-kabishop"
-              placeholder="Prix (GNF) *"
-              type="number"
-              value={form.prix}
-              onChange={(e) => setForm({ ...form, prix: e.target.value })}
-            />
-            <select
-              className="input-kabishop sm:col-span-2"
-              value={form.categorieId}
-              onChange={(e) => setForm({ ...form, categorieId: e.target.value })}
-            >
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.parentNom ? `${c.parentNom} › ` : ''}
-                  {c.nom}
-                  {c.actif === false ? ' (inactive)' : ''}
-                </option>
-              ))}
-            </select>
-            <textarea
-              className="input-kabishop sm:col-span-2 min-h-[80px]"
-              placeholder="Description"
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-            />
+        <div className="admin-product-editor-body">
+          <div className="admin-product-editor-fields">
+            <label className="admin-product-editor-field span-full">
+              <span>Nom du produit *</span>
+              <input
+                className="admin-product-editor-input"
+                placeholder="Ex. Gel Stimulant Intense"
+                value={form.nom}
+                onChange={(e) => setForm({ ...form, nom: e.target.value })}
+              />
+            </label>
+            <label className="admin-product-editor-field">
+              <span>Marque</span>
+              <input
+                className="admin-product-editor-input"
+                placeholder="Love Pimenté"
+                value={form.marque}
+                onChange={(e) => setForm({ ...form, marque: e.target.value })}
+              />
+            </label>
+            <label className="admin-product-editor-field field-narrow">
+              <span>Prix (GNF) *</span>
+              <input
+                className="admin-product-editor-input"
+                placeholder="48000"
+                type="number"
+                value={form.prix}
+                onChange={(e) => setForm({ ...form, prix: e.target.value })}
+              />
+            </label>
+            <label className="admin-product-editor-field field-medium">
+              <span>Catégorie *</span>
+              <select
+                className="admin-product-editor-input"
+                value={form.categorieId}
+                onChange={(e) => setForm({ ...form, categorieId: e.target.value })}
+              >
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.parentNom ? `${c.parentNom} › ` : ''}
+                    {c.nom}
+                    {c.actif === false ? ' (inactive)' : ''}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="admin-product-editor-field span-full">
+              <span>Description</span>
+              <textarea
+                className="admin-product-editor-input admin-product-editor-textarea"
+                placeholder="Description du produit"
+                rows={3}
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
+            </label>
           </div>
 
-          {/* Images */}
-          <div className="space-y-3">
-            <h3 className="flex items-center gap-2 text-sm font-bold text-zinc-800">
+          <div className="admin-product-editor-section">
+            <h3 className="admin-product-editor-section-title">
               <ImageIcon className="h-4 w-4" /> Images ({form.images.length})
             </h3>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2">
               {form.images.map((url, idx) => (
-                <div key={`${url}-${idx}`} className="relative h-20 w-20 overflow-hidden rounded-lg ring-1 ring-zinc-200">
-                  <Image src={url} alt="" fill sizes="80px" className="object-cover" />
+                <div key={`${url}-${idx}`} className="admin-product-editor-thumb">
+                  <Image src={url} alt="" fill sizes="64px" className="object-cover" />
                   <button
                     type="button"
                     onClick={() =>
                       setForm((f) => ({ ...f, images: f.images.filter((_, i) => i !== idx) }))
                     }
-                    className="absolute right-0.5 top-0.5 rounded bg-red-500 p-0.5 text-white"
+                    className="admin-product-editor-thumb-remove"
+                    aria-label="Supprimer l'image"
                   >
                     <X className="h-3 w-3" />
                   </button>
                 </div>
               ))}
             </div>
-            <div className="flex gap-2">
+            <div className="admin-product-editor-image-add">
               <input
-                className="input-kabishop flex-1"
-                placeholder="URL de l'image (https://...)"
+                className="admin-product-editor-input"
+                placeholder="URL image (https://...)"
                 value={newImageUrl}
                 onChange={(e) => setNewImageUrl(e.target.value)}
               />
-              <Button type="button" variant="outline" onClick={addImage}>
+              <button type="button" onClick={addImage} className="admin-product-editor-icon-btn">
                 <Plus className="h-4 w-4" />
-              </Button>
+              </button>
             </div>
           </div>
 
-          {/* Variantes */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold text-zinc-800">Variantes & stock</h3>
-              <Button
+          <div className="admin-product-editor-section">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="admin-product-editor-section-title">Variantes &amp; stock</h3>
+              <button
                 type="button"
-                size="sm"
-                variant="outline"
                 onClick={() => setForm((f) => ({ ...f, variantes: [...f.variantes, emptyVariante()] }))}
+                className="admin-product-editor-add-btn"
               >
-                <Plus className="mr-1 h-3.5 w-3.5" /> Ajouter
-              </Button>
+                <Plus className="h-3.5 w-3.5" /> Ajouter
+              </button>
             </div>
-            <div className="overflow-x-auto rounded-xl border border-zinc-200">
-              <table className="w-full min-w-[720px] text-xs">
-                <thead className="bg-zinc-50 text-left uppercase text-zinc-500">
+            <div className="admin-product-editor-variants-wrap">
+              <table className="admin-product-editor-variants">
+                <thead>
                   <tr>
-                    <th className="px-2 py-2">Capacité</th>
-                    <th className="px-2 py-2">Taille</th>
-                    <th className="px-2 py-2">Couleur</th>
-                    <th className="px-2 py-2">Stock</th>
-                    <th className="px-2 py-2">SKU</th>
-                    <th className="px-2 py-2">Code-barres</th>
-                    <th className="px-2 py-2"></th>
+                    <th>Capacité</th>
+                    <th>Taille</th>
+                    <th>Couleur</th>
+                    <th>Stock</th>
+                    <th>SKU</th>
+                    <th>Code-barres</th>
+                    <th></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-100">
+                <tbody>
                   {form.variantes.map((v, idx) => (
                     <tr key={v.id ?? idx}>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <input
-                          className="input-kabishop py-1 text-xs"
+                          className="admin-product-editor-input admin-product-editor-input-compact field-capacite"
                           placeholder="100ml"
                           value={v.capacite}
                           onChange={(e) => updateVariante(idx, { capacite: e.target.value })}
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <input
-                          className="input-kabishop py-1 text-xs"
+                          className="admin-product-editor-input admin-product-editor-input-compact field-taille"
                           value={v.taille}
                           onChange={(e) => updateVariante(idx, { taille: e.target.value })}
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <input
-                          className="input-kabishop py-1 text-xs"
+                          className="admin-product-editor-input admin-product-editor-input-compact field-couleur"
                           value={v.couleur}
                           onChange={(e) => updateVariante(idx, { couleur: e.target.value })}
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <input
-                          className="input-kabishop w-16 py-1 text-xs"
+                          className="admin-product-editor-input admin-product-editor-input-compact field-stock"
                           type="number"
                           min={0}
                           value={v.stock}
                           onChange={(e) => updateVariante(idx, { stock: e.target.value })}
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <input
-                          className="input-kabishop py-1 text-xs"
+                          className="admin-product-editor-input admin-product-editor-input-compact field-sku"
                           value={v.sku}
                           onChange={(e) => updateVariante(idx, { sku: e.target.value })}
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <input
-                          className="input-kabishop py-1 text-xs"
+                          className="admin-product-editor-input admin-product-editor-input-compact field-barcode"
                           value={v.codeBarre}
                           onChange={(e) => updateVariante(idx, { codeBarre: e.target.value })}
                         />
                       </td>
-                      <td className="px-2 py-1.5">
+                      <td>
                         <button
                           type="button"
                           onClick={() =>
@@ -307,7 +322,8 @@ export function AdminProductEditor({
                               variantes: f.variantes.filter((_, i) => i !== idx),
                             }))
                           }
-                          className="rounded p-1 text-red-500 hover:bg-red-50"
+                          className="admin-product-editor-icon-btn is-danger"
+                          aria-label="Supprimer la variante"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
@@ -319,17 +335,17 @@ export function AdminProductEditor({
             </div>
           </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+          {error && <p className="admin-product-editor-error">{error}</p>}
         </div>
 
-        <div className="flex justify-end gap-2 border-t border-zinc-100 px-6 py-4">
-          <Button variant="outline" onClick={onClose} disabled={saving}>
+        <div className="admin-product-editor-foot">
+          <button type="button" onClick={onClose} disabled={saving} className="admin-product-editor-btn">
             Annuler
-          </Button>
-          <Button onClick={save} disabled={saving} className="btn-primary">
-            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          </button>
+          <button type="button" onClick={save} disabled={saving} className="admin-product-editor-btn is-primary">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
             Enregistrer
-          </Button>
+          </button>
         </div>
       </div>
     </div>

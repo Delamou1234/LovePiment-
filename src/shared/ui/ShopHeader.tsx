@@ -13,18 +13,22 @@ import {
   ChevronDown,
   User,
   LogOut,
+  Headphones,
+  Lock,
+  Phone,
   Truck,
-  Sparkles,
-  ArrowRight,
+  Search,
 } from 'lucide-react';
 import type { BoutiqueNavLink } from '@/modules/produits/lib/boutique-nav';
 import { useAuthSession, type AuthSessionUser } from '@/shared/providers/AuthSessionProvider';
+import { BrandLogo } from '@/shared/ui/BrandLogo';
+import { getShopPhoneDisplay, getShopTelHref } from '@/shared/lib/shop-contact';
 
-const NAV_AFTER_BOUTIQUE = [
-  { name: 'Profil beauté', href: '/profil-beaute' },
+const NAV_LINKS = [
+  { name: 'Accueil', href: '/' },
+  { name: 'Boutique', href: '/produits' },
   { name: 'Nouveautés', href: '/produits?tri=nouveautes' },
   { name: 'Promotions', href: '/promos' },
-  { name: 'À propos', href: '/apropos' },
   { name: 'Contact', href: '/contact' },
 ];
 
@@ -35,9 +39,8 @@ type ShopHeaderProps = {
 function isNavActive(pathname: string, href: string, tri?: string | null): boolean {
   const path = href.split('?')[0];
   if (href === '/') return pathname === '/';
-  if (href.includes('tri=nouveautes')) {
-    return pathname === '/produits' && tri === 'nouveautes';
-  }
+  if (href.includes('tri=nouveautes')) return pathname === '/produits' && tri === 'nouveautes';
+  if (href === '/produits') return pathname === '/produits' && tri !== 'nouveautes';
   return pathname === path || pathname.startsWith(`${path}/`);
 }
 
@@ -50,70 +53,42 @@ function HeaderAccountButton({
 }) {
   if (!user) {
     return (
-      <Link href={loginHref} className="shop-icon-btn" aria-label="Connexion" title="Connexion">
-        <User className="h-4 w-4" strokeWidth={1.75} />
-      </Link>
-    );
-  }
-
-  if (user.avatarUrl) {
-    return (
-      <Link
-        href="/compte"
-        className="shop-icon-btn overflow-hidden p-0"
-        aria-label="Mon compte"
-        title={user.name}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={user.avatarUrl} alt="" className="h-full w-full object-cover" />
+      <Link href={loginHref} className="text-white/80 transition hover:text-white" aria-label="Connexion">
+        <User className="h-5 w-5" strokeWidth={1.75} />
       </Link>
     );
   }
 
   return (
-    <Link href="/compte" className="shop-icon-btn" aria-label="Mon compte" title={user.name}>
-      <User className="h-4 w-4" strokeWidth={1.75} />
+    <Link href="/compte" className="text-white/80 transition hover:text-white" aria-label="Mon compte">
+      {user.avatarUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={user.avatarUrl} alt="" className="h-6 w-6 rounded-full object-cover ring-1 ring-white/30" />
+      ) : (
+        <User className="h-5 w-5" strokeWidth={1.75} />
+      )}
     </Link>
   );
 }
 
 export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const tri = searchParams.get('tri');
-  const router = useRouter();
   const panier = usePanier();
-  const cartProductCount = usePanier(selectDistinctProductCount);
-  const [mounted, setMounted] = useState(false);
+  const cartProductCountDisplay = usePanier(selectDistinctProductCount);
+  const { user: authUser, logout } = useAuthSession();
   const [menuOpen, setMenuOpen] = useState(false);
   const [boutiqueOpen, setBoutiqueOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const { user: authUser, logout } = useAuthSession();
+  const [searchOpen, setSearchOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const loginHref = `/connexion?redirect=${encodeURIComponent(pathname)}`;
+  const telHref = getShopTelHref();
+  const phoneDisplay = getShopPhoneDisplay();
 
-  useEffect(() => setMounted(true), []);
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  const handleLogout = async () => {
-    await logout('customer');
-    router.refresh();
-  };
-
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setBoutiqueOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
+  const boutiqueActive = pathname.startsWith('/produits') || pathname.startsWith('/promos');
+  const isHome = pathname === '/';
 
   useEffect(() => {
     setMenuOpen(false);
@@ -121,251 +96,186 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
   }, [pathname]);
 
   useEffect(() => {
-    if (!menuOpen) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
+    const onClick = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setBoutiqueOpen(false);
+      }
     };
-  }, [menuOpen]);
-
-  const cartProductCountDisplay = mounted ? cartProductCount : 0;
-
-  const loginHref =
-    pathname === '/connexion' || pathname === '/inscription'
-      ? '/connexion'
-      : `/connexion?redirect=${encodeURIComponent(pathname)}`;
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, []);
 
   const closeMenu = () => setMenuOpen(false);
 
-  const navLinkClass = (href: string) => {
-    const active = isNavActive(pathname, href, tri);
-    return `shop-nav-link${active ? ' is-active' : ''}`;
+  const handleLogout = async () => {
+    await logout();
+    router.push('/');
+    router.refresh();
   };
 
-  const boutiqueActive =
-    pathname.startsWith('/produits') || pathname.startsWith('/promos');
+  const navLinkClass = (href: string) =>
+    `lp-nav-link px-1 py-4${isNavActive(pathname, href, tri) ? ' is-active' : ''}`;
 
   return (
-    <>
-      <div className="shop-announcement px-3 py-2.5 text-center">
-        <p className="inline-flex flex-wrap items-center justify-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-white/95 sm:text-[11px] sm:tracking-[0.16em]">
-          <Truck className="h-3.5 w-3.5 shrink-0 opacity-90" strokeWidth={2} />
-          <span>Livraison offerte dès 500&nbsp;000 GNF à Conakry</span>
-          <Sparkles className="hidden h-3 w-3 shrink-0 opacity-80 sm:inline" strokeWidth={2} />
-        </p>
+    <header className={`sticky top-0 z-50${isHome ? ' lp-header-shell--home' : ''}`}>
+      {/* Top bar */}
+      <div className={`lp-topbar hidden md:block${isHome ? ' lp-topbar--home' : ''}`}>
+        <div className="container-shop flex items-center justify-center gap-8 py-2.5 text-[11px] text-white/70">
+          <span className="inline-flex items-center gap-2">
+            <Truck className="h-3.5 w-3.5 text-olive" />
+            Livraison discrète et rapide
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <Lock className="h-3.5 w-3.5 text-olive" />
+            Paiement 100% sécurisé
+          </span>
+          <span className="inline-flex items-center gap-2">
+            <Headphones className="h-3.5 w-3.5 text-olive" />
+            Support discret 7j/7
+          </span>
+          <a
+            href={telHref}
+            className="inline-flex items-center gap-2 transition hover:text-white"
+          >
+            <Phone className="h-3.5 w-3.5 text-olive" />
+            {phoneDisplay}
+          </a>
+        </div>
       </div>
 
-      <header
-        className={`shop-header sticky top-0 z-40 supports-[backdrop-filter]:backdrop-blur-md${scrolled ? ' is-scrolled' : ''}`}
-      >
-        <div className="container-kabishop">
-          {/* Desktop : logo | nav centrée | recherche + actions */}
-          <div className="hidden lg:grid lg:h-16 lg:grid-cols-[1fr_auto_1fr] lg:items-center lg:gap-4">
-            <Link href="/" className="group justify-self-start">
-              <span className="font-serif text-[1.5rem] font-bold leading-none tracking-tight text-zinc-900 transition-colors group-hover:text-olive">
-                KabiShop<span className="text-olive">.</span>
-              </span>
-            </Link>
+      {/* Main nav */}
+      <div className={`lp-header${isHome ? ' lp-header--home' : ''}`}>
+        <div className="container-shop">
+          <div className="hidden h-16 items-center justify-between lg:flex">
+            <BrandLogo href="/" size="md" priority />
 
-            <nav className="flex items-center justify-self-center gap-5 xl:gap-6">
-              <Link href="/" className={navLinkClass('/')}>
-                Accueil
-              </Link>
+            <nav className="flex items-center gap-6 xl:gap-8">
+              {NAV_LINKS.map((link) => (
+                <Link key={link.name} href={link.href} className={navLinkClass(link.href)}>
+                  {link.name}
+                </Link>
+              ))}
 
               <div className="relative" ref={dropdownRef}>
                 <button
                   type="button"
                   onClick={() => setBoutiqueOpen(!boutiqueOpen)}
-                  className={`shop-nav-link${boutiqueActive ? ' is-active' : ''}`}
-                  aria-expanded={boutiqueOpen}
-                  aria-haspopup="true"
+                  className={`lp-nav-link inline-flex items-center gap-1 px-1 py-4${boutiqueActive ? ' is-active' : ''}`}
                 >
-                  Boutique
-                  <ChevronDown
-                    className={`h-3.5 w-3.5 transition-transform duration-200 ${boutiqueOpen ? 'rotate-180' : ''}`}
-                    strokeWidth={2.5}
-                  />
+                  Catégories
+                  <ChevronDown className={`h-3.5 w-3.5 transition ${boutiqueOpen ? 'rotate-180' : ''}`} />
                 </button>
-
-                {boutiqueOpen && (
-                  <div className="shop-mega-menu absolute left-1/2 top-[calc(100%+0.85rem)] z-50 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 p-2 animate-fadeIn">
-                    <div className="mb-1 flex items-center justify-between px-2 pt-1">
-                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-zinc-400">
-                        Collections
-                      </p>
+                {boutiqueOpen && boutiqueLinks.length > 0 && (
+                  <div className="absolute left-1/2 top-full z-50 mt-1 w-56 -translate-x-1/2 rounded-xl border border-beige-border bg-[#161018] p-2 shadow-2xl">
+                    {boutiqueLinks.map((link) => (
                       <Link
-                        href="/produits"
+                        key={link.href}
+                        href={link.href}
                         onClick={() => setBoutiqueOpen(false)}
-                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-olive hover:text-olive-dark"
+                        className="block rounded-lg px-3 py-2.5 text-sm text-white/80 transition hover:bg-white/5 hover:text-white"
                       >
-                        Voir tout
-                        <ArrowRight className="h-3 w-3" />
+                        {link.name}
                       </Link>
-                    </div>
-                    <div className="space-y-0.5">
-                      {boutiqueLinks.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          onClick={() => setBoutiqueOpen(false)}
-                          className="shop-mega-link"
-                        >
-                          <span className="shop-mega-link-title">{link.name}</span>
-                          <span className="shop-mega-link-desc">{link.desc}</span>
-                        </Link>
-                      ))}
-                    </div>
+                    ))}
                   </div>
                 )}
               </div>
-
-              {NAV_AFTER_BOUTIQUE.map((link) => (
-                <Link key={link.name} href={link.href} className={navLinkClass(link.href)}>
-                  {link.name}
-                </Link>
-              ))}
             </nav>
 
-            <div className="shop-header-actions flex items-center justify-self-end gap-2">
-              <ProductSearchBar compact />
-
-              <div className="flex items-center gap-1">
-                <HeaderAccountButton user={authUser} loginHref={loginHref} />
-
-                <button
-                  type="button"
-                  onClick={() => panier.ouvrirPanier()}
-                  className="shop-icon-btn relative"
-                  aria-label={`Panier${cartProductCountDisplay > 0 ? ` (${cartProductCountDisplay} produit${cartProductCountDisplay > 1 ? 's' : ''})` : ''}`}
-                >
-                  <ShoppingBag className="h-4 w-4" strokeWidth={1.75} />
-                  {cartProductCountDisplay > 0 && (
-                    <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-olive px-0.5 text-[9px] font-bold text-white ring-2 ring-white">
-                      {cartProductCountDisplay > 99 ? '99+' : cartProductCountDisplay}
-                    </span>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Mobile */}
-          <div className="relative flex h-[3.75rem] items-center justify-between gap-2 lg:hidden">
-            <button
-              type="button"
-              className="shop-icon-btn"
-              onClick={() => setMenuOpen(!menuOpen)}
-              aria-label="Menu"
-              aria-expanded={menuOpen}
-            >
-              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
-
-            <Link href="/" className="absolute left-1/2 -translate-x-1/2">
-              <span className="font-serif text-xl font-bold tracking-tight text-zinc-900">
-                KabiShop<span className="text-olive">.</span>
-              </span>
-            </Link>
-
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => setSearchOpen(!searchOpen)}
+                className="text-white/80 transition hover:text-white"
+                aria-label="Rechercher"
+              >
+                <Search className="h-5 w-5" />
+              </button>
               <HeaderAccountButton user={authUser} loginHref={loginHref} />
               <button
                 type="button"
                 onClick={() => panier.ouvrirPanier()}
-                className="shop-icon-btn relative"
-                aria-label={`Panier${cartProductCountDisplay > 0 ? ` (${cartProductCountDisplay})` : ''}`}
+                className="relative text-white/80 transition hover:text-white"
+                aria-label="Panier"
               >
-                <ShoppingBag className="h-4 w-4" strokeWidth={1.75} />
-                {cartProductCountDisplay > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-olive px-0.5 text-[9px] font-bold text-white ring-2 ring-white">
-                    {cartProductCountDisplay > 99 ? '99+' : cartProductCountDisplay}
-                  </span>
-                )}
+                <ShoppingBag className="h-5 w-5" />
+                <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-olive px-1 text-[9px] font-bold text-white">
+                  {cartProductCountDisplay > 99 ? '99+' : cartProductCountDisplay}
+                </span>
               </button>
             </div>
           </div>
+
+          {/* Mobile */}
+          <div className="flex h-14 items-center justify-between lg:hidden">
+            <button type="button" onClick={() => setMenuOpen(!menuOpen)} className="text-white" aria-label="Menu">
+              {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+            <BrandLogo href="/" size="sm" />
+            <button
+              type="button"
+              onClick={() => panier.ouvrirPanier()}
+              className="relative text-white"
+              aria-label="Panier"
+            >
+              <ShoppingBag className="h-5 w-5" />
+              {cartProductCountDisplay > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-olive text-[9px] font-bold text-white">
+                  {cartProductCountDisplay}
+                </span>
+              )}
+            </button>
+          </div>
+
+          {searchOpen && (
+            <div className="hidden border-t border-white/10 py-3 lg:block">
+              <ProductSearchBar fullWidth />
+            </div>
+          )}
         </div>
 
         {menuOpen && (
-          <div className="border-t border-beige-border bg-white/98 backdrop-blur-md lg:hidden animate-fadeIn max-h-[calc(100dvh-8rem)] overflow-y-auto overscroll-contain">
-            <div className="container-kabishop space-y-1 py-5 safe-area-bottom">
-              <ProductSearchBar fullWidth className="mb-4" onNavigate={closeMenu} />
-
-              <Link href="/" onClick={closeMenu} className={`block rounded-xl px-3 py-3 ${navLinkClass('/')}`}>
-                Accueil
-              </Link>
-
-              <p className="px-3 pb-1 pt-3 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">
-                Boutique
-              </p>
-              {boutiqueLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={closeMenu}
-                  className="block rounded-xl px-3 py-2.5"
-                >
-                  <span className="block text-sm font-semibold text-zinc-800">{link.name}</span>
-                  <span className="text-xs text-zinc-400">{link.desc}</span>
-                </Link>
-              ))}
-
-              {NAV_AFTER_BOUTIQUE.map((link) => (
-                <Link
-                  key={link.name}
-                  href={link.href}
-                  onClick={closeMenu}
-                  className={`block rounded-xl px-3 py-3 ${navLinkClass(link.href)}`}
-                >
+          <div className="border-t border-white/10 bg-[#0a0508] lg:hidden">
+            <div className="container-shop space-y-1 py-4">
+              <ProductSearchBar fullWidth className="mb-3" onNavigate={closeMenu} />
+              {NAV_LINKS.map((link) => (
+                <Link key={link.name} href={link.href} onClick={closeMenu} className="block py-2.5 text-sm font-semibold text-white/85">
                   {link.name}
                 </Link>
               ))}
-
+              <p className="pt-2 text-[10px] font-bold uppercase tracking-widest text-white/40">Catégories</p>
+              {boutiqueLinks.map((link) => (
+                <Link key={link.href} href={link.href} onClick={closeMenu} className="block py-2 text-sm text-white/70">
+                  {link.name}
+                </Link>
+              ))}
               {authUser ? (
                 <>
-                  <Link
-                    href="/compte"
-                    onClick={closeMenu}
-                    className="mt-3 flex items-center gap-3 rounded-xl border border-beige-border bg-cream px-3 py-3"
-                  >
-                    <CustomerAvatar
-                      name={authUser.name}
-                      avatarUrl={authUser.avatarUrl}
-                      size="sm"
-                      ringClassName="ring-beige-border"
-                    />
-                    <div>
-                      <p className="text-sm font-semibold text-zinc-900">Mon compte</p>
-                      <p className="text-xs text-zinc-500">{authUser.name}</p>
-                    </div>
+                  <Link href="/compte" onClick={closeMenu} className="mt-3 flex items-center gap-3 py-2">
+                    <CustomerAvatar name={authUser.name} avatarUrl={authUser.avatarUrl} size="sm" />
+                    <span className="text-sm text-white">{authUser.name}</span>
                   </Link>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      closeMenu();
-                      handleLogout();
-                    }}
-                    className="flex w-full items-center gap-2 rounded-xl px-3 py-3 text-sm font-medium text-zinc-500"
-                  >
-                    <LogOut className="h-4 w-4" strokeWidth={1.5} />
-                    Déconnexion
+                  <button type="button" onClick={handleLogout} className="flex items-center gap-2 py-2 text-sm text-white/60">
+                    <LogOut className="h-4 w-4" /> Déconnexion
                   </button>
                 </>
               ) : (
-                <Link
-                  href={loginHref}
-                  onClick={closeMenu}
-                  className="mt-3 flex items-center justify-center gap-2 rounded-xl bg-olive px-4 py-3 text-sm font-semibold text-white"
-                >
-                  <User className="h-4 w-4" strokeWidth={1.75} />
+                <Link href={loginHref} onClick={closeMenu} className="mt-3 block rounded-full bg-olive py-3 text-center text-sm font-semibold text-white">
                   Connexion
                 </Link>
               )}
+              <a
+                href={telHref}
+                onClick={closeMenu}
+                className="mt-4 flex items-center justify-center gap-2 rounded-full border border-white/20 py-3 text-sm font-semibold text-white"
+              >
+                <Phone className="h-4 w-4" />
+                Appeler — {phoneDisplay}
+              </a>
             </div>
           </div>
         )}
-      </header>
-    </>
+      </div>
+    </header>
   );
 }

@@ -19,8 +19,11 @@ import {
 import type {
   CourierLivraisonIsoleDto,
   CourierTourneeDto,
+  CourierTotauxDto,
 } from '@/modules/livraison/services/courier-order.service';
 import { confirmAction, confirmDeliveryCopy } from '@/shared/lib/confirm-action';
+import { confirmLogout } from '@/shared/lib/confirm-logout';
+import { CourierTotalsBanner, TOTAUX_LIVREUR_VIDES } from '@/modules/livraison/components/CourierTotalsBanner';
 
 function StatCard({
   icon: Icon,
@@ -54,6 +57,7 @@ export function CourierPageContent() {
   const [profil, setProfil] = useState<CourierProfil | null>(null);
   const [tournees, setTournees] = useState<CourierTourneeDto[]>([]);
   const [livraisonsIsoles, setLivraisonsIsoles] = useState<CourierLivraisonIsoleDto[]>([]);
+  const [totaux, setTotaux] = useState<CourierTotauxDto>(TOTAUX_LIVREUR_VIDES);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -83,6 +87,7 @@ export function CourierPageContent() {
         setProfil(data.profil as CourierProfil);
         setTournees(data.tournees ?? []);
         setLivraisonsIsoles(data.livraisonsIsoles ?? []);
+        setTotaux(data.totaux ?? TOTAUX_LIVREUR_VIDES);
       }
     } finally {
       setLoading(false);
@@ -151,6 +156,7 @@ export function CourierPageContent() {
       <CourierSidebar
         profil={profil}
         arretsCount={totalArrets}
+        totaux={totaux}
         onLogout={handleLogout}
         mobileOpen={mobileMenuOpen}
         onMobileClose={() => setMobileMenuOpen(false)}
@@ -158,7 +164,9 @@ export function CourierPageContent() {
 
       <div className={COMPTE_MAIN}>
         <CourierMobileNav
+          title="En cours"
           arretsCount={totalArrets}
+          totaux={totaux}
           onMenuOpen={() => setMobileMenuOpen(true)}
         />
         <CourierTopBar
@@ -168,10 +176,12 @@ export function CourierPageContent() {
           tourneesCount={tournees.length}
           arretsCount={totalArrets}
           especesTotal={especesTotal}
+          totaux={totaux}
           onLogout={handleLogout}
           onRefresh={() => void load(true)}
           refreshing={refreshing}
         />
+        <CourierTotalsBanner totaux={totaux} />
 
         <div className={COMPTE_MAIN_SCROLL}>
           <header className="mb-6 hidden lg:block">
@@ -197,12 +207,20 @@ export function CourierPageContent() {
             />
             <StatCard
               icon={Banknote}
-              label="Espèces à encaisser"
-              value={`${especesTotal.toLocaleString('fr-FR')} GN`}
-              iconClass="bg-amber-50 text-amber-800"
-              hint={especesTotal > 0 ? 'Signalez le paiement à chaque livraison' : undefined}
+              label="Total livré"
+              value={`${totaux.montantTermineGn.toLocaleString('fr-FR')} GN`}
+              iconClass="bg-emerald-50 text-emerald-700"
+              hint={`${totaux.livraisonsTerminees} livraison${totaux.livraisonsTerminees > 1 ? 's' : ''} terminée${totaux.livraisonsTerminees > 1 ? 's' : ''}`}
             />
           </div>
+
+          {totaux.especesAEncaisserGn > 0 && (
+            <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              <span className="font-semibold">Espèces à encaisser : </span>
+              {totaux.especesAEncaisserGn.toLocaleString('fr-FR')} GN — signalez le paiement à chaque
+              livraison.
+            </div>
+          )}
 
           {totalArrets === 0 ? (
             <div className={`${COMPTE_CARD} py-16 text-center`}>

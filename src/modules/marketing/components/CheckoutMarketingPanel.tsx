@@ -141,7 +141,7 @@ export function CheckoutMarketingPanel({
               setCouponMsg('');
             }}
             placeholder="Ex: BIENVENUE10"
-            className="input-kabishop flex-1 uppercase"
+            className="input-shop flex-1 uppercase"
           />
           <Button
             type="button"
@@ -170,7 +170,7 @@ export function CheckoutMarketingPanel({
             max={maxPoints}
             value={pointsUtilises}
             onChange={(e) => setPointsUtilises(Number(e.target.value))}
-            className="w-full accent-[#4a5240]"
+            className="w-full accent-[#9B1B2E]"
           />
           <p className="text-xs text-zinc-500">
             Utiliser {pointsUtilises} pts (−{formaterPrixGN(pointsUtilises * LOYALTY.VALEUR_POINT_GN)})
@@ -188,7 +188,7 @@ export function CheckoutMarketingPanel({
           value={codeParrainage}
           onChange={(e) => setCodeParrainage(e.target.value.toUpperCase())}
           placeholder="Ex: KABI4X2YZ"
-          className="input-kabishop uppercase"
+          className="input-shop uppercase"
         />
         {codeParrainage && (
           <p className="text-[11px] text-emerald-700 font-medium">
@@ -205,7 +205,7 @@ export function CheckoutMarketingPanel({
       )}
 
       {totaux && (totaux.remiseCoupon > 0 || totaux.remisePoints > 0 || totaux.remiseParrainage > 0) && (
-        <div className="rounded-xl bg-[#faf7f2] border border-[#ebe4d8] p-3 text-xs space-y-1">
+        <div className="rounded-xl bg-[#FFF8F6] border border-[#F2D4DC] p-3 text-xs space-y-1">
           {totaux.remiseCoupon > 0 && (
             <div className="flex justify-between text-emerald-700">
               <span>Coupon</span>

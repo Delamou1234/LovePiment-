@@ -2,13 +2,13 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'KabiShop',
-    short_name: 'KabiShop',
-    description: 'Parfums, huiles et crèmes corporelles à Conakry',
+    name: 'Love Piment&',
+    short_name: 'Love Piment&',
+    description: 'Boutique intime pour adultes à Conakry — livraison discrète',
     start_url: '/',
     display: 'standalone',
-    background_color: '#faf7f2',
-    theme_color: '#4a5240',
+    background_color: '#0C0609',
+    theme_color: '#9B1B2E',
     lang: 'fr',
     icons: [
       {

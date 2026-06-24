@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { productService } from '@/modules/produits/services/product.service';
 import { adminUnauthorized, requireAdmin } from '@/modules/admin/lib/require-admin';
 import { revalidateBoutique } from '@/modules/produits/lib/revalidate-boutique';
+import { revalidateTag } from 'next/cache';
 
 type Params = Promise<{ id: string }>;
 
@@ -36,6 +37,7 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
   try {
     const produit = await productService.synchroniserVariantes(id, parsed.data.variantes);
     revalidateBoutique({ productSlug: produit.slug });
+    revalidateTag('admin-stats', 'max');
     return NextResponse.json({
       produit: {
         ...produit,

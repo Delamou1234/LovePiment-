@@ -145,6 +145,7 @@ model Product {
   wishlistItems WishlistItem[]
   avis            ProductReview[]
 
+  @@index([nom])
   @@map("products")
 }
 
@@ -255,6 +256,8 @@ model Order {
   @@index([customerId])
   @@index([courierId])
   @@index([deliveryRunId])
+  @@index([clientNom])
+  @@index([clientTelephone])
   @@map("orders")
 }
 
@@ -311,6 +314,7 @@ model Courier {
   contactUrgenceNom String?             @map("contact_urgence_nom")
   contactUrgenceTel String?             @map("contact_urgence_tel")
   permisConduire    String?             @map("permis_conduire")
+  photoUrl          String?             @map("photo_url")
   verifie           Boolean             @default(false)
   actif             Boolean             @default(true)
   notesAdmin        String?             @map("notes_admin")
@@ -363,7 +367,7 @@ model OrderItem {
 
 model StoreSettings {
   id              String  @id @default(cuid())
-  nomBoutique     String  @default("KabiShop") @map("nom_boutique")
+  nomBoutique     String  @default("Love Piment&") @map("nom_boutique")
   logoUrl         String? @map("logo_url")
   telephone       String?
   adresse         String?
@@ -376,6 +380,18 @@ model StoreSettings {
   metaDescription String? @map("meta_description")
   parrainageActif Boolean @default(true) @map("parrainage_actif")
   appelsActifs    Boolean @default(true) @map("appels_actifs")
+  newsletterActif        Boolean @default(true) @map("newsletter_actif")
+  newsletterTitre        String  @default("Offre de bienvenue !") @map("newsletter_titre")
+  newsletterDescription  String? @map("newsletter_description")
+  newsletterImageUrl     String? @map("newsletter_image_url")
+  newsletterRemisePct    Int     @default(10) @map("newsletter_remise_pct")
+  newsletterCouponCode   String? @default("BIENVENUE10") @map("newsletter_coupon_code")
+  livraisonTarifConakry      Int     @default(15000) @map("livraison_tarif_conakry")
+  livraisonTarifHorsConakry  Int     @default(25000) @map("livraison_tarif_hors_conakry")
+  livraisonSeuilGratuit      Int     @default(500000) @map("livraison_seuil_gratuit")
+  livraisonVilleParDefaut    String  @default("Conakry") @map("livraison_ville_par_defaut")
+  livraisonGratuiteActive    Boolean @default(true) @map("livraison_gratuite_active")
+  livraisonDelaiLabel        String? @default("24–48 h") @map("livraison_delai_label")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@map("store_settings")
@@ -444,6 +460,8 @@ model Customer {
   avis                ProductReview[]
   passwordResetTokens PasswordResetToken[]
 
+  @@index([nom])
+  @@index([email])
   @@map("customers")
 }
 
@@ -514,6 +532,16 @@ model Coupon {
   commandes       Order[]
 
   @@map("coupons")
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String   @default("homepage")
+  actif     Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("newsletter_subscribers")
 }
 
 model FlashSale {

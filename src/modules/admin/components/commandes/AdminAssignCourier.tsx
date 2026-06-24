@@ -77,7 +77,7 @@ export function AdminAssignCourier({
       ) : (
         <div className="flex flex-wrap gap-2">
           <select
-            className="input-kabishop text-sm flex-1 min-w-[160px]"
+            className="input-shop text-sm flex-1 min-w-[160px]"
             value={selected}
             onChange={(e) => setSelected(e.target.value)}
             disabled={disabled || saving}

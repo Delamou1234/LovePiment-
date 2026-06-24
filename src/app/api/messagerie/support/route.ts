@@ -3,7 +3,7 @@ import { isDatabaseConnectionError } from '@/shared/lib/db/errors';
 import { resolveChatClientContext } from '@/modules/messagerie/lib/client-context';
 import { conversationService } from '@/modules/messagerie/services/conversation.service';
 
-/** GET /api/messagerie/support — fil unique client ↔ équipe KabiShop */
+/** GET /api/messagerie/support — fil unique client ↔ équipe Love Piment& */
 export async function GET(request: NextRequest) {
   try {
     const ctx = await resolveChatClientContext(request);

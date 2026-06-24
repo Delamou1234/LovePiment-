@@ -120,6 +120,7 @@ export class AvisService {
       createdAt: r.createdAt.toISOString(),
       clientNom: r.customer.nom,
       clientVille: r.order.clientVille,
+      productId: r.productId,
       productNom: r.product.nom,
       productSlug: r.product.slug,
     }));
@@ -127,6 +128,10 @@ export class AvisService {
 
   async moderer(id: string, statut: ReviewStatus) {
     return this.repo.moderer(id, statut);
+  }
+
+  async supprimer(id: string) {
+    return this.repo.supprimer(id);
   }
 }
 

@@ -75,7 +75,7 @@ export function AdminGeoGroupsPanel({ onSelectGroup, refreshKey }: Props) {
           <label className="text-xs text-zinc-600 flex items-center gap-1">
             Rayon
             <select
-              className="input-kabishop text-xs h-8 py-0"
+              className="input-shop text-xs h-8 py-0"
               value={rayonKm}
               onChange={(e) => setRayonKm(e.target.value)}
             >

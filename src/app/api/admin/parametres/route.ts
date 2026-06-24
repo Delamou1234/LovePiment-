@@ -6,6 +6,16 @@ import { storeSettingsService } from '@/modules/admin/services/store-settings.se
 const patchSchema = z.object({
   parrainageActif: z.boolean().optional(),
   appelsActifs: z.boolean().optional(),
+  livraison: z
+    .object({
+      tarifConakry: z.number().int().min(0).max(10_000_000).optional(),
+      tarifHorsConakry: z.number().int().min(0).max(10_000_000).optional(),
+      seuilGratuit: z.number().int().min(0).max(100_000_000).optional(),
+      villeParDefaut: z.string().min(2).max(80).optional(),
+      gratuiteActive: z.boolean().optional(),
+      delaiLabel: z.string().max(80).nullable().optional(),
+    })
+    .optional(),
 });
 
 /** GET /api/admin/parametres */
@@ -22,7 +32,7 @@ export async function GET() {
   }
 }
 
-/** PATCH /api/admin/parametres — activer / désactiver des fonctionnalités */
+/** PATCH /api/admin/parametres */
 export async function PATCH(request: NextRequest) {
   const user = await requireAdmin();
   if (!user) return adminUnauthorized();
@@ -34,14 +44,29 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ message: 'Données invalides' }, { status: 400 });
     }
 
+    const { parrainageActif, appelsActifs, livraison } = parsed.data;
+
     if (
-      parsed.data.parrainageActif === undefined &&
-      parsed.data.appelsActifs === undefined
+      parrainageActif === undefined &&
+      appelsActifs === undefined &&
+      !livraison
     ) {
       return NextResponse.json({ message: 'Aucune modification' }, { status: 400 });
     }
 
-    const settings = await storeSettingsService.updateFeatureFlags(parsed.data);
+    let settings = await storeSettingsService.getSettings();
+
+    if (parrainageActif !== undefined || appelsActifs !== undefined) {
+      settings = await storeSettingsService.updateFeatureFlags({
+        parrainageActif,
+        appelsActifs,
+      });
+    }
+
+    if (livraison) {
+      settings = await storeSettingsService.updateLivraisonSettings(livraison);
+    }
+
     return NextResponse.json({ settings });
   } catch (error) {
     console.error('[PATCH /api/admin/parametres]', error);

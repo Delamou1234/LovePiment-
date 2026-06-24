@@ -29,7 +29,7 @@ type AuthSessionContextValue = {
 
 const AuthSessionContext = createContext<AuthSessionContextValue | null>(null);
 
-export const AUTH_ME_CACHE_KEY = 'kabishop_auth_me_v2';
+export const AUTH_ME_CACHE_KEY = 'lovepiment_auth_me_v2';
 
 export function clearAuthMeCache() {
   try {

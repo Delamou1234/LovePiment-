@@ -104,15 +104,20 @@ export function ProductCard({
   return (
     <>
       <article className="group flex flex-col">
-        <div className="product-card-image mb-3.5">
-          <Link href={`/produits/${slug}`} className="absolute inset-0 z-[1]">
+        <div className="product-card-image mb-3.5 cursor-pointer">
+          <Link
+            href={`/produits/${slug}`}
+            className="absolute inset-0 z-[2] block"
+            aria-label={`Voir les détails — ${nom}`}
+          >
+            <span className="sr-only">{nom}</span>
             <Image
               src={image}
               alt={nom}
               fill
               priority={priority}
               loading={priority ? undefined : 'lazy'}
-              className="object-cover object-center transition duration-700 ease-out group-hover:scale-[1.03]"
+              className="object-cover object-center transition duration-700 ease-out group-hover:scale-[1.03] pointer-events-none"
               sizes="(max-width: 640px) 50vw, 25vw"
             />
           </Link>
@@ -124,7 +129,7 @@ export function ProductCard({
           )}
 
           {canQuickAdd && (
-            <div className="absolute bottom-3 left-3 right-3 z-20 flex gap-1.5 opacity-100 sm:translate-y-1 sm:opacity-0 sm:group-hover:translate-y-0 sm:group-hover:opacity-100 transition duration-300">
+            <div className="absolute bottom-3 left-3 right-3 z-20 hidden gap-1.5 opacity-0 translate-y-1 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100 sm:flex">
               <button
                 type="button"
                 onClick={handleQuickAdd}
