@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { BiPeriode } from '@/modules/admin/services/bi.service';
 import type { DashboardOverview } from '@/modules/admin/services/dashboard-overview.service';
+import { DashboardHomeButton } from '@/shared/ui/DashboardHomeButton';
 import { STATUT_LABELS, STATUT_STYLES } from '@/modules/compte/components/compte-ui';
 
 const PERIODES: { value: BiPeriode; label: string }[] = [
@@ -225,21 +226,24 @@ export function AdminDashboardLive({ initialOverview }: AdminDashboardLiveProps)
           <h1 className="admin-dash-title">Tableau de bord</h1>
           <p className="admin-dash-subtitle">Bienvenue dans votre espace d&apos;administration Love Piment&</p>
         </div>
-        <div className="admin-dash-period">
-          {PERIODES.map((p) => (
-            <button
-              key={p.value}
-              type="button"
-              onClick={() => {
-                setPeriode(p.value);
-                load(p.value);
-              }}
-              className={periode === p.value ? 'is-active' : ''}
-            >
-              {p.label}
-            </button>
-          ))}
-          {loading && <Loader2 className="h-4 w-4 animate-spin text-[#e91e8c]" />}
+        <div className="flex flex-wrap items-center gap-2">
+          <DashboardHomeButton variant="admin" />
+          <div className="admin-dash-period">
+            {PERIODES.map((p) => (
+              <button
+                key={p.value}
+                type="button"
+                onClick={() => {
+                  setPeriode(p.value);
+                  load(p.value);
+                }}
+                className={periode === p.value ? 'is-active' : ''}
+              >
+                {p.label}
+              </button>
+            ))}
+            {loading && <Loader2 className="h-4 w-4 animate-spin text-[#e91e8c]" />}
+          </div>
         </div>
       </div>
 

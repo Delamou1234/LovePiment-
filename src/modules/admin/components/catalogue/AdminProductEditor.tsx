@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { Loader2, Plus, Trash2, X, ImageIcon } from 'lucide-react';
+import { CloudinaryUploadButton } from '@/shared/components/CloudinaryImageField';
 
 export type VarianteForm = {
   id?: string;
@@ -238,6 +239,11 @@ export function AdminProductEditor({
               <button type="button" onClick={addImage} className="admin-product-editor-icon-btn">
                 <Plus className="h-4 w-4" />
               </button>
+              <CloudinaryUploadButton
+                folder="products"
+                label="Cloudinary"
+                onUploaded={(url) => setForm((f) => ({ ...f, images: [...f.images, url] }))}
+              />
             </div>
           </div>
 

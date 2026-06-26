@@ -8,6 +8,7 @@ import { CheckCircle2, Loader2, MapPin, Shield, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PasswordInput } from '@/shared/components/PasswordInput';
 import { CompteAvatarUpload } from './CompteAvatarUpload';
+import { CompteProfilHero } from './CompteProfilHero';
 import {
   AVATAR_COULEURS,
   type CustomerProfile,
@@ -45,9 +46,11 @@ type PasswordFormValues = z.infer<typeof passwordSchema>;
 type Props = {
   profil: CustomerProfile;
   onProfilUpdate: (p: CustomerProfile) => void;
+  /** En-tête complet (page /compte/profil) */
+  showHero?: boolean;
 };
 
-export function CompteProfilForms({ profil, onProfilUpdate }: Props) {
+export function CompteProfilForms({ profil, onProfilUpdate, showHero = false }: Props) {
   const [profilMsg, setProfilMsg] = useState('');
   const [passwordMsg, setPasswordMsg] = useState('');
   const [passwordOk, setPasswordOk] = useState(false);
@@ -124,6 +127,9 @@ export function CompteProfilForms({ profil, onProfilUpdate }: Props) {
 
   return (
     <div className="space-y-6">
+      {showHero ? <CompteProfilHero profil={profil} onProfilUpdate={onProfilUpdate} /> : null}
+
+      {!showHero ? (
       <section className={`${COMPTE_CARD} ${COMPTE_CARD_PAD}`}>
         <div className="flex items-start gap-3 mb-6">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-olive-light text-olive">
@@ -163,6 +169,30 @@ export function CompteProfilForms({ profil, onProfilUpdate }: Props) {
           ))}
         </div>
       </section>
+      ) : (
+      <section className={`${COMPTE_CARD} ${COMPTE_CARD_PAD}`}>
+        <h2 className={COMPTE_SECTION_TITLE}>Couleur d&apos;avatar</h2>
+        <p className={COMPTE_SECTION_DESC}>Utilisée si vous n&apos;avez pas de photo</p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          {AVATAR_COULEURS.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              disabled={savingCouleur}
+              onClick={() => onChangeCouleur(c.id)}
+              className={`relative h-11 w-11 rounded-full transition hover:scale-110 disabled:opacity-50 ${
+                profil.avatarCouleur === c.id
+                  ? 'ring-2 ring-[#e91e8c] ring-offset-2 scale-110'
+                  : 'ring-1 ring-beige-border'
+              }`}
+              style={{ backgroundColor: c.hex }}
+              title={c.label}
+              aria-label={c.label}
+            />
+          ))}
+        </div>
+      </section>
+      )}
 
       <section className={`${COMPTE_CARD} ${COMPTE_CARD_PAD}`}>
         <div className="flex items-start gap-3 mb-6">
@@ -177,6 +207,21 @@ export function CompteProfilForms({ profil, onProfilUpdate }: Props) {
           </div>
         </div>
         <form onSubmit={profilForm.handleSubmit(onSaveProfil)} className="space-y-5">
+          <div>
+            <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-zinc-500">
+              Adresse e-mail
+            </label>
+            <input
+              type="email"
+              value={profil.email}
+              readOnly
+              disabled
+              className={`${COMPTE_INPUT} cursor-not-allowed bg-zinc-50 text-zinc-500`}
+            />
+            <p className="mt-1.5 text-xs text-zinc-400">
+              L&apos;e-mail de connexion ne peut pas être modifié ici.
+            </p>
+          </div>
           <div className="grid gap-5 sm:grid-cols-2">
             <div>
               <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-zinc-500">

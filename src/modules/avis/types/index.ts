@@ -8,6 +8,8 @@ export type AvisProduitPublic = {
   achatVerifie: boolean;
   date: string;
   productNom?: string;
+  avatarUrl?: string | null;
+  avatarCouleur?: string | null;
 };
 
 export type AvisProduitStats = {

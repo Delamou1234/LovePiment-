@@ -115,7 +115,7 @@ export function AuthSplitLayout({
         className={`flex min-h-dvh flex-col lg:h-full lg:overflow-hidden ${isConnexion ? 'auth-connexion-form-shell' : 'bg-cream'}${compactForm ? ' auth-connexion-form-shell--compact' : ''}`}
       >
         <div className={`shrink-0 flex items-center justify-between px-8 lg:px-12 ${compactForm ? 'pt-4' : 'pt-6'}`}>
-          <BrandLogo href="/" size="sm" className="lg:invisible auth-brand-logo" />
+          <BrandLogo href="/" size="sm" variant="dark" className="lg:invisible auth-brand-logo" />
           <Link
             href="/"
             className={`text-xs font-medium transition ml-auto ${isConnexion ? 'text-zinc-400 hover:text-[#e91e8c]' : 'text-zinc-400 hover:text-zinc-700'}`}

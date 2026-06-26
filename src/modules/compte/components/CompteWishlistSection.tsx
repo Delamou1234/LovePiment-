@@ -22,8 +22,10 @@ type Props = {
   initialItems?: WishlistItemClient[];
 };
 
+const EMPTY_WISHLIST: WishlistItemClient[] = [];
+
 export function CompteWishlistSection({ initialItems }: Props) {
-  const [items, setItems] = useSyncedState(initialItems ?? []);
+  const [items, setItems] = useSyncedState(initialItems ?? EMPTY_WISHLIST);
   const [loading, setLoading] = useState(initialItems == null);
   const { refresh } = useWishlist();
   const panier = usePanier();

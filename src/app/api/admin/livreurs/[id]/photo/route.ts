@@ -1,21 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { mkdir, writeFile } from 'fs/promises';
-import { join } from 'path';
-import { randomUUID } from 'crypto';
 import { courierRepository } from '@/modules/livraison/repository/courier.repository';
 import { adminUnauthorized, requireAdmin } from '@/modules/admin/lib/require-admin';
+import { isCloudinaryConfigured, uploadImageToCloudinary } from '@/shared/lib/cloudinary';
+import { validateImageUpload } from '@/shared/lib/media-upload';
 
 export const runtime = 'nodejs';
 
 type Params = Promise<{ id: string }>;
 
-const MAX_SIZE = 2 * 1024 * 1024;
-const ALLOWED = new Set(['image/jpeg', 'image/png', 'image/webp']);
-
-/** POST /api/admin/livreurs/[id]/photo */
+/** POST /api/admin/livreurs/[id]/photo — photo livreur sur Cloudinary */
 export async function POST(request: NextRequest, { params }: { params: Params }) {
   const admin = await requireAdmin();
   if (!admin) return adminUnauthorized();
+
+  if (!isCloudinaryConfigured()) {
+    return NextResponse.json(
+      { message: 'Cloudinary non configuré pour le téléversement des photos livreur' },
+      { status: 503 },
+    );
+  }
 
   const { id } = await params;
   const livreur = await courierRepository.trouverParId(id);
@@ -30,23 +33,14 @@ export async function POST(request: NextRequest, { params }: { params: Params })
     return NextResponse.json({ message: 'Fichier requis' }, { status: 400 });
   }
 
-  if (!ALLOWED.has(file.type)) {
-    return NextResponse.json({ message: 'Format JPG, PNG ou WebP uniquement' }, { status: 400 });
+  const validationError = validateImageUpload(file);
+  if (validationError) {
+    return NextResponse.json({ message: validationError }, { status: 400 });
   }
 
-  if (file.size > MAX_SIZE) {
-    return NextResponse.json({ message: 'Image trop lourde (max 2 Mo)' }, { status: 400 });
-  }
-
-  const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
-  const filename = `${id}-${randomUUID()}.${ext}`;
-  const dir = join(process.cwd(), 'public', 'uploads', 'livreurs');
-
-  await mkdir(dir, { recursive: true });
-  await writeFile(join(dir, filename), Buffer.from(await file.arrayBuffer()));
-
-  const url = `/uploads/livreurs/${filename}`;
-  const updated = await courierRepository.mettreAJour(id, { photoUrl: url });
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const uploaded = await uploadImageToCloudinary(buffer, 'couriers');
+  const updated = await courierRepository.mettreAJour(id, { photoUrl: uploaded.url });
 
   return NextResponse.json({
     livreur: {
@@ -54,7 +48,7 @@ export async function POST(request: NextRequest, { params }: { params: Params })
       nom: updated.nom,
       photoUrl: updated.photoUrl,
     },
-    url,
+    url: uploaded.url,
     message: 'Photo du livreur mise à jour',
   });
 }

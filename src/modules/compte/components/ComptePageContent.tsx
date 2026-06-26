@@ -7,7 +7,6 @@ import { Loader2 } from 'lucide-react';
 import { CompteAdressesSection } from './CompteAdressesSection';
 import { CompteWishlistSection } from './CompteWishlistSection';
 import { CompteCommandesSection } from './CompteCommandesSection';
-import { CompteProfilForms } from './CompteProfilForms';
 import { CompteSidebar, CompteMobileNav } from './CompteSidebar';
 import { CompteTopBar } from './CompteTopBar';
 import { CompteDashboard } from './CompteDashboard';
@@ -85,9 +84,13 @@ export function ComptePageContent() {
       'avis',
     ];
     if (validSections.includes(requested as CompteSectionId)) {
+      if (requested === 'profil') {
+        router.replace('/compte/profil');
+        return;
+      }
       setSection(requested as CompteSectionId);
     }
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const handleLogout = async () => {
     if (!(await confirmLogout('customer'))) return;
@@ -113,9 +116,9 @@ export function ComptePageContent() {
 
   if (loading || !profil || !dashboard) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 bg-cream">
-        <Loader2 className="h-8 w-8 animate-spin text-olive" />
-        <p className="text-sm text-zinc-500">Chargement de votre espace…</p>
+      <div className="compte-area flex min-h-[60vh] flex-col items-center justify-center gap-3 bg-[#f7f2f5] text-zinc-900">
+        <Loader2 className="h-8 w-8 animate-spin text-[#e91e8c]" />
+        <p className="text-sm text-zinc-600">Chargement de votre espace…</p>
       </div>
     );
   }
@@ -162,7 +165,7 @@ export function ComptePageContent() {
               onVoirCommandes={() => goTo('commandes')}
               onVoirFavoris={() => goTo('favoris')}
               onVoirAdresses={() => goTo('adresses')}
-              onVoirProfil={() => goTo('profil')}
+              onVoirProfil={() => router.push('/compte/profil')}
               onVoirFidelite={() => goTo('fidelite')}
               onVoirAvis={() => goTo('avis')}
             />
@@ -173,9 +176,6 @@ export function ComptePageContent() {
           )}
           {section === 'adresses' && <CompteAdressesSection />}
           {section === 'favoris' && <CompteWishlistSection initialItems={wishlist} />}
-          {section === 'profil' && (
-            <CompteProfilForms profil={profil} onProfilUpdate={setProfil} />
-          )}
           {section === 'fidelite' && (
             <CompteFideliteSection
               pointsFidelite={profil.pointsFidelite}

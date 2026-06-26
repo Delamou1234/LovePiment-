@@ -37,6 +37,7 @@ const ICONS: Record<CompteSectionId, typeof User> = {
 
 const LINK_ICONS: Record<string, typeof HelpCircle> = {
   '/compte/messages': Headphones,
+  '/compte/profil': Settings,
   '/contact': HelpCircle,
 };
 
@@ -98,7 +99,7 @@ function SidebarContent({
   return (
     <div className="compte-sidebar-inner">
       <div className="compte-sidebar-brand">
-        <BrandLogo href="/" size="sm" onClick={onMobileClose} className="compte-brand-logo" />
+        <BrandLogo href="/" size="sm" variant="dark" onClick={onMobileClose} className="compte-brand-logo" />
       </div>
 
       <nav className="compte-sidebar-nav" aria-label="Navigation compte">

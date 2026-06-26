@@ -71,7 +71,7 @@ export const COMPTE_SIDEBAR_NAV: CompteNavItem[] = [
   { kind: 'section', id: 'commandes', label: 'Mes commandes' },
   { kind: 'section', id: 'favoris', label: 'Mes favoris' },
   { kind: 'section', id: 'adresses', label: 'Mes adresses' },
-  { kind: 'section', id: 'profil', label: 'Paramètres du compte' },
+  { kind: 'link', href: '/compte/profil', label: 'Mon profil' },
   { kind: 'section', id: 'avis', label: 'Mes avis' },
   { kind: 'section', id: 'fidelite', label: 'Mes offres & bons' },
   { kind: 'link', href: '/compte/messages', label: "Centre d'aide" },
@@ -89,7 +89,7 @@ export const VIP_NEXT_TIER = 2000;
 export const COMPTE_SIDEBAR_WIDTH = 'lg:w-[260px]';
 export const COMPTE_SIDEBAR_OFFSET = 'lg:ml-[260px]';
 
-export const COMPTE_SHELL = 'h-dvh overflow-hidden bg-[#f7f2f5]';
+export const COMPTE_SHELL = 'compte-area h-dvh overflow-hidden bg-[#f7f2f5] text-zinc-900';
 export const COMPTE_MAIN = `flex h-dvh flex-col overflow-hidden ${COMPTE_SIDEBAR_OFFSET}`;
 export const COMPTE_MAIN_SCROLL = 'flex-1 min-h-0 overflow-y-auto p-4 md:p-6 lg:p-8';
 export const COMPTE_MAIN_FILL = 'flex flex-1 min-h-0 flex-col overflow-hidden p-4 md:p-6 lg:p-8';

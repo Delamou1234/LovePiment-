@@ -12,6 +12,7 @@ import {
   Store,
 } from 'lucide-react';
 import { AdminSearchBar } from './AdminSearchBar';
+import { DashboardHomeButton } from '@/shared/ui/DashboardHomeButton';
 import { AdminNotificationBell } from './AdminNotificationBell';
 import { AdminMessagesMenu } from './AdminMessagesMenu';
 import { AdminStockAlertsMenu } from './AdminStockAlertsMenu';
@@ -108,15 +109,13 @@ export function AdminTopBar({
           </>
         )}
 
+        <DashboardHomeButton variant="admin" className="shrink-0" />
+
         <AdminSearchBar className="min-w-0 flex-1 sm:flex-none sm:w-[180px] md:w-[240px] lg:w-[320px]" />
 
         <div className="hidden min-w-2 flex-1 sm:block" aria-hidden />
 
         <nav className="flex shrink-0 items-center gap-1 sm:gap-1.5" aria-label="Raccourcis essentiels">
-          <Link href="/" className={`${adminTopbarQuick()} hidden md:inline-flex`} title="Voir la boutique">
-            <Store className="h-4 w-4" strokeWidth={1.75} />
-          </Link>
-
           <Link
             href="/admin/commandes"
             className={adminTopbarQuick(isCommandesActive)}

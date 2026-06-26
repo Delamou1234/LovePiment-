@@ -25,6 +25,9 @@ async function main() {
   const { ensureDemoCourier } = await import('./ensure-demo-courier');
   await ensureDemoCourier(prisma);
 
+  const { ensureDemoReviews } = await import('./seed-demo-reviews');
+  await ensureDemoReviews(prisma);
+
   await prisma.storeSettings.upsert({
     where: { id: 'lovepiment-settings' },
     update: {
@@ -42,6 +45,23 @@ async function main() {
       livraisonVilleParDefaut: 'Conakry',
       livraisonGratuiteActive: true,
       livraisonDelaiLabel: '24–48 h',
+      aproposHeroKicker: 'Notre histoire',
+      aproposHeroTitre: 'Le plaisir sans tabou,',
+      aproposHeroAccent: 'livrée à Conakry',
+      aproposHeroTexte:
+        'Love Piment& est votre boutique intime à Conakry : sextoys, lingerie, lubrifiants et accessoires pour adultes. Nous offrons une expérience discrète, confidentielle et chaleureuse à chaque cliente.',
+      aproposHeroImageUrl: '/images/hero-love-piment-visual.png',
+      aproposMissionTitre: 'Notre mission',
+      aproposMissionTexte:
+        "Rendre le bien-être intime accessible à toutes les femmes de Conakry : catalogue clair, conseils personnalisés, suivi de commande en temps réel et options de paiement adaptées au marché local — le tout dans le plus strict respect de votre vie privée.",
+      aproposHistoireTitre: 'Qui sommes-nous ?',
+      aproposHistoireTexte:
+        "Love Piment& est née d'un constat simple : en Guinée, il manquait une boutique en ligne dédiée au plaisir féminin, à la fois professionnelle et sans jugement.\n\nNous avons créé un espace où chaque femme peut explorer sa sensualité en toute confiance : commande discrète, livraison soignée et accompagnement humain à chaque étape.",
+      aproposCtaTitre: 'Prêt à commander ?',
+      aproposCtaTexte:
+        'Parcourez notre boutique intime ou profitez de nos promotions en cours. Notre équipe reste disponible pour vous guider, en toute discrétion.',
+      aproposMetaDescription:
+        'Love Piment& — boutique intime pour femmes à Conakry. Sextoys, lingerie, lubrifiants. Livraison discrète, paiement Mobile Money.',
     },
     create: {
       id: 'lovepiment-settings',
@@ -66,6 +86,23 @@ async function main() {
       livraisonVilleParDefaut: 'Conakry',
       livraisonGratuiteActive: true,
       livraisonDelaiLabel: '24–48 h',
+      aproposHeroKicker: 'Notre histoire',
+      aproposHeroTitre: 'Le plaisir sans tabou,',
+      aproposHeroAccent: 'livrée à Conakry',
+      aproposHeroTexte:
+        'Love Piment& est votre boutique intime à Conakry : sextoys, lingerie, lubrifiants et accessoires pour adultes. Nous offrons une expérience discrète, confidentielle et chaleureuse à chaque cliente.',
+      aproposHeroImageUrl: '/images/hero-love-piment-visual.png',
+      aproposMissionTitre: 'Notre mission',
+      aproposMissionTexte:
+        "Rendre le bien-être intime accessible à toutes les femmes de Conakry : catalogue clair, conseils personnalisés, suivi de commande en temps réel et options de paiement adaptées au marché local — le tout dans le plus strict respect de votre vie privée.",
+      aproposHistoireTitre: 'Qui sommes-nous ?',
+      aproposHistoireTexte:
+        "Love Piment& est née d'un constat simple : en Guinée, il manquait une boutique en ligne dédiée au plaisir féminin, à la fois professionnelle et sans jugement.\n\nNous avons créé un espace où chaque femme peut explorer sa sensualité en toute confiance : commande discrète, livraison soignée et accompagnement humain à chaque étape.",
+      aproposCtaTitre: 'Prêt à commander ?',
+      aproposCtaTexte:
+        'Parcourez notre boutique intime ou profitez de nos promotions en cours. Notre équipe reste disponible pour vous guider, en toute discrétion.',
+      aproposMetaDescription:
+        'Love Piment& — boutique intime pour femmes à Conakry. Sextoys, lingerie, lubrifiants. Livraison discrète, paiement Mobile Money.',
       metaDescription:
         'Boutique intime pour adultes à Conakry : sextoys, lingerie, lubrifiants. Livraison discrète, paiement Mobile Money.',
     },

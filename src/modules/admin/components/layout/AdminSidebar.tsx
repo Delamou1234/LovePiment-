@@ -65,8 +65,9 @@ function SidebarContent({
         <BrandLogo
           href="/admin"
           size="lg"
+          variant="light"
           onClick={onMobileClose}
-          className="admin-sidebar-logo !h-14 lg:!h-16 w-auto max-w-full"
+          className="admin-sidebar-logo"
         />
       </div>
 

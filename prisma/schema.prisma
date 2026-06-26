@@ -392,6 +392,20 @@ model StoreSettings {
   livraisonVilleParDefaut    String  @default("Conakry") @map("livraison_ville_par_defaut")
   livraisonGratuiteActive    Boolean @default(true) @map("livraison_gratuite_active")
   livraisonDelaiLabel        String? @default("24–48 h") @map("livraison_delai_label")
+  aproposHeroKicker          String? @map("apropos_hero_kicker")
+  aproposHeroTitre           String? @map("apropos_hero_titre")
+  aproposHeroAccent          String? @map("apropos_hero_accent")
+  aproposHeroTexte           String? @map("apropos_hero_texte") @db.Text
+  aproposHeroImageUrl        String? @map("apropos_hero_image_url")
+  aproposMissionTitre        String? @map("apropos_mission_titre")
+  aproposMissionTexte        String? @map("apropos_mission_texte") @db.Text
+  aproposHistoireTitre       String? @map("apropos_histoire_titre")
+  aproposHistoireTexte       String? @map("apropos_histoire_texte") @db.Text
+  aproposChiffres            Json?   @map("apropos_chiffres")
+  aproposValeurs             Json?   @map("apropos_valeurs")
+  aproposCtaTitre            String? @map("apropos_cta_titre")
+  aproposCtaTexte            String? @map("apropos_cta_texte") @db.Text
+  aproposMetaDescription     String? @map("apropos_meta_description") @db.Text
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   @@map("store_settings")

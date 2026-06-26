@@ -13,6 +13,7 @@ interface ProductSearchBarProps {
   inputClassName?: string;
   compact?: boolean;
   fullWidth?: boolean;
+  autoFocus?: boolean;
   placeholder?: string;
   onNavigate?: () => void;
 }
@@ -32,6 +33,7 @@ export function ProductSearchBar({
   inputClassName,
   compact = false,
   fullWidth = false,
+  autoFocus = false,
   placeholder = 'Rechercher un produit...',
   onNavigate,
 }: ProductSearchBarProps) {
@@ -151,6 +153,12 @@ export function ProductSearchBar({
     const file = e.target.files?.[0];
     if (file) void searchByImage(file);
   };
+
+  useEffect(() => {
+    if (!autoFocus) return;
+    const timer = setTimeout(() => inputRef.current?.focus(), 50);
+    return () => clearTimeout(timer);
+  }, [autoFocus]);
 
   useEffect(() => {
     if (!canSearchText) return;

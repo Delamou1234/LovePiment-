@@ -77,7 +77,7 @@ export class ReviewRepository {
     return prisma.productReview.findMany({
       where: { statut: 'APPROUVE' },
       include: {
-        customer: { select: { nom: true } },
+        customer: { select: { nom: true, avatarUrl: true, avatarCouleur: true } },
         order: { select: { clientVille: true } },
         product: { select: { nom: true } },
       },

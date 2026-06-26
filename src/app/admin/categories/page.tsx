@@ -14,6 +14,7 @@ import {
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { CloudinaryImageField } from '@/shared/components/CloudinaryImageField';
 
 type Categorie = {
   id: string;
@@ -454,15 +455,14 @@ export default function AdminCategoriesPage() {
                 />
               </div>
 
-              <div>
-                <label className="text-xs font-semibold text-zinc-600">Image (URL)</label>
-                <input
-                  value={form.image}
-                  onChange={(e) => setForm({ ...form, image: e.target.value })}
-                  placeholder="https://…"
-                  className="mt-1 w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
-                />
-              </div>
+              <CloudinaryImageField
+                label="Image de la catégorie"
+                folder="categories"
+                value={form.image}
+                onChange={(image) => setForm({ ...form, image })}
+                hint="Image affichée sur la boutique — stockée sur Cloudinary."
+                previewAspect="square"
+              />
 
               <div>
                 <label className="text-xs font-semibold text-zinc-600">Catégorie parente</label>

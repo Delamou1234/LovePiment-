@@ -69,7 +69,7 @@ export const getCachedHomeCategories = unstable_cache(
 export const getCachedHomeReviews = unstable_cache(
   async () => {
     const [avisClients, totalAvis] = await Promise.all([
-      reviewService.listerAvisPublics(6),
+      reviewService.listerAvisPublics(12),
       reviewService.compterAvisSatisfaits(),
     ]);
     return { avisClients, totalAvis };

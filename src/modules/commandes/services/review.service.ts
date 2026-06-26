@@ -22,6 +22,8 @@ export class ReviewService {
       photos: a.photos,
       achatVerifie: a.achatVerifie,
       productNom: a.productNom,
+      avatarUrl: a.avatarUrl,
+      avatarCouleur: a.avatarCouleur,
     }));
 
     if (fromProducts.length >= limit) return fromProducts.slice(0, limit);

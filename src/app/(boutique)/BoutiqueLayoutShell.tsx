@@ -14,7 +14,7 @@ type Props = {
 };
 
 function HeaderFallback() {
-  return <div className="h-24 bg-[#0a0508] md:h-[6.75rem]" aria-hidden />;
+  return <div className="h-16 bg-[#0a0508] md:h-[7.75rem]" aria-hidden />;
 }
 
 export function BoutiqueLayoutShell({ boutiqueNavLinks, boutiqueFooterLinks, children }: Props) {

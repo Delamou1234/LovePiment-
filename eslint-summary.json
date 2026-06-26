@@ -1,0 +1,15 @@
+{
+  "rules": {
+    "react/no-unescaped-entities": 6,
+    "react-hooks/incompatible-library": 1,
+    "@typescript-eslint/no-unused-vars": 27,
+    "react-hooks/immutability": 3,
+    "@typescript-eslint/no-explicit-any": 12,
+    "react-hooks/preserve-manual-memoization": 1,
+    "react-hooks/exhaustive-deps": 4,
+    "jsx-a11y/role-has-required-aria-props": 1,
+    "react-hooks/refs": 1
+  },
+  "sseCount": 0,
+  "sse": []
+}

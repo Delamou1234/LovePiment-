@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Home, LogOut, Package, RefreshCw, Store, Truck } from 'lucide-react';
+import { LogOut, Package, RefreshCw, Store, Truck } from 'lucide-react';
+import { DashboardHomeButton } from '@/shared/ui/DashboardHomeButton';
 import { initialesNom } from '@/modules/compte/types';
 import type { CourierProfil } from './livreur-ui';
 import type { CourierTotauxDto } from '@/modules/livraison/services/courier-order.service';
@@ -95,9 +96,7 @@ export function CourierTopBar({
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} strokeWidth={1.75} />
           </button>
 
-          <Link href="/" className={`${QUICK_ACTION} hidden lg:flex`} title="Accueil boutique">
-            <Home className="h-4 w-4" strokeWidth={1.75} />
-          </Link>
+          <DashboardHomeButton className="shrink-0" />
 
           <Link href="/produits" className={QUICK_ACTION} title="Boutique">
             <Store className="h-4 w-4" strokeWidth={1.75} />

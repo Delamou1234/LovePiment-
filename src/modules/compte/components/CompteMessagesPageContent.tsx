@@ -60,9 +60,9 @@ export function CompteMessagesPageContent() {
 
   if (loading || !profil) {
     return (
-      <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 bg-cream">
-        <Loader2 className="h-8 w-8 animate-spin text-olive" />
-        <p className="text-sm text-zinc-500">Chargement…</p>
+      <div className="compte-area flex min-h-[60vh] flex-col items-center justify-center gap-3 bg-[#f7f2f5] text-zinc-900">
+        <Loader2 className="h-8 w-8 animate-spin text-[#e91e8c]" />
+        <p className="text-sm text-zinc-600">Chargement…</p>
       </div>
     );
   }

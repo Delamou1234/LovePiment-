@@ -1,6 +1,6 @@
 import { variantePourCarte } from '@/shared/lib/product-card';
 import { getCachedHomeCatalog, getCachedHomeCategories, getCachedHomeReviews } from '@/modules/produits/lib/cached-queries';
-import { getCachedNewsletterConfig } from '@/modules/marketing/lib/cached-queries';
+import { getCachedNewsletterConfig, getCachedHeroBadge } from '@/modules/marketing/lib/cached-queries';
 import { notesPourProduit } from '@/modules/produits/lib/product-ratings';
 import { LandingHero } from '@/shared/components/home/landing/LandingHero';
 import { LandingCategories } from '@/shared/components/home/landing/LandingCategories';
@@ -10,11 +10,13 @@ import { LandingNewsletter } from '@/shared/components/home/landing/LandingNewsl
 import { LandingTestimonials } from '@/shared/components/home/landing/LandingTestimonials';
 
 export default async function HomePage() {
-  const [{ featured, notesProduits }, categoriesVitrine, { avisClients }, newsletter] = await Promise.all([
+  const [{ featured, notesProduits }, categoriesVitrine, { avisClients }, newsletter, heroBadge] =
+    await Promise.all([
     getCachedHomeCatalog(),
     getCachedHomeCategories(),
     getCachedHomeReviews(),
     getCachedNewsletterConfig(),
+    getCachedHeroBadge(),
   ]);
 
   const featuredProducts = featured.produits;
@@ -36,7 +38,7 @@ export default async function HomePage() {
 
   return (
     <div className="animate-fadeIn bg-white">
-      <LandingHero categories={categoriesVitrine} />
+      <LandingHero clientesSatisfaites={heroBadge.label} clientesCount={heroBadge.count} />
       <LandingCategories categories={categoriesVitrine} />
       <LandingTrustBar />
       <LandingFeaturedProducts products={landingProducts} />

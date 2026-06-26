@@ -1,12 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { useSyncedState } from '@/shared/hooks/useSyncedState';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Gift,
-  Home,
   LayoutDashboard,
   LogOut,
   MessageSquare,
@@ -16,6 +14,7 @@ import {
 } from 'lucide-react';
 import { usePanier, selectDistinctProductCount } from '@/store/panier';
 import { ProductSearchBar } from '@/shared/components/ProductSearchBar';
+import { DashboardHomeButton } from '@/shared/ui/DashboardHomeButton';
 import { CompteAvatar } from './CompteAvatar';
 import { AVATAR_UPDATED_EVENT } from '@/modules/compte/lib/avatar-events';
 import {
@@ -40,7 +39,7 @@ type MenuItem =
 
 const MENU_ITEMS: MenuItem[] = [
   { kind: 'section', id: 'dashboard', label: 'Vue d\'ensemble', icon: LayoutDashboard },
-  { kind: 'section', id: 'profil', label: 'Mon profil', icon: User },
+  { kind: 'link', href: '/compte/profil', label: 'Mon profil', icon: User },
   { kind: 'link', href: '/compte/messages', label: 'Messagerie', icon: MessageSquare },
   { kind: 'link', href: '/produits', label: 'Boutique', icon: ShoppingBag },
 ];
@@ -78,19 +77,18 @@ export function CompteTopBar({
   const router = useRouter();
   const panier = usePanier();
   const cartProductCount = usePanier(selectDistinctProductCount);
-  const [localProfil, setLocalProfil] = useSyncedState(profil);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const onProfilUpdateRef = useRef(onProfilUpdate);
-  const localProfilRef = useRef(profil);
+  const profilRef = useRef(profil);
 
   useEffect(() => {
     onProfilUpdateRef.current = onProfilUpdate;
   }, [onProfilUpdate]);
 
   useEffect(() => {
-    localProfilRef.current = localProfil;
-  }, [localProfil]);
+    profilRef.current = profil;
+  }, [profil]);
 
   const pageTitle = resolvePageTitle(pathname, activeSection);
   const isMessagesActive = isNavLinkActive(pathname, '/compte/messages');
@@ -99,15 +97,15 @@ export function CompteTopBar({
   useEffect(() => {
     const onAvatarUpdated = (event: Event) => {
       const detail = (event as CustomEvent<{ avatarUrl: string | null }>).detail;
-      const next = { ...localProfilRef.current, avatarUrl: detail.avatarUrl };
-      localProfilRef.current = next;
-      setLocalProfil(next);
-      onProfilUpdateRef.current?.(next);
+      onProfilUpdateRef.current?.({
+        ...profilRef.current,
+        avatarUrl: detail.avatarUrl,
+      });
     };
 
     window.addEventListener(AVATAR_UPDATED_EVENT, onAvatarUpdated);
     return () => window.removeEventListener(AVATAR_UPDATED_EVENT, onAvatarUpdated);
-  }, [setLocalProfil]);
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -119,7 +117,7 @@ export function CompteTopBar({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const isVip = localProfil.pointsFidelite >= VIP_POINTS_THRESHOLD;
+  const isVip = profil.pointsFidelite >= VIP_POINTS_THRESHOLD;
 
   const closeMenu = () => setMenuOpen(false);
 
@@ -148,6 +146,8 @@ export function CompteTopBar({
   return (
     <header className={`relative z-30 shrink-0 border-b border-[#ead6de] bg-white/90 px-4 backdrop-blur-md md:px-6 lg:px-8 ${minimal ? 'py-2' : 'py-2.5'}`}>
       <div className="flex items-center gap-3 md:gap-4">
+        <DashboardHomeButton className="shrink-0" />
+
         {!minimal && (
           <>
             <div className="hidden min-w-0 shrink-0 md:block md:max-w-[140px] lg:max-w-[180px]">
@@ -178,14 +178,6 @@ export function CompteTopBar({
           aria-label="Raccourcis"
         >
           <Link
-            href="/"
-            className={`${QUICK_ACTION} hidden lg:flex`}
-            title="Accueil boutique"
-          >
-            <Home className="h-4 w-4" strokeWidth={1.75} />
-          </Link>
-
-          <Link
             href="/produits"
             className={`${QUICK_ACTION} hidden sm:inline-flex`}
             title="Boutique"
@@ -212,7 +204,7 @@ export function CompteTopBar({
             title="Mes points fidélité"
           >
             <Gift className="h-3.5 w-3.5 shrink-0" />
-            <span>{localProfil.pointsFidelite} pts</span>
+            <span>{profil.pointsFidelite} pts</span>
             {isVip && (
               <span className="rounded bg-amber-100 px-1 py-px text-[8px] font-bold uppercase text-amber-800">
                 VIP
@@ -248,42 +240,42 @@ export function CompteTopBar({
             }`}
             aria-expanded={menuOpen}
             aria-haspopup="menu"
-            aria-label={`Menu compte — ${localProfil.nom}`}
-            title={localProfil.nom}
+            aria-label={`Menu compte — ${profil.nom}`}
+            title={profil.nom}
           >
-            <CompteAvatar profil={localProfil} size="sm" />
+            <CompteAvatar profil={profil} size="sm" />
           </button>
 
           {menuOpen && (
             <div
               role="menu"
-              className="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 overflow-hidden rounded-xl border border-beige-border bg-white py-1 shadow-[0_12px_40px_rgba(0,0,0,0.1)] animate-fadeIn"
+              className="compte-user-menu animate-fadeIn"
             >
-              <div className="border-b border-beige-border/80 px-4 py-3">
-                <p className="truncate text-sm font-semibold text-zinc-900">{localProfil.nom}</p>
-                <p className="truncate text-xs text-zinc-500">{localProfil.email}</p>
-                <div className="mt-2 flex items-center gap-2">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-olive/10 px-2 py-0.5 text-[10px] font-semibold text-olive">
+              <div className="compte-user-menu-head">
+                <p className="compte-user-menu-name">{profil.nom}</p>
+                <p className="compte-user-menu-email">{profil.email}</p>
+                <div className="compte-user-menu-badges">
+                  <span className="compte-user-menu-points">
                     <Gift className="h-3 w-3" />
-                    {localProfil.pointsFidelite} pts
+                    {profil.pointsFidelite} pts
                   </span>
                   {isVip && (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold text-amber-800">
-                      Client VIP
-                    </span>
+                    <span className="compte-user-menu-vip">Client VIP</span>
                   )}
                 </div>
               </div>
 
-              <div className="py-1">
+              <div className="compte-user-menu-nav">
                 {MENU_ITEMS.map((item) => {
                   const Icon = item.icon;
                   const active =
                     item.kind === 'link'
-                      ? pathname.startsWith(item.href)
+                      ? isNavLinkActive(pathname, item.href)
                       : item.kind === 'section' &&
                         pathname === '/compte' &&
                         activeSection === item.id;
+
+                  const itemClass = `compte-user-menu-item${active ? ' is-active' : ''}`;
 
                   if (item.kind === 'link') {
                     return (
@@ -292,13 +284,9 @@ export function CompteTopBar({
                         href={item.href}
                         role="menuitem"
                         onClick={closeMenu}
-                        className={`flex items-center gap-2.5 px-4 py-2.5 text-sm transition ${
-                          active
-                            ? 'bg-cream text-olive font-medium'
-                            : 'text-zinc-600 hover:bg-cream hover:text-zinc-900'
-                        }`}
+                        className={itemClass}
                       >
-                        <Icon className="h-4 w-4 shrink-0 opacity-80" />
+                        <Icon className="compte-user-menu-icon" strokeWidth={1.75} />
                         {item.label}
                       </Link>
                     );
@@ -311,13 +299,9 @@ export function CompteTopBar({
                         type="button"
                         role="menuitem"
                         onClick={() => handleSection(item.id)}
-                        className={`flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm transition ${
-                          active
-                            ? 'bg-cream text-olive font-medium'
-                            : 'text-zinc-600 hover:bg-cream hover:text-zinc-900'
-                        }`}
+                        className={itemClass}
                       >
-                        <Icon className="h-4 w-4 shrink-0 opacity-80" />
+                        <Icon className="compte-user-menu-icon" strokeWidth={1.75} />
                         {item.label}
                       </button>
                     );
@@ -328,14 +312,14 @@ export function CompteTopBar({
               </div>
 
               {onLogout && (
-                <div className="border-t border-beige-border/80 py-1">
+                <div className="compte-user-menu-footer">
                   <button
                     type="button"
                     role="menuitem"
                     onClick={handleLogout}
-                    className="flex w-full items-center gap-2.5 px-4 py-2.5 text-left text-sm text-red-600 transition hover:bg-red-50"
+                    className="compte-user-menu-logout"
                   >
-                    <LogOut className="h-4 w-4 shrink-0" />
+                    <LogOut className="h-4 w-4 shrink-0" strokeWidth={1.75} />
                     Déconnexion
                   </button>
                 </div>

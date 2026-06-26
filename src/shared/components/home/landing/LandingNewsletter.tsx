@@ -6,6 +6,7 @@ import { Lock, Send } from 'lucide-react';
 import type { NewsletterPublicConfig } from '@/modules/marketing/services/newsletter.service';
 
 const HEART_CLIP_ID = 'lp-newsletter-heart-clip';
+const PORTRAIT_IMAGE = '/images/newsletter-woman-cutout.png';
 
 function NeonHeartBadge({
   remisePct,
@@ -118,13 +119,27 @@ export function LandingNewsletter({
     <section className="lp-newsletter relative overflow-hidden">
       <div className="lp-newsletter-gradient absolute inset-0" aria-hidden />
 
-      <div className="container-shop relative z-10 py-10 md:py-12">
-        <div className="grid items-center gap-8 lg:grid-cols-[auto_minmax(0,1fr)] lg:gap-10">
-          <div className="flex justify-center lg:justify-start">
+      <div className="lp-newsletter-portrait" aria-hidden>
+        <div className="lp-newsletter-portrait-media">
+          <Image
+            src={PORTRAIT_IMAGE}
+            alt=""
+            fill
+            unoptimized
+            className="lp-newsletter-portrait-img"
+            sizes="(min-width: 1280px) 420px, (min-width: 1024px) 360px"
+          />
+        </div>
+        <div className="lp-newsletter-portrait-fade" />
+      </div>
+
+      <div className="container-shop relative z-10">
+        <div className="lp-newsletter-layout">
+          <div className="lp-newsletter-heart">
             <NeonHeartBadge remisePct={remisePct} imageUrl={imageUrl} isExternal={isExternal} />
           </div>
 
-          <div className="min-w-0 text-center lg:text-left">
+          <div className="lp-newsletter-content min-w-0 text-center lg:text-left">
             <h2 className="font-serif text-xl font-bold uppercase tracking-wide text-white md:text-2xl lg:text-[1.65rem]">
               {titre}
             </h2>

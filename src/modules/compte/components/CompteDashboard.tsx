@@ -30,6 +30,7 @@ import type {
   CustomerOrderResume,
   CustomerProfile,
 } from '@/modules/compte/types';
+import { DashboardHomeButton } from '@/shared/ui/DashboardHomeButton';
 
 type Props = {
   profil: CustomerProfile;
@@ -74,7 +75,7 @@ function StatTile({
       </div>
       <p className="compte-dash-stat-value">{value}</p>
       <p className="compte-dash-stat-label">{label}</p>
-      <span className={COMPTE_WIDGET_LINK}>
+      <span className="compte-dash-stat-link">
         Voir <ArrowRight className="h-3 w-3" />
       </span>
     </div>
@@ -130,6 +131,7 @@ export function CompteDashboard({
           </p>
         </div>
         <div className="compte-dash-header-actions">
+          <DashboardHomeButton />
           <button
             type="button"
             className="compte-dash-bell"
@@ -143,7 +145,7 @@ export function CompteDashboard({
           </button>
           <button type="button" onClick={onVoirProfil} className="compte-dash-profile">
             <span className="compte-dash-profile-name">{profil.nom}</span>
-            <ChevronRight className="h-4 w-4 text-zinc-400" />
+            <ChevronRight className="h-4 w-4 shrink-0 text-zinc-500" />
           </button>
         </div>
       </header>
@@ -196,7 +198,17 @@ export function CompteDashboard({
           </div>
 
           {recentOrders.length === 0 ? (
-            <p className="px-6 py-10 text-sm text-zinc-500">Aucune commande pour le moment.</p>
+            <div className="px-6 py-12 text-center">
+              <Package className="mx-auto h-10 w-10 text-zinc-300" strokeWidth={1.5} />
+              <p className="mt-3 text-sm font-medium text-zinc-700">Aucune commande pour le moment</p>
+              <p className="mt-1 text-xs text-zinc-500">Vos achats apparaîtront ici.</p>
+              <Link
+                href="/produits"
+                className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-[#e91e8c] hover:text-[#b8105f]"
+              >
+                Découvrir la boutique <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="compte-dash-table">

@@ -1,47 +1,75 @@
-import Image from 'next/image';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
-export const BRAND_LOGO_SRC = '/images/logo.png';
-
-const SIZES = {
-  sm: { width: 96, height: 38, className: 'h-8 w-auto sm:h-9' },
-  md: { width: 128, height: 50, className: 'h-10 w-auto sm:h-11' },
-  lg: { width: 160, height: 64, className: 'h-12 w-auto sm:h-14' },
+const SIZE_CLASS = {
+  sm: 'brand-wordmark--sm',
+  md: 'brand-wordmark--md',
+  lg: 'brand-wordmark--lg',
 } as const;
 
 type BrandLogoProps = {
   href?: string;
   onClick?: () => void;
-  size?: keyof typeof SIZES;
+  size?: keyof typeof SIZE_CLASS;
+  /** `light` = fond sombre (header, footer). `dark` = fond clair (compte). */
+  variant?: 'light' | 'dark';
+  /** Sous-titre sous le wordmark (ex. page d'accueil). */
+  tagline?: string;
   className?: string;
-  priority?: boolean;
 };
+
+export function BrandWordmark({
+  size = 'md',
+  variant = 'light',
+  tagline,
+  className,
+}: {
+  size?: keyof typeof SIZE_CLASS;
+  variant?: 'light' | 'dark';
+  tagline?: string;
+  className?: string;
+}) {
+  return (
+    <span className={cn('brand-wordmark-wrap', className)}>
+      <span
+        className={cn('brand-wordmark', SIZE_CLASS[size], `brand-wordmark--${variant}`)}
+        aria-hidden
+      >
+        <span className="brand-wordmark-love">Love</span>
+        <span className="brand-wordmark-piment">
+          Piment<span className="brand-wordmark-amp">&</span>
+          <span className="brand-wordmark-heart" aria-hidden>
+            ♥
+          </span>
+        </span>
+      </span>
+      {tagline ? <span className="brand-wordmark-tagline">{tagline}</span> : null}
+    </span>
+  );
+}
 
 export function BrandLogo({
   href = '/',
   onClick,
   size = 'md',
+  variant = 'light',
+  tagline,
   className = '',
-  priority = false,
 }: BrandLogoProps) {
-  const { width, height, className: sizeClass } = SIZES[size];
-
-  const image = (
-    <Image
-      src={BRAND_LOGO_SRC}
-      alt="Love Piment&"
-      width={width}
-      height={height}
-      priority={priority}
-      className={`object-contain object-left ${sizeClass} ${className}`.trim()}
-    />
+  const wordmark = (
+    <BrandWordmark size={size} variant={variant} tagline={tagline} className={className} />
   );
 
-  if (!href) return image;
+  if (!href) return wordmark;
 
   return (
-    <Link href={href} onClick={onClick} className="inline-flex shrink-0 items-center">
-      {image}
+    <Link
+      href={href}
+      onClick={onClick}
+      className="brand-wordmark-link inline-flex shrink-0 items-center"
+      aria-label="Love Piment& — Accueil"
+    >
+      {wordmark}
     </Link>
   );
 }

@@ -62,6 +62,8 @@ export class AvisService {
       achatVerifie: r.achatVerifie,
       date: r.createdAt.toISOString(),
       productNom: r.product.nom,
+      avatarUrl: r.customer.avatarUrl,
+      avatarCouleur: r.customer.avatarCouleur,
     }));
   }
 

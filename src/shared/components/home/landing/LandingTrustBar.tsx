@@ -1,43 +1,56 @@
-import { Headphones, Lock, Package, Sparkles } from 'lucide-react';
+import { Gem, Headset, Package, ShieldCheck } from 'lucide-react';
 
 const ITEMS = [
   {
     icon: Package,
-    title: 'LIVRAISON DISCRÈTE',
-    desc: 'Emballage neutre et sans indication.',
+    title: 'Livraison discrète',
+    desc: 'Emballage neutre, sans logo ni mention sur le colis. Livraison rapide à Conakry et environs.',
   },
   {
-    icon: Lock,
-    title: 'PAIEMENT SÉCURISÉ',
-    desc: 'Transactions 100% sécurisées.',
+    icon: ShieldCheck,
+    title: 'Paiement sécurisé',
+    desc: 'Mobile Money et paiement à la livraison. Transactions protégées, données strictement confidentielles.',
   },
   {
-    icon: Sparkles,
-    title: 'PRODUITS DE QUALITÉ',
-    desc: 'Matériaux sûrs et testés.',
+    icon: Gem,
+    title: 'Produits de qualité',
+    desc: 'Sélection soignée, matériaux body-safe et marques fiables pour votre bien-être intime.',
   },
   {
-    icon: Headphones,
-    title: 'SUPPORT À L\'ÉCOUTE',
-    desc: 'Notre équipe est là pour vous 7j/7.',
+    icon: Headset,
+    title: 'Support à l\'écoute',
+    desc: 'Une équipe bienveillante sur WhatsApp et par téléphone, 7j/7 — en toute discrétion.',
   },
-];
+] as const;
 
 export function LandingTrustBar() {
   return (
-    <section className="lp-trust-bar py-10 md:py-12">
+    <section className="lp-trust-bar" aria-labelledby="lp-trust-title">
       <div className="container-shop">
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
-          {ITEMS.map(({ icon: Icon, title, desc }) => (
-            <div key={title} className="flex flex-col items-center text-center lg:items-start lg:text-left">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-olive/40 text-olive">
-                <Icon className="h-5 w-5" strokeWidth={1.75} />
-              </div>
-              <h3 className="text-xs font-bold tracking-[0.12em] text-white">{title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-white/60">{desc}</p>
-            </div>
-          ))}
+        <div className="lp-trust-intro">
+          <p className="lp-trust-eyebrow">Notre promesse</p>
+          <h2 id="lp-trust-title" className="lp-trust-heading">
+            Une expérience intime, <span className="text-olive">en toute confiance</span>
+          </h2>
+          <p className="lp-trust-lead">
+            Chez Love Piment&, chaque commande est traitée avec soin : discrétion, qualité et accompagnement
+            personnalisé.
+          </p>
         </div>
+
+        <ul className="lp-trust-grid">
+          {ITEMS.map(({ icon: Icon, title, desc }) => (
+            <li key={title} className="lp-trust-item">
+              <div className="lp-trust-icon" aria-hidden>
+                <Icon className="h-6 w-6" strokeWidth={1.65} />
+              </div>
+              <div className="lp-trust-copy">
+                <h3 className="lp-trust-title">{title}</h3>
+                <p className="lp-trust-desc">{desc}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );

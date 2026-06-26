@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import {
   BarChart3,
   Boxes,
+  FileText,
   FolderTree,
   LayoutDashboard,
   LineChart,
@@ -87,7 +88,10 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   },
   {
     title: 'Système',
-    items: [{ href: '/admin/parametres', label: 'Paramètres', icon: Settings }],
+    items: [
+      { href: '/admin/apropos', label: 'Page À propos', icon: FileText },
+      { href: '/admin/parametres', label: 'Paramètres', icon: Settings },
+    ],
   },
 ];
 
