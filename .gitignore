@@ -35,6 +35,8 @@ yarn-error.log*
 .env.local
 .env.*.local
 !.env.example
+deploy/hetzner/env/*.env
+!deploy/hetzner/env/*.env.example
 
 # identifiants admin / notes locales
 admin_connexion.md

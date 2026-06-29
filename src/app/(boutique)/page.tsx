@@ -8,6 +8,7 @@ import { LandingTrustBar } from '@/shared/components/home/landing/LandingTrustBa
 import { LandingFeaturedProducts } from '@/shared/components/home/landing/LandingFeaturedProducts';
 import { LandingNewsletter } from '@/shared/components/home/landing/LandingNewsletter';
 import { LandingTestimonials } from '@/shared/components/home/landing/LandingTestimonials';
+import { HomeRecommendationsLazy } from '@/modules/ia/components/HomeRecommendationsLazy';
 
 export default async function HomePage() {
   const [{ featured, notesProduits }, categoriesVitrine, { avisClients }, newsletter, heroBadge] =
@@ -42,6 +43,7 @@ export default async function HomePage() {
       <LandingCategories categories={categoriesVitrine} />
       <LandingTrustBar />
       <LandingFeaturedProducts products={landingProducts} />
+      <HomeRecommendationsLazy />
       <LandingNewsletter {...newsletter} />
       <LandingTestimonials avis={avisClients} />
     </div>

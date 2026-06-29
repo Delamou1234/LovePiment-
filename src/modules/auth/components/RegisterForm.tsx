@@ -12,6 +12,12 @@ import { PARRAINAGE_SESSION_KEY } from '@/modules/marketing/lib/referral-code';
 import { useFeatureFlags } from '@/shared/hooks/useFeatureFlags';
 import { AuthField } from './AuthField';
 import { PasswordInput } from '@/shared/components/PasswordInput';
+import {
+  SocialLoginButtons,
+  SocialLoginDivider,
+} from './SocialLoginButtons';
+import type { SocialAuthProviders } from '@/shared/lib/auth/social-providers';
+import { hasAnySocialProvider } from '@/shared/lib/auth/social-providers';
 
 const registerSchema = z
   .object({
@@ -35,15 +41,20 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 interface RegisterFormProps {
   isCheckout?: boolean;
+  socialProviders?: SocialAuthProviders;
 }
 
-export function RegisterForm({ isCheckout = false }: RegisterFormProps) {
+export function RegisterForm({
+  isCheckout = false,
+  socialProviders,
+}: RegisterFormProps) {
   const { parrainageActif } = useFeatureFlags();
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get('redirect');
   const parrainParam = searchParams.get('parrain')?.trim().toUpperCase() ?? '';
   const safeRedirect = getSafeRedirect(redirectParam, isCheckout ? '/commande' : '/compte');
   const loginHref = `/connexion${redirectParam ? `?redirect=${encodeURIComponent(safeRedirect)}` : ''}`;
+  const showSocial = socialProviders && hasAnySocialProvider(socialProviders);
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -126,6 +137,18 @@ export function RegisterForm({ isCheckout = false }: RegisterFormProps) {
       </div>
 
       {errorMsg && <div className="auth-connexion-error auth-connexion-error--compact">{errorMsg}</div>}
+
+      {showSocial && socialProviders && (
+        <>
+          <SocialLoginButtons
+            redirect={safeRedirect}
+            googleEnabled={socialProviders.google}
+            facebookEnabled={socialProviders.facebook}
+            appleEnabled={socialProviders.apple}
+          />
+          <SocialLoginDivider />
+        </>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="auth-connexion-form auth-connexion-form--register">
         <div className="auth-connexion-form-grid">

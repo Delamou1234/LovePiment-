@@ -11,9 +11,10 @@ const FACEBOOK = process.env.NEXT_PUBLIC_FACEBOOK_PAGE_URL ?? 'https://facebook.
 
 const INFO_LINKS = [
   { label: 'À propos de nous', href: '/apropos' },
-  { label: 'Livraison & retours', href: '/apropos' },
-  { label: 'Conditions générales', href: '/contact' },
-  { label: 'Politique de confidentialité', href: '/contact' },
+  { label: 'Livraison & retours', href: '/cgv' },
+  { label: 'Conditions générales', href: '/cgv' },
+  { label: 'Politique de confidentialité', href: '/confidentialite' },
+  { label: 'Mentions légales', href: '/mentions-legales' },
   { label: 'FAQ', href: '/contact' },
 ];
 

@@ -56,7 +56,7 @@ export function HomeNewsletter() {
             </form>
             <p className="text-[11px] text-white/50 text-center mt-4">
               En vous inscrivant, vous acceptez notre{' '}
-              <Link href="/mentions-legales" className="underline hover:text-white/70">
+              <Link href="/confidentialite" className="underline hover:text-white/70">
                 politique de confidentialité
               </Link>
               .

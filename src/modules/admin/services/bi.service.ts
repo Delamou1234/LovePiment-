@@ -22,6 +22,7 @@ export type BiRapport = {
     nom: string;
     slug: string;
     image: string | null;
+    categorie: string;
     quantiteVendue: number;
     chiffreAffaires: number;
   }[];
@@ -84,6 +85,27 @@ function grouperCaParJour(
   return map;
 }
 
+function remplirSerieJours(
+  depuis: Date,
+  fin: Date,
+  parJourMap: Map<string, { montant: number; commandes: number }>,
+) {
+  const rows: { date: string; montant: number; commandes: number }[] = [];
+  const cursor = new Date(depuis);
+  cursor.setHours(0, 0, 0, 0);
+  const end = new Date(fin);
+  end.setHours(0, 0, 0, 0);
+
+  while (cursor <= end) {
+    const key = cursor.toISOString().slice(0, 10);
+    const v = parJourMap.get(key) ?? { montant: 0, commandes: 0 };
+    rows.push({ date: key, montant: v.montant, commandes: v.commandes });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return rows;
+}
+
 export class BiAdminService {
   async genererRapport(periode: BiPeriode = '30j'): Promise<BiRapport> {
     const depuis = periodeEnDate(periode);
@@ -128,7 +150,13 @@ export class BiAdminService {
           variante: {
             select: {
               produit: {
-                select: { id: true, nom: true, slug: true, images: true },
+                select: {
+                  id: true,
+                  nom: true,
+                  slug: true,
+                  images: true,
+                  categorie: { select: { nom: true } },
+                },
               },
             },
           },
@@ -157,9 +185,7 @@ export class BiAdminService {
       caPrecedent > 0 ? Math.round(((caTotal - caPrecedent) / caPrecedent) * 1000) / 10 : null;
 
     const parJourMap = grouperCaParJour(commandesPeriode);
-    const parJour = Array.from(parJourMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, v]) => ({ date, montant: v.montant, commandes: v.commandes }));
+    const parJour = remplirSerieJours(depuis, now, parJourMap);
 
     const parMoisMap = new Map<string, { montant: number; commandes: number }>();
     for (const c of commandesPeriode) {
@@ -175,7 +201,7 @@ export class BiAdminService {
 
     const produitsMap = new Map<
       string,
-      { nom: string; slug: string; image: string | null; qty: number; ca: number }
+      { nom: string; slug: string; image: string | null; categorie: string; qty: number; ca: number }
     >();
     for (const item of orderItems) {
       const p = item.variante.produit;
@@ -183,6 +209,7 @@ export class BiAdminService {
         nom: p.nom,
         slug: p.slug,
         image: p.images[0] ?? null,
+        categorie: p.categorie.nom,
         qty: 0,
         ca: 0,
       };
@@ -196,6 +223,7 @@ export class BiAdminService {
         nom: v.nom,
         slug: v.slug,
         image: v.image,
+        categorie: v.categorie,
         quantiteVendue: v.qty,
         chiffreAffaires: v.ca,
       }))

@@ -1,3 +1,7 @@
+import {
+  verifyCinetpayHmacToken,
+  type CinetpayNotificationFields,
+} from '@/shared/lib/cinetpay-hmac';
 import type {
   PaymentProvider,
   InitierPaiementParams,
@@ -151,8 +155,32 @@ export class CinetPayProvider implements PaymentProvider {
     }
   }
 
-  validerWebhook(..._args: [unknown, string]): boolean {
-    void _args;
-    return true;
+  private getSecretKey(): string | null {
+    return process.env.CINETPAY_SECRET_KEY?.trim() ?? null;
+  }
+
+  isWebhookHmacRequired(): boolean {
+    return process.env.NODE_ENV === 'production' || Boolean(this.getSecretKey());
+  }
+
+  validerWebhook(payload: unknown, signature: string): boolean {
+    const secret = this.getSecretKey();
+    if (!secret) {
+      if (process.env.NODE_ENV === 'production') return false;
+      return true;
+    }
+    if (!payload || typeof payload !== 'object') return false;
+    return verifyCinetpayHmacToken(
+      signature,
+      payload as CinetpayNotificationFields,
+      secret,
+    );
+  }
+
+  /** Vérifie que le montant notifié correspond à la commande (tolérance 0 GN). */
+  montantNotificationValide(montantNotifie: string | number, montantCommande: number): boolean {
+    const notifie = Math.round(Number(montantNotifie));
+    const attendu = Math.round(montantCommande);
+    return Number.isFinite(notifie) && notifie === attendu;
   }
 }

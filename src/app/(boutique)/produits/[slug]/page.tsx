@@ -6,6 +6,7 @@ import { serialiserProduitPourClient } from '@/modules/produits/lib/serialize-pr
 import { getCachedProduct, getCachedSimilarProducts } from '@/modules/produits/lib/cached-queries';
 import { notFound } from 'next/navigation';
 import { ProductReviewsSection } from '@/modules/avis/components/ProductReviewsSection';
+import { ProductAiRecommendationsLazy } from '@/modules/ia/components/ProductAiRecommendationsLazy';
 import { avisService } from '@/modules/avis/services/review.service';
 import { getSession } from '@/shared/lib/auth/session';
 
@@ -60,6 +61,11 @@ export default async function ProductDetailPage({ params }: { params: Params }) 
           product={productClient}
           avisStats={avisStats}
           similaires={similaires}
+        />
+
+        <ProductAiRecommendationsLazy
+          productId={productClient.id}
+          categorieId={productClient.categorie.id}
         />
 
         <div id="avis-clients" className="product-reviews-wrap">

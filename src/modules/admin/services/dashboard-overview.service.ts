@@ -53,12 +53,6 @@ export type DashboardOverview = {
     commandesAujourdhui: number;
     produitsAjoutes: number;
   };
-  objectifVentes: {
-    actuel: number;
-    objectif: number;
-    pct: number;
-    libelle: string;
-  };
 };
 
 const CATEGORY_COLORS = ['#e91e8c', '#a855f7', '#f59e0b', '#22c55e', '#3b82f6', '#94a3b8'];
@@ -76,7 +70,7 @@ function periodeEnDate(periode: BiPeriode): Date {
 }
 
 function evolutionPct(actuel: number, precedent: number): number | null {
-  if (precedent <= 0) return actuel > 0 ? 100 : null;
+  if (precedent <= 0) return null;
   return Math.round(((actuel - precedent) / precedent) * 1000) / 10;
 }
 
@@ -93,7 +87,6 @@ export class DashboardOverviewService {
     const periodePrecedenteFin = new Date(depuis);
     const periodePrecedenteDebut = new Date(depuis.getTime() - dureeMs);
 
-    const debutMois = new Date(now.getFullYear(), now.getMonth(), 1);
     const debutJour = new Date();
     debutJour.setHours(0, 0, 0, 0);
 
@@ -108,7 +101,7 @@ export class DashboardOverviewService {
       nouveauxClientsPrecedents,
       commandesPeriode,
       commandesPrecedentes,
-      produitsAjoutes,
+      produitsAjoutesAujourdhui,
       orderItemsCategories,
       stocksParProduit,
       caPrecedentAgg,
@@ -149,7 +142,7 @@ export class DashboardOverviewService {
           createdAt: { gte: periodePrecedenteDebut, lt: periodePrecedenteFin },
         },
       }),
-      prisma.product.count({ where: { createdAt: { gte: depuis } } }),
+      prisma.product.count({ where: { createdAt: { gte: debutJour } } }),
       prisma.orderItem.findMany({
         where: {
           ordre: {
@@ -194,13 +187,11 @@ export class DashboardOverviewService {
     const stockMap = new Map(stocksParProduit.map((s) => [s.productId, s._sum.stock ?? 0]));
 
     const catMap = new Map<string, number>();
-    const productCatMap = new Map<string, string>();
     for (const item of orderItemsCategories) {
       const produit = item.variante.produit;
       const nom = produit.categorie.nom;
       const ca = item.quantite * Number(item.prixUnitaire);
       catMap.set(nom, (catMap.get(nom) ?? 0) + ca);
-      productCatMap.set(produit.id, nom);
     }
     const totalCat = Array.from(catMap.values()).reduce((s, v) => s + v, 0);
     const ventesParCategorie = Array.from(catMap.entries())
@@ -219,20 +210,12 @@ export class DashboardOverviewService {
       label: formatJourLabel(row.date),
     }));
 
-    const caMoisAgg = await prisma.order.aggregate({
-      _sum: { montantTotal: true },
-      where: {
-        statut: { in: [...STATUTS_CA] },
-        createdAt: { gte: debutMois },
-      },
-    });
-    const caMois = Number(caMoisAgg._sum.montantTotal ?? 0);
-    const objectif = Math.max(Math.round(caMois * 1.6), 1_000_000);
-    const moisLabel = now.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
-
     const caPrecedent = Number(caPrecedentAgg._sum.montantTotal ?? 0);
     const panierPrecedent =
       commandesPrecedentesCa > 0 ? Math.round(caPrecedent / commandesPrecedentesCa) : 0;
+    const nouvellesInscriptionsAujourdhui = await prisma.customer.count({
+      where: { createdAt: { gte: debutJour } },
+    });
 
     return {
       periode,
@@ -263,7 +246,7 @@ export class DashboardOverviewService {
         productId: p.productId,
         nom: p.nom,
         image: p.image,
-        categorie: productCatMap.get(p.productId) ?? '—',
+        categorie: p.categorie,
         quantiteVendue: p.quantiteVendue,
         stock: stockMap.get(p.productId) ?? 0,
         chiffreAffaires: p.chiffreAffaires,
@@ -278,15 +261,9 @@ export class DashboardOverviewService {
       })),
       activite: {
         visitesAujourdhui: stats.visitesAujourdhui,
-        nouvellesInscriptions: await prisma.customer.count({ where: { createdAt: { gte: debutJour } } }),
+        nouvellesInscriptions: nouvellesInscriptionsAujourdhui,
         commandesAujourdhui: stats.commandesAujourdhui,
-        produitsAjoutes,
-      },
-      objectifVentes: {
-        actuel: caMois,
-        objectif,
-        pct: objectif > 0 ? Math.min(100, Math.round((caMois / objectif) * 100)) : 0,
-        libelle: moisLabel,
+        produitsAjoutes: produitsAjoutesAujourdhui,
       },
     };
   }

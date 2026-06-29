@@ -177,6 +177,45 @@ export class StoreSettingsService {
 
     return mapSettingsDto(row);
   }
+
+  async updateNewsletterSettings(
+    data: Partial<
+      Pick<
+        StoreSettingsDto,
+        | 'newsletterActif'
+        | 'newsletterTitre'
+        | 'newsletterDescription'
+        | 'newsletterImageUrl'
+        | 'newsletterRemisePct'
+        | 'newsletterCouponCode'
+      >
+    >,
+  ): Promise<StoreSettingsDto> {
+    await this.ensureSettings();
+    const row = await prisma.storeSettings.update({
+      where: { id: STORE_SETTINGS_ID },
+      data: {
+        ...(data.newsletterActif !== undefined && { newsletterActif: data.newsletterActif }),
+        ...(data.newsletterTitre !== undefined && {
+          newsletterTitre: data.newsletterTitre.trim(),
+        }),
+        ...(data.newsletterDescription !== undefined && {
+          newsletterDescription: data.newsletterDescription?.trim() || null,
+        }),
+        ...(data.newsletterImageUrl !== undefined && {
+          newsletterImageUrl: data.newsletterImageUrl?.trim() || null,
+        }),
+        ...(data.newsletterRemisePct !== undefined && {
+          newsletterRemisePct: data.newsletterRemisePct,
+        }),
+        ...(data.newsletterCouponCode !== undefined && {
+          newsletterCouponCode: data.newsletterCouponCode?.trim() || null,
+        }),
+      },
+    });
+
+    return mapSettingsDto(row);
+  }
 }
 
 export const storeSettingsService = new StoreSettingsService();

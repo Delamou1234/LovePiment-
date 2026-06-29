@@ -9,7 +9,10 @@ export type CatalogSearchParams = {
   prixMax?: string;
   promo?: string;
   enStock?: string;
+  page?: string;
 };
+
+export const CATALOG_PAGE_SIZE = 24;
 
 export function buildCatalogUrl(
   current: CatalogSearchParams,

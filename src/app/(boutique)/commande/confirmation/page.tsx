@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { orderService } from '@/modules/commandes/services/order.service';
+import { computeOrderReceiptTotals } from '@/shared/lib/order-receipt';
 
 // ─── CONFIRMATION PAGE (SERVER COMPONENT) ────────────────────────────────────
 
@@ -56,11 +57,15 @@ export default async function ConfirmationPage({
     );
   }
 
-  const formattedTotal = Number(order.montantTotal).toLocaleString('fr-FR') + ' GN';
-  const shippingCost = 15000;
-  const subtotal = Number(order.montantTotal) - shippingCost;
-  const formattedSubtotal = subtotal.toLocaleString('fr-FR') + ' GN';
-  const formattedShipping = shippingCost.toLocaleString('fr-FR') + ' GN';
+  const { montantTotal, fraisLivraison, sousTotalArticles } = computeOrderReceiptTotals({
+    montantTotal: order.montantTotal,
+    fraisLivraison: order.fraisLivraison,
+    items: order.items,
+  });
+
+  const formattedTotal = montantTotal.toLocaleString('fr-FR') + ' GN';
+  const formattedSubtotal = sousTotalArticles.toLocaleString('fr-FR') + ' GN';
+  const formattedShipping = fraisLivraison.toLocaleString('fr-FR') + ' GN';
 
   // Génération du texte de reçu WhatsApp
   const articlesListText = order.items

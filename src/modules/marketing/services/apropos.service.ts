@@ -1,10 +1,11 @@
 import { revalidateTag } from 'next/cache';
 import { prisma } from '@/shared/lib/prisma';
-import { STORE_SETTINGS_ID } from '@/modules/admin/services/store-settings.service';
+import { STORE_SETTINGS_ID, storeSettingsService } from '@/modules/admin/services/store-settings.service';
 import {
   DEFAULT_APROPOS,
   parseAproposChiffres,
   parseAproposValeurs,
+  type AproposChiffre,
   type AproposPatchDto,
   type AproposPublicConfig,
 } from '../types/apropos';
@@ -26,8 +27,38 @@ type AproposRow = {
   aproposMetaDescription: string | null;
 };
 
-function mapApropos(row: AproposRow | null): AproposPublicConfig {
-  if (!row) return DEFAULT_APROPOS;
+const STATUTS_LIVRE = ['LIVREE'] as const;
+
+async function computeChiffresDynamiquesImpl(): Promise<AproposChiffre[]> {
+  const [clients, commandesLivrees, avisApprouves, livraison, produitsActifs] = await Promise.all([
+    prisma.customer.count(),
+    prisma.order.count({ where: { statut: { in: [...STATUTS_LIVRE] } } }),
+    prisma.productReview.count({ where: { statut: 'APPROUVE' } }),
+    storeSettingsService.getLivraisonConfig(),
+    prisma.product.count({ where: { actif: true } }),
+  ]);
+
+  return [
+    { value: clients.toLocaleString('fr-FR'), label: 'Clientes inscrites' },
+    { value: livraison.delaiLabel ?? '—', label: 'Délai de livraison' },
+    { value: commandesLivrees.toLocaleString('fr-FR'), label: 'Commandes livrées' },
+    { value: avisApprouves.toLocaleString('fr-FR'), label: 'Avis vérifiés' },
+  ];
+}
+
+async function resolveChiffres(raw: unknown): Promise<AproposChiffre[]> {
+  const custom = parseAproposChiffres(raw);
+  if (custom.length > 0) return custom;
+  return computeChiffresDynamiquesImpl();
+}
+
+async function mapApropos(row: AproposRow | null): Promise<AproposPublicConfig> {
+  if (!row) {
+    return {
+      ...DEFAULT_APROPOS,
+      chiffres: await computeChiffresDynamiquesImpl(),
+    };
+  }
 
   return {
     heroKicker: row.aproposHeroKicker?.trim() || DEFAULT_APROPOS.heroKicker,
@@ -39,7 +70,7 @@ function mapApropos(row: AproposRow | null): AproposPublicConfig {
     missionTexte: row.aproposMissionTexte?.trim() || DEFAULT_APROPOS.missionTexte,
     histoireTitre: row.aproposHistoireTitre?.trim() || DEFAULT_APROPOS.histoireTitre,
     histoireTexte: row.aproposHistoireTexte?.trim() || DEFAULT_APROPOS.histoireTexte,
-    chiffres: parseAproposChiffres(row.aproposChiffres),
+    chiffres: await resolveChiffres(row.aproposChiffres),
     valeurs: parseAproposValeurs(row.aproposValeurs),
     ctaTitre: row.aproposCtaTitre?.trim() || DEFAULT_APROPOS.ctaTitre,
     ctaTexte: row.aproposCtaTexte?.trim() || DEFAULT_APROPOS.ctaTexte,
@@ -65,6 +96,10 @@ const APROPOS_SELECT = {
 } as const;
 
 export class AproposService {
+  async computeChiffresDynamiques(): Promise<AproposChiffre[]> {
+    return computeChiffresDynamiquesImpl();
+  }
+
   async getPublicConfig(): Promise<AproposPublicConfig> {
     const row = await prisma.storeSettings.findUnique({
       where: { id: STORE_SETTINGS_ID },
@@ -106,7 +141,7 @@ export class AproposService {
         aproposMissionTexte: dto.missionTexte?.trim() ?? DEFAULT_APROPOS.missionTexte,
         aproposHistoireTitre: dto.histoireTitre?.trim() ?? DEFAULT_APROPOS.histoireTitre,
         aproposHistoireTexte: dto.histoireTexte?.trim() ?? DEFAULT_APROPOS.histoireTexte,
-        aproposChiffres: dto.chiffres ?? DEFAULT_APROPOS.chiffres,
+        aproposChiffres: dto.chiffres ?? null,
         aproposValeurs: dto.valeurs ?? DEFAULT_APROPOS.valeurs,
         aproposCtaTitre: dto.ctaTitre?.trim() ?? DEFAULT_APROPOS.ctaTitre,
         aproposCtaTexte: dto.ctaTexte?.trim() ?? DEFAULT_APROPOS.ctaTexte,

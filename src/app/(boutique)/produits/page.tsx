@@ -21,9 +21,11 @@ import { CatalogSearchBar } from '@/modules/produits/components/catalog/CatalogS
 import {
   buildCatalogUrl,
   catalogTriToRepository,
+  CATALOG_PAGE_SIZE,
   CATALOG_TRI_OPTIONS,
   type CatalogSearchParams,
 } from '@/modules/produits/lib/catalog-url';
+import { CatalogPagination } from '@/modules/produits/components/catalog/CatalogPagination';
 import type { ProduitAvecCategorie } from '@/modules/produits/types';
 
 type SearchParams = Promise<CatalogSearchParams>;
@@ -35,6 +37,7 @@ export default async function CatalogPage({
 }) {
   const params = await searchParams;
   const activeTri = params.tri || 'nouveautes';
+  const currentPage = Math.max(1, Number(params.page) || 1);
 
   const filtres = {
     categorieSlug: params.categorie || undefined,
@@ -53,9 +56,13 @@ export default async function CatalogPage({
   const [categories, facettes, catalog] = await Promise.all([
     getCachedCategoriesArbre(),
     productService.obtenirFacettesCatalogue(filtres),
-    productService.listerProduits(filtres, catalogTriToRepository(activeTri), { page: 1, limit: 100 }),
+    productService.listerProduits(filtres, catalogTriToRepository(activeTri), {
+      page: currentPage,
+      limit: CATALOG_PAGE_SIZE,
+    }),
   ]);
   const products: ProduitAvecCategorie[] = catalog.produits;
+  const { pagination } = catalog;
 
   const notesMap = await chargerNotesProduits(
     products.map((p) => p.id),
@@ -195,8 +202,13 @@ export default async function CatalogPage({
                 <div className="shop-dash-toolbar-meta">
                   <Sparkles className="h-4 w-4 text-[#e91e8c]" strokeWidth={1.75} />
                   <span>
-                    <strong>{products.length}</strong> produit{products.length !== 1 ? 's' : ''} affiché
-                    {products.length !== 1 ? 's' : ''}
+                    <strong>{pagination.total}</strong> produit{pagination.total !== 1 ? 's' : ''}
+                    {pagination.totalPages > 1 && (
+                      <>
+                        {' '}
+                        — page {pagination.page}/{pagination.totalPages}
+                      </>
+                    )}
                   </span>
                 </div>
                 <div className="shop-dash-sort" role="tablist" aria-label="Tri du catalogue">
@@ -295,6 +307,13 @@ export default async function CatalogPage({
                   </Link>
                 </div>
               )}
+
+              <CatalogPagination
+                params={params}
+                page={pagination.page}
+                totalPages={pagination.totalPages}
+                total={pagination.total}
+              />
             </div>
           </div>
         </div>

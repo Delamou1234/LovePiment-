@@ -1,0 +1,10 @@
+# Remplacez les domaines par les vôtres avant déploiement.
+# Love Piment&
+lovepiment.gn, www.lovepiment.gn {
+	reverse_proxy lovepiment:3000
+}
+
+# Kabishop (décommentez quand prêt)
+# kabishop.gn, www.kabishop.gn {
+# 	reverse_proxy kabishop:3000
+# }

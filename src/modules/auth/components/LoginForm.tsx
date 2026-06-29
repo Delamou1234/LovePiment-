@@ -14,6 +14,12 @@ import {
 } from '@/shared/lib/auth-redirect';
 import { AuthField } from './AuthField';
 import { PasswordInput } from '@/shared/components/PasswordInput';
+import {
+  SocialLoginButtons,
+  SocialLoginDivider,
+} from './SocialLoginButtons';
+import type { SocialAuthProviders } from '@/shared/lib/auth/social-providers';
+import { hasAnySocialProvider } from '@/shared/lib/auth/social-providers';
 
 const loginSchema = z.object({
   email: z.string().email('Adresse e-mail invalide'),
@@ -25,15 +31,21 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 interface LoginFormProps {
   isCheckout?: boolean;
   initialError?: string;
+  socialProviders?: SocialAuthProviders;
 }
 
-export function LoginForm({ isCheckout = false, initialError }: LoginFormProps) {
+export function LoginForm({
+  isCheckout = false,
+  initialError,
+  socialProviders,
+}: LoginFormProps) {
   const searchParams = useSearchParams();
   const redirectParam = searchParams.get('redirect');
 
   const defaultRedirect = isCheckoutRedirect(redirectParam) ? '/commande' : '/compte';
   const safeRedirect = getSafeRedirectForCustomer(redirectParam, defaultRedirect);
   const registerHref = `/inscription${redirectParam ? `?redirect=${encodeURIComponent(safeRedirect)}` : ''}`;
+  const showSocial = socialProviders && hasAnySocialProvider(socialProviders);
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(initialError ?? '');
@@ -106,6 +118,18 @@ export function LoginForm({ isCheckout = false, initialError }: LoginFormProps) 
 
       {errorMsg && (
         <div className="auth-connexion-error">{errorMsg}</div>
+      )}
+
+      {showSocial && socialProviders && (
+        <>
+          <SocialLoginButtons
+            redirect={safeRedirect}
+            googleEnabled={socialProviders.google}
+            facebookEnabled={socialProviders.facebook}
+            appleEnabled={socialProviders.apple}
+          />
+          <SocialLoginDivider />
+        </>
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="auth-connexion-form">

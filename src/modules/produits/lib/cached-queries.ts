@@ -99,7 +99,7 @@ export async function getCachedProductStock(slug: string) {
 /** Produits similaires — cache 5 min. */
 export async function getCachedSimilarProducts(productId: string, categorieId: string) {
   return unstable_cache(
-    () => productService.obtenirProduitsSimilaires(productId, categorieId, 4),
+    () => productService.obtenirProduitsSimilaires(productId, categorieId, 6),
     ['similar-products', productId, categorieId],
     { revalidate: 300, tags: ['products'] },
   )();

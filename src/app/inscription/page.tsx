@@ -5,6 +5,7 @@ import { Gift, Lock, Truck } from 'lucide-react';
 import { RegisterForm } from '@/modules/auth/components/RegisterForm';
 import { AuthSplitLayout } from '@/modules/auth/components/AuthSplitLayout';
 import { getSafeRedirect, isCheckoutRedirect } from '@/shared/lib/auth-redirect';
+import { getSocialAuthProviders } from '@/shared/lib/auth/social-providers';
 import { getCustomerSession } from '@/shared/lib/auth/session';
 
 export const metadata: Metadata = {
@@ -34,6 +35,7 @@ export default async function InscriptionPage({
   }
 
   const isCheckout = isCheckoutRedirect(redirectParam);
+  const socialProviders = getSocialAuthProviders();
 
   return (
     <AuthSplitLayout
@@ -45,7 +47,7 @@ export default async function InscriptionPage({
       compactForm
     >
       <Suspense fallback={<div className="auth-connexion-card skeleton h-96 w-full rounded-2xl" />}>
-        <RegisterForm isCheckout={isCheckout} />
+        <RegisterForm isCheckout={isCheckout} socialProviders={socialProviders} />
       </Suspense>
     </AuthSplitLayout>
   );

@@ -4,11 +4,21 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import Image from 'next/image';
 import Link from 'next/link';
-import { X, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const IMAGE_FALLBACK =
   'https://images.unsplash.com/photo-1541643600914-78b084683601?w=800&q=80';
+
+/** AliExpress : zoom ×2 dans le cadre preview (383×383) */
+const ZOOM_RATIO = 2;
+
+type CursorState = {
+  px: number;
+  py: number;
+  w: number;
+  h: number;
+};
 
 export type RelatedProductThumb = {
   slug: string;
@@ -23,7 +33,7 @@ type Props = {
   relatedProducts?: RelatedProductThumb[];
 };
 
-function ImageThumb({
+function SliderThumb({
   img,
   active,
   onSelect,
@@ -31,23 +41,38 @@ function ImageThumb({
 }: {
   img: string;
   active: boolean;
-  onSelect?: () => void;
+  onSelect: () => void;
   label: string;
 }) {
-  const className = cn('product-gallery-thumb', active && 'is-active');
-
-  if (onSelect) {
-    return (
-      <button type="button" onClick={onSelect} className={className} aria-label={label} aria-current={active}>
-        <Image src={img} alt="" fill sizes="72px" className="object-cover" />
-      </button>
-    );
-  }
-
   return (
-    <div className={className}>
-      <Image src={img} alt="" fill sizes="72px" className="object-cover" />
-    </div>
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn('product-gallery-ae-thumb', active && 'is-active')}
+      aria-label={label}
+      aria-current={active}
+    >
+      <Image src={img} alt="" fill sizes="51px" className="object-contain" />
+    </button>
+  );
+}
+
+function SimilarThumb({ product }: { product: RelatedProductThumb }) {
+  return (
+    <Link
+      href={`/produits/${product.slug}`}
+      className="product-gallery-ae-thumb product-gallery-ae-thumb--link"
+      title={product.nom}
+      aria-label={`Produit similaire — ${product.nom}`}
+    >
+      <Image
+        src={product.image || IMAGE_FALLBACK}
+        alt={product.nom}
+        fill
+        sizes="51px"
+        className="object-contain"
+      />
+    </Link>
   );
 }
 
@@ -61,7 +86,13 @@ export function ProductImageGallery({ images, alt, badge, relatedProducts = [] }
   const [isDragging, setIsDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0, ox: 0, oy: 0 });
 
+  const previewRef = useRef<HTMLDivElement>(null);
+  const [hoverZoom, setHoverZoom] = useState(false);
+  const [cursor, setCursor] = useState<CursorState>({ px: 0, py: 0, w: 0, h: 0 });
+  const [canHoverZoom, setCanHoverZoom] = useState(false);
+
   const activeImage = gallery[activeIndex];
+  const hasSimilar = relatedProducts.length > 0;
 
   const resetZoom = useCallback(() => {
     setScale(1);
@@ -76,18 +107,61 @@ export function ProductImageGallery({ images, alt, badge, relatedProducts = [] }
     [resetZoom],
   );
 
+  const goPrev = useCallback(() => {
+    selectIndex((activeIndex - 1 + gallery.length) % gallery.length);
+  }, [activeIndex, gallery.length, selectIndex]);
+
+  const goNext = useCallback(() => {
+    selectIndex((activeIndex + 1) % gallery.length);
+  }, [activeIndex, gallery.length, selectIndex]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 1024px)');
+    const sync = () => setCanHoverZoom(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
   useEffect(() => {
     if (!zoomOpen) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setZoomOpen(false);
+      if (e.key === 'ArrowLeft') goPrev();
+      if (e.key === 'ArrowRight') goNext();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [zoomOpen]);
+  }, [zoomOpen, goPrev, goNext]);
 
   useRunAfterMount(() => {
     if (zoomOpen) resetZoom();
   }, [zoomOpen, activeIndex, resetZoom]);
+
+  const syncCursor = (clientX: number, clientY: number) => {
+    if (!previewRef.current) return;
+    const rect = previewRef.current.getBoundingClientRect();
+    setCursor({
+      px: clientX - rect.left,
+      py: clientY - rect.top,
+      w: rect.width,
+      h: rect.height,
+    });
+  };
+
+  const handlePreviewMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!canHoverZoom) return;
+    syncCursor(e.clientX, e.clientY);
+  };
+
+  const handlePreviewMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!canHoverZoom) return;
+    syncCursor(e.clientX, e.clientY);
+    setHoverZoom(true);
+  };
+
+  const zoomPosX = cursor.w > 0 ? (cursor.px / cursor.w) * 100 : 50;
+  const zoomPosY = cursor.h > 0 ? (cursor.py / cursor.h) * 100 : 50;
 
   const onWheel = (e: React.WheelEvent) => {
     e.preventDefault();
@@ -115,85 +189,98 @@ export function ProductImageGallery({ images, alt, badge, relatedProducts = [] }
     setIsDragging(false);
   };
 
-  const showSidebar = gallery.length > 1 || relatedProducts.length > 0;
-
   return (
     <>
-      <div className="lg:sticky lg:top-24">
-        <div className="product-gallery-luxury">
-          {showSidebar && (
-            <aside className="product-gallery-sidebar">
-              {gallery.length > 1 && (
-                <div className="product-gallery-thumbs-vertical">
-                  {gallery.map((img, idx) => (
-                    <ImageThumb
-                      key={`v-${img}-${idx}`}
-                      img={img}
-                      active={activeIndex === idx}
-                      onSelect={() => selectIndex(idx)}
-                      label={`${alt} — vue ${idx + 1}`}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {relatedProducts.length > 0 && (
-                <div className="product-gallery-related-block">
-                  <p className="product-gallery-related-label">Autres modèles</p>
-                  <div className="product-gallery-related">
-                    {relatedProducts.map((p) => (
-                      <Link
-                        key={p.slug}
-                        href={`/produits/${p.slug}`}
-                        className="product-gallery-thumb product-gallery-thumb--link"
-                        title={p.nom}
-                      >
-                        <Image
-                          src={p.image || IMAGE_FALLBACK}
-                          alt={p.nom}
-                          fill
-                          sizes="72px"
-                          className="object-cover"
-                        />
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </aside>
-          )}
-
-          <button
-            type="button"
-            className="product-gallery-main group"
-            onClick={() => setZoomOpen(true)}
-            aria-label={`Agrandir — ${alt}`}
-          >
-            <Image
-              src={activeImage}
-              alt={alt}
-              fill
-              priority
-              sizes="(max-width: 1024px) 100vw, 48vw"
-              className="object-cover object-center transition-opacity duration-500"
-            />
-            {badge}
-          </button>
-        </div>
-
-        {gallery.length > 1 && (
-          <div className="product-gallery-thumbs-mobile scrollbar-hide lg:hidden">
+      <div className="product-gallery-wrap">
+        <div className="product-gallery-ae">
+          <div className="product-gallery-ae-slider scrollbar-hide">
             {gallery.map((img, idx) => (
-              <ImageThumb
-                key={`m-${img}-${idx}`}
+              <SliderThumb
+                key={`slide-${img}-${idx}`}
                 img={img}
                 active={activeIndex === idx}
                 onSelect={() => selectIndex(idx)}
-                label={`Vue ${idx + 1}`}
+                label={`${alt} — vue ${idx + 1}`}
               />
             ))}
+
+            {hasSimilar && (
+              <>
+                <div className="product-gallery-ae-slider-divider" aria-hidden />
+                <p className="product-gallery-ae-slider-label">Similaires</p>
+                {relatedProducts.map((p) => (
+                  <SimilarThumb key={p.slug} product={p} />
+                ))}
+              </>
+            )}
           </div>
-        )}
+
+          <div className="product-gallery-ae-preview-wrap">
+            <div
+              ref={previewRef}
+              className={cn(
+                'product-gallery-ae-preview-box',
+                hoverZoom && canHoverZoom && 'is-magnifying',
+              )}
+              onMouseEnter={handlePreviewMouseEnter}
+              onMouseLeave={() => setHoverZoom(false)}
+              onMouseMove={handlePreviewMouseMove}
+              onClick={() => !canHoverZoom && setZoomOpen(true)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setZoomOpen(true);
+                }
+              }}
+              aria-label={`${alt} — survoler pour zoomer`}
+            >
+              <div className="product-gallery-ae-magnifier-wrap">
+                {!(hoverZoom && canHoverZoom) ? (
+                  <Image
+                    src={activeImage}
+                    alt={alt}
+                    fill
+                    priority
+                    sizes="(max-width: 1023px) 88vw, 383px"
+                    className="product-gallery-ae-base-image"
+                    draggable={false}
+                  />
+                ) : (
+                  <div
+                    className="product-gallery-ae-magnifier"
+                    style={{
+                      backgroundImage: `url(${activeImage})`,
+                      backgroundRepeat: 'no-repeat',
+                      backgroundSize: `${ZOOM_RATIO * 100}%`,
+                      backgroundPosition: `${zoomPosX}% ${zoomPosY}%`,
+                    }}
+                    aria-hidden
+                  />
+                )}
+              </div>
+
+              {badge}
+            </div>
+          </div>
+        </div>
+
+        <div className="product-gallery-thumbs-mobile scrollbar-hide lg:hidden">
+          {gallery.map((img, idx) => (
+            <SliderThumb
+              key={`m-${img}-${idx}`}
+              img={img}
+              active={activeIndex === idx}
+              onSelect={() => selectIndex(idx)}
+              label={`Vue ${idx + 1}`}
+            />
+          ))}
+          {hasSimilar &&
+            relatedProducts.map((p) => (
+              <SimilarThumb key={`m-sim-${p.slug}`} product={p} />
+            ))}
+        </div>
       </div>
 
       {zoomOpen && (
@@ -204,8 +291,30 @@ export function ProductImageGallery({ images, alt, badge, relatedProducts = [] }
           aria-label="Zoom produit"
         >
           <div className="flex items-center justify-between px-4 py-3 text-white">
-            <span className="text-sm font-medium">{alt}</span>
+            <span className="text-sm font-medium">
+              {alt} ({activeIndex + 1}/{gallery.length})
+            </span>
             <div className="flex items-center gap-2">
+              {gallery.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    onClick={goPrev}
+                    className="rounded-full bg-white/10 p-2 hover:bg-white/20"
+                    aria-label="Image précédente"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={goNext}
+                    className="rounded-full bg-white/10 p-2 hover:bg-white/20"
+                    aria-label="Image suivante"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </>
+              )}
               <button
                 type="button"
                 onClick={() => setScale((s) => Math.max(1, s - 0.25))}

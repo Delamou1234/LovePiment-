@@ -4,7 +4,7 @@ services:
     container_name: lovepiment-postgres
     restart: unless-stopped
     ports:
-      - '5432:5432'
+      - '5434:5432'
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: Delamou1234
@@ -19,3 +19,5 @@ services:
 
 volumes:
   lovepiment_pg_data:
+
+

@@ -11,8 +11,6 @@ import { CourierIdCard } from './CourierIdCard';
 import { CourierPhotoUpload, uploadCourierPhoto } from './CourierPhotoUpload';
 import { triggerCourierCardPrint } from './print-courier-card';
 
-const COMMUNES = ['Kaloum', 'Dixinn', 'Matam', 'Ratoma', 'Matoto', 'Coyah', 'Kindia', 'Autre'];
-
 const ENGIN_LABELS: Record<string, string> = {
   MOTO: 'Moto',
   VOITURE: 'Voiture',
@@ -36,7 +34,7 @@ const empty = {
   immatriculation: '',
   numeroCni: '',
   quartierBase: '',
-  commune: 'Ratoma',
+  commune: '',
   contactUrgenceNom: '',
   contactUrgenceTel: '',
   permisConduire: '',
@@ -46,6 +44,7 @@ const empty = {
 
 export function AdminLivreursPage() {
   const [livreurs, setLivreurs] = useState<Livreur[]>([]);
+  const [communes, setCommunes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(empty);
   const [saving, setSaving] = useState(false);
@@ -57,10 +56,19 @@ export function AdminLivreursPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/livreurs');
-      if (res.ok) {
-        const data = await res.json();
+      const [livRes, commRes] = await Promise.all([
+        fetch('/api/admin/livreurs'),
+        fetch('/api/admin/reference/communes'),
+      ]);
+      if (livRes.ok) {
+        const data = await livRes.json();
         setLivreurs(data.livreurs ?? []);
+      }
+      if (commRes.ok) {
+        const data = await commRes.json();
+        const list: string[] = data.communes ?? [];
+        setCommunes(list);
+        setForm((f) => (f.commune ? f : { ...f, commune: list[0] ?? '' }));
       }
     } finally {
       setLoading(false);
@@ -207,7 +215,7 @@ export function AdminLivreursPage() {
             </select>
             <input className="input-shop" placeholder="Immatriculation / plaque" value={form.immatriculation} onChange={(e) => setForm({ ...form, immatriculation: e.target.value })} />
             <select className="input-shop" value={form.commune} onChange={(e) => setForm({ ...form, commune: e.target.value })}>
-              {COMMUNES.map((c) => (
+              {communes.map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>

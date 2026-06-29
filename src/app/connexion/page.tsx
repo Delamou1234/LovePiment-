@@ -16,6 +16,7 @@ import {
   getCustomerSession,
 } from '@/shared/lib/auth/session';
 import { redirectUrlApresSessionExpiree } from '@/shared/lib/auth/stale-session';
+import { getSocialAuthProviders } from '@/shared/lib/auth/social-providers';
 
 export const metadata: Metadata = {
   title: 'Connexion',
@@ -64,6 +65,7 @@ export default async function ConnexionPage({
   }
 
   const isCheckout = isCheckoutRedirect(redirectParam);
+  const socialProviders = getSocialAuthProviders();
 
   return (
     <AuthSplitLayout
@@ -76,6 +78,7 @@ export default async function ConnexionPage({
       <Suspense fallback={<div className="auth-connexion-card skeleton h-80 w-full rounded-2xl" />}>
         <LoginForm
           isCheckout={isCheckout}
+          socialProviders={socialProviders}
           initialError={
             error === 'session_expired'
               ? 'Votre session a expiré ou le compte n\'existe plus. Reconnectez-vous.'

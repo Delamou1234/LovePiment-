@@ -106,9 +106,26 @@ export function AdminAproposPage() {
     }
   };
 
-  const resetDefaults = () => {
-    if (!window.confirm('Réinitialiser tout le contenu avec les textes par défaut ?')) return;
-    setDraft({ ...DEFAULT_APROPOS });
+  const resetDefaults = async () => {
+    if (!window.confirm('Réinitialiser les textes avec le contenu éditorial par défaut ?')) return;
+    try {
+      const res = await fetch('/api/admin/apropos/chiffres-dynamiques');
+      const chiffres = res.ok ? ((await res.json()) as { chiffres: AproposChiffre[] }).chiffres : [];
+      setDraft({ ...DEFAULT_APROPOS, chiffres });
+    } catch {
+      setDraft({ ...DEFAULT_APROPOS, chiffres: draft?.chiffres ?? [] });
+    }
+  };
+
+  const syncChiffres = async () => {
+    try {
+      const res = await fetch('/api/admin/apropos/chiffres-dynamiques');
+      if (!res.ok) return;
+      const data = (await res.json()) as { chiffres: AproposChiffre[] };
+      setDraft((d) => (d ? { ...d, chiffres: data.chiffres } : d));
+    } catch {
+      /* ignore */
+    }
   };
 
   const dirty = saved && draft && JSON.stringify(saved) !== JSON.stringify(draft);
@@ -284,16 +301,30 @@ export function AdminAproposPage() {
       </section>
 
       <section className="rounded-xl border border-[#F2D4DC] bg-white p-5 space-y-4">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Chiffres clés</h2>
-          <button
-            type="button"
-            onClick={addChiffre}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-[#9B1B2E]"
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Ajouter
-          </button>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500">Chiffres clés</h2>
+            <p className="mt-1 text-[11px] text-zinc-400">
+              Par défaut, calculés depuis la boutique (clients, commandes, avis, délais).
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => void syncChiffres()}
+              className="inline-flex items-center gap-1 rounded-lg border border-[#F2D4DC] px-2.5 py-1.5 text-xs font-semibold text-[#9B1B2E] hover:bg-[#FFF8F6]"
+            >
+              Synchroniser stats réelles
+            </button>
+            <button
+              type="button"
+              onClick={addChiffre}
+              className="inline-flex items-center gap-1 text-xs font-semibold text-[#9B1B2E]"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Ajouter
+            </button>
+          </div>
         </div>
         <div className="space-y-3">
           {draft.chiffres.map((chiffre, index) => (
@@ -303,7 +334,7 @@ export function AdminAproposPage() {
             >
               <input
                 className={inputClass}
-                placeholder="1000+"
+                placeholder="Ex. 42"
                 value={chiffre.value}
                 onChange={(e) => patchChiffre(index, { value: e.target.value })}
               />

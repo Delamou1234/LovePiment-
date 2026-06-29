@@ -2,7 +2,7 @@
 
 import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import { useCallback, useState } from 'react';
-import { CheckCircle2, Gift, Loader2, Phone, Save, Truck } from 'lucide-react';
+import { CheckCircle2, Gift, Loader2, Mail, Phone, Save, Truck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { LivraisonConfig } from '@/shared/lib/shipping';
 
@@ -10,6 +10,14 @@ type Settings = {
   parrainageActif: boolean;
   appelsActifs: boolean;
   livraison: LivraisonConfig;
+  newsletter: {
+    actif: boolean;
+    titre: string;
+    description: string | null;
+    imageUrl: string | null;
+    remisePct: number;
+    couponCode: string | null;
+  };
   updatedAt: string;
 };
 
@@ -82,6 +90,14 @@ export default function AdminParametresPage() {
           parrainageActif: data.settings.parrainageActif,
           appelsActifs: data.settings.appelsActifs,
           livraison: data.settings.livraison,
+          newsletter: {
+            actif: data.settings.newsletterActif,
+            titre: data.settings.newsletterTitre,
+            description: data.settings.newsletterDescription,
+            imageUrl: data.settings.newsletterImageUrl,
+            remisePct: data.settings.newsletterRemisePct,
+            couponCode: data.settings.newsletterCouponCode,
+          },
           updatedAt: data.settings.updatedAt,
         };
         setSettings(s);
@@ -107,6 +123,14 @@ export default function AdminParametresPage() {
           parrainageActif: draft.parrainageActif,
           appelsActifs: draft.appelsActifs,
           livraison: draft.livraison,
+          newsletter: {
+            actif: draft.newsletter.actif,
+            titre: draft.newsletter.titre,
+            description: draft.newsletter.description,
+            imageUrl: draft.newsletter.imageUrl,
+            remisePct: draft.newsletter.remisePct,
+            couponCode: draft.newsletter.couponCode,
+          },
         }),
       });
       const data = await res.json();
@@ -115,6 +139,14 @@ export default function AdminParametresPage() {
         parrainageActif: data.settings.parrainageActif,
         appelsActifs: data.settings.appelsActifs,
         livraison: data.settings.livraison,
+        newsletter: {
+          actif: data.settings.newsletterActif,
+          titre: data.settings.newsletterTitre,
+          description: data.settings.newsletterDescription,
+          imageUrl: data.settings.newsletterImageUrl,
+          remisePct: data.settings.newsletterRemisePct,
+          couponCode: data.settings.newsletterCouponCode,
+        },
         updatedAt: data.settings.updatedAt,
       };
       setSettings(s);
@@ -134,7 +166,8 @@ export default function AdminParametresPage() {
     draft &&
     (settings.parrainageActif !== draft.parrainageActif ||
       settings.appelsActifs !== draft.appelsActifs ||
-      JSON.stringify(settings.livraison) !== JSON.stringify(draft.livraison));
+      JSON.stringify(settings.livraison) !== JSON.stringify(draft.livraison) ||
+      JSON.stringify(settings.newsletter) !== JSON.stringify(draft.newsletter));
 
   const patchLivraison = (patch: Partial<LivraisonConfig>) => {
     setDraft((d) => (d ? { ...d, livraison: { ...d.livraison, ...patch } } : d));
@@ -244,6 +277,123 @@ export default function AdminParametresPage() {
             checked={livraison.gratuiteActive}
             onChange={(v) => patchLivraison({ gratuiteActive: v })}
           />
+        </div>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-2">
+          <Mail className="h-4 w-4" />
+          Newsletter popup
+        </h2>
+
+        <div className="rounded-xl border border-[#F2D4DC] bg-white p-5 space-y-4">
+          <ToggleRow
+            icon={Mail}
+            title="Popup newsletter active"
+            description="Bandeau d'inscription affiché sur la boutique (titre, texte, remise et code coupon)."
+            checked={draft.newsletter.actif}
+            onChange={(v) =>
+              setDraft((d) => (d ? { ...d, newsletter: { ...d.newsletter, actif: v } } : d))
+            }
+          />
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label className="mb-1.5 block text-xs font-semibold text-zinc-600">Titre</label>
+              <input
+                className={inputClass}
+                value={draft.newsletter.titre}
+                onChange={(e) =>
+                  setDraft((d) =>
+                    d ? { ...d, newsletter: { ...d.newsletter, titre: e.target.value } } : d,
+                  )
+                }
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1.5 block text-xs font-semibold text-zinc-600">Description</label>
+              <textarea
+                className={`${inputClass} min-h-[5rem] resize-y`}
+                value={draft.newsletter.description ?? ''}
+                onChange={(e) =>
+                  setDraft((d) =>
+                    d
+                      ? {
+                          ...d,
+                          newsletter: {
+                            ...d.newsletter,
+                            description: e.target.value || null,
+                          },
+                        }
+                      : d,
+                  )
+                }
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-zinc-600">Remise (%)</label>
+              <input
+                type="number"
+                min={0}
+                max={100}
+                className={inputClass}
+                value={draft.newsletter.remisePct}
+                onChange={(e) =>
+                  setDraft((d) =>
+                    d
+                      ? {
+                          ...d,
+                          newsletter: {
+                            ...d.newsletter,
+                            remisePct: Math.min(100, Math.max(0, Number(e.target.value) || 0)),
+                          },
+                        }
+                      : d,
+                  )
+                }
+              />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-semibold text-zinc-600">Code coupon</label>
+              <input
+                className={inputClass}
+                value={draft.newsletter.couponCode ?? ''}
+                onChange={(e) =>
+                  setDraft((d) =>
+                    d
+                      ? {
+                          ...d,
+                          newsletter: {
+                            ...d.newsletter,
+                            couponCode: e.target.value.trim() || null,
+                          },
+                        }
+                      : d,
+                  )
+                }
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1.5 block text-xs font-semibold text-zinc-600">Image (URL)</label>
+              <input
+                className={inputClass}
+                value={draft.newsletter.imageUrl ?? ''}
+                onChange={(e) =>
+                  setDraft((d) =>
+                    d
+                      ? {
+                          ...d,
+                          newsletter: {
+                            ...d.newsletter,
+                            imageUrl: e.target.value.trim() || null,
+                          },
+                        }
+                      : d,
+                  )
+                }
+              />
+            </div>
+          </div>
         </div>
       </section>
 

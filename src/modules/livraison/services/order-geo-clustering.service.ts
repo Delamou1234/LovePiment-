@@ -3,7 +3,9 @@ import { deliveryNavigationService } from './delivery-navigation.service';
 import { distanceKm, formaterDistance } from '@/shared/lib/geolocation/distance';
 import type { GeoCoordinates } from '@/shared/lib/geolocation/forward-geocode';
 
-const COMMUNES_CONAKRY = ['Kaloum', 'Dixinn', 'Matam', 'Ratoma', 'Matoto', 'Coyah', 'Kindia'];
+import { COMMUNES_CONAKRY_REFERENCE } from '@/shared/lib/communes-conakry';
+
+const COMMUNES_CONAKRY = [...COMMUNES_CONAKRY_REFERENCE];
 
 export type GeoOrderPoint = {
   id: string;

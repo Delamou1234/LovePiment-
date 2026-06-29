@@ -267,37 +267,34 @@ export default function ProductDetailsSection({ product, avisStats, similaires =
               <h1 className="product-title">{product.nom}</h1>
 
               {avisStats && avisStats.total > 0 && (
-                <div className="flex items-center gap-2.5">
+                <div className="product-rating-row">
                   <StarRating value={avisStats.moyenne} size="sm" showValue />
-                  <a
-                    href="#avis-clients"
-                    className="text-xs text-zinc-500 underline-offset-2 transition hover:text-[#e91e8c] hover:underline"
-                  >
+                  <a href="#avis-clients" className="product-rating-link">
                     {avisStats.total} avis vérifié{avisStats.total > 1 ? 's' : ''}
                   </a>
                 </div>
               )}
             </header>
 
-            <div className="product-price-card">
-              <div>
+            <div className="product-price-block">
+              <div className="product-price-row">
                 {enPromo && product.prixPromo != null ? (
-                  <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <>
                     <p className="product-price-main">{prixAffiche.toLocaleString('fr-FR')} GN</p>
                     <p className="product-price-old">{prixCatalogue.toLocaleString('fr-FR')} GN</p>
-                  </div>
+                  </>
                 ) : (
                   <p className="product-price-main">{prixAffiche.toLocaleString('fr-FR')} GN</p>
                 )}
+              </div>
+
+              <div className="product-price-meta">
                 {enPromo && product.promoFin && (
-                  <span className="product-promo-tag mt-2">
+                  <span className="product-promo-tag">
                     <Tag className="h-3 w-3" />
                     Promo jusqu&apos;au {formaterDatePromo(product.promoFin)}
                   </span>
                 )}
-              </div>
-
-              <div className="product-meta-row">
                 {aDuStock ? (
                   <span className="product-stock-badge">
                     <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -323,11 +320,11 @@ export default function ProductDetailsSection({ product, avisStats, similaires =
               <p className="product-description">{product.description}</p>
             )}
 
-            <div className="product-config-panel">
+            <div className="product-purchase-block">
               {capacites.length > 0 && (
-                <fieldset>
+                <fieldset className="product-option-field">
                   <legend className="product-option-label">Capacité</legend>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="product-option-list">
                     {capacites.map((c) => (
                       <button
                         key={c}
@@ -343,9 +340,9 @@ export default function ProductDetailsSection({ product, avisStats, similaires =
               )}
 
               {tailles.length > 0 && (
-                <fieldset>
+                <fieldset className="product-option-field">
                   <legend className="product-option-label">Taille</legend>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="product-option-list">
                     {tailles.map((t) => (
                       <button
                         key={t}
@@ -361,9 +358,9 @@ export default function ProductDetailsSection({ product, avisStats, similaires =
               )}
 
               {couleurs.length > 0 && (
-                <fieldset>
+                <fieldset className="product-option-field">
                   <legend className="product-option-label">Fragrance</legend>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="product-option-list">
                     {couleurs.map((c) => (
                       <button
                         key={c}
@@ -392,9 +389,7 @@ export default function ProductDetailsSection({ product, avisStats, similaires =
                       >
                         −
                       </button>
-                      <span className="w-12 text-center text-base font-bold tabular-nums text-zinc-900">
-                        {quantite}
-                      </span>
+                      <span className="product-qty-value">{quantite}</span>
                       <button
                         type="button"
                         onClick={() => setQuantite(Math.min(stockDisponible, quantite + 1))}
@@ -408,7 +403,7 @@ export default function ProductDetailsSection({ product, avisStats, similaires =
                   </div>
 
                   {selectedVariant?.sku && (
-                    <p className="product-sku-line flex items-center gap-2">
+                    <p className="product-sku-line">
                       <span>SKU {selectedVariant.sku}</span>
                       {selectedVariant.codeBarre && (
                         <span className="inline-flex items-center gap-1">
@@ -420,10 +415,8 @@ export default function ProductDetailsSection({ product, avisStats, similaires =
                   )}
                 </div>
               )}
-            </div>
 
-            <div className="product-buy-panel">
-              {actionButtons}
+              <div className="product-actions-wrap">{actionButtons}</div>
             </div>
 
             <div className="product-trust-strip">

@@ -16,6 +16,16 @@ const patchSchema = z.object({
       delaiLabel: z.string().max(80).nullable().optional(),
     })
     .optional(),
+  newsletter: z
+    .object({
+      actif: z.boolean().optional(),
+      titre: z.string().min(1).max(120).optional(),
+      description: z.string().max(500).nullable().optional(),
+      imageUrl: z.string().max(500).nullable().optional(),
+      remisePct: z.number().int().min(0).max(100).optional(),
+      couponCode: z.string().max(40).nullable().optional(),
+    })
+    .optional(),
 });
 
 /** GET /api/admin/parametres */
@@ -44,12 +54,13 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ message: 'Données invalides' }, { status: 400 });
     }
 
-    const { parrainageActif, appelsActifs, livraison } = parsed.data;
+    const { parrainageActif, appelsActifs, livraison, newsletter } = parsed.data;
 
     if (
       parrainageActif === undefined &&
       appelsActifs === undefined &&
-      !livraison
+      !livraison &&
+      !newsletter
     ) {
       return NextResponse.json({ message: 'Aucune modification' }, { status: 400 });
     }
@@ -65,6 +76,21 @@ export async function PATCH(request: NextRequest) {
 
     if (livraison) {
       settings = await storeSettingsService.updateLivraisonSettings(livraison);
+    }
+
+    if (newsletter) {
+      settings = await storeSettingsService.updateNewsletterSettings({
+        ...(newsletter.actif !== undefined && { newsletterActif: newsletter.actif }),
+        ...(newsletter.titre !== undefined && { newsletterTitre: newsletter.titre }),
+        ...(newsletter.description !== undefined && {
+          newsletterDescription: newsletter.description,
+        }),
+        ...(newsletter.imageUrl !== undefined && { newsletterImageUrl: newsletter.imageUrl }),
+        ...(newsletter.remisePct !== undefined && { newsletterRemisePct: newsletter.remisePct }),
+        ...(newsletter.couponCode !== undefined && {
+          newsletterCouponCode: newsletter.couponCode,
+        }),
+      });
     }
 
     return NextResponse.json({ settings });

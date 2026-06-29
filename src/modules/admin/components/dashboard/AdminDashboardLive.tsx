@@ -80,7 +80,8 @@ function KpiCard({
 }
 
 function SalesLineChart({ data }: { data: DashboardOverview['ventesParJour'] }) {
-  if (data.length === 0) {
+  const hasSales = data.some((d) => d.montant > 0);
+  if (!hasSales) {
     return <p className="admin-dash-empty">Pas encore de ventes sur cette période.</p>;
   }
 
@@ -308,20 +309,24 @@ export function AdminDashboardLive({ initialOverview }: AdminDashboardLiveProps)
             <Link href="/admin/commandes" className="admin-dash-link">Voir toutes</Link>
           </div>
           <ul className="admin-dash-orders">
-            {overview.commandesRecentes.map((cmd) => (
-              <li key={cmd.id}>
-                <div>
-                  <p className="admin-dash-order-id">#{cmd.id.slice(0, 8).toUpperCase()}</p>
-                  <p className="admin-dash-order-client">{cmd.clientNom}</p>
-                </div>
-                <div className="admin-dash-order-right">
-                  <p className="admin-dash-order-price">{formatGn(cmd.montantTotal)}</p>
-                  <span className={`admin-dash-status ${STATUT_STYLES[cmd.statut] ?? ''}`}>
-                    {STATUT_LABELS[cmd.statut] ?? cmd.statut}
-                  </span>
-                </div>
-              </li>
-            ))}
+            {overview.commandesRecentes.length === 0 ? (
+              <li className="admin-dash-empty">Aucune commande pour le moment.</li>
+            ) : (
+              overview.commandesRecentes.map((cmd) => (
+                <li key={cmd.id}>
+                  <div>
+                    <p className="admin-dash-order-id">#{cmd.id.slice(0, 8).toUpperCase()}</p>
+                    <p className="admin-dash-order-client">{cmd.clientNom}</p>
+                  </div>
+                  <div className="admin-dash-order-right">
+                    <p className="admin-dash-order-price">{formatGn(cmd.montantTotal)}</p>
+                    <span className={`admin-dash-status ${STATUT_STYLES[cmd.statut] ?? ''}`}>
+                      {STATUT_LABELS[cmd.statut] ?? cmd.statut}
+                    </span>
+                  </div>
+                </li>
+              ))
+            )}
           </ul>
         </section>
       </div>
@@ -344,26 +349,34 @@ export function AdminDashboardLive({ initialOverview }: AdminDashboardLiveProps)
                 </tr>
               </thead>
               <tbody>
-                {overview.topProduits.map((p) => (
-                  <tr key={p.productId}>
-                    <td>
-                      <div className="admin-dash-product">
-                        <div className="admin-dash-product-thumb">
-                          {p.image ? (
-                            <Image src={p.image} alt="" width={40} height={40} className="object-cover" />
-                          ) : (
-                            <Package className="h-4 w-4 text-zinc-400" />
-                          )}
-                        </div>
-                        <span>{p.nom}</span>
-                      </div>
+                {overview.topProduits.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="admin-dash-empty">
+                      Aucune vente enregistrée sur cette période.
                     </td>
-                    <td><span className="admin-dash-cat-pill">{p.categorie}</span></td>
-                    <td>{p.quantiteVendue}</td>
-                    <td className={p.stock <= 5 ? 'is-low' : ''}>{p.stock}</td>
-                    <td className="font-semibold">{formatGn(p.chiffreAffaires)}</td>
                   </tr>
-                ))}
+                ) : (
+                  overview.topProduits.map((p) => (
+                    <tr key={p.productId}>
+                      <td>
+                        <div className="admin-dash-product">
+                          <div className="admin-dash-product-thumb">
+                            {p.image ? (
+                              <Image src={p.image} alt="" width={40} height={40} className="object-cover" />
+                            ) : (
+                              <Package className="h-4 w-4 text-zinc-400" />
+                            )}
+                          </div>
+                          <span>{p.nom}</span>
+                        </div>
+                      </td>
+                      <td><span className="admin-dash-cat-pill">{p.categorie}</span></td>
+                      <td>{p.quantiteVendue}</td>
+                      <td className={p.stock <= 5 ? 'is-low' : ''}>{p.stock}</td>
+                      <td className="font-semibold">{formatGn(p.chiffreAffaires)}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -426,7 +439,7 @@ export function AdminDashboardLive({ initialOverview }: AdminDashboardLiveProps)
             <li>
               <Package className="h-4 w-4 text-[#22c55e]" />
               <div>
-                <p>Produits ajoutés</p>
+                <p>Produits ajoutés aujourd&apos;hui</p>
                 <strong>{overview.activite.produitsAjoutes}</strong>
               </div>
             </li>
@@ -436,7 +449,7 @@ export function AdminDashboardLive({ initialOverview }: AdminDashboardLiveProps)
 
       <footer className="admin-dash-footer">
         <span>© {new Date().getFullYear()} Love Piment& — Tous droits réservés</span>
-        <span>Version 1.0.0</span>
+        <span>Dernière mise à jour : {new Date(overview.genereLe).toLocaleString('fr-FR')}</span>
       </footer>
     </div>
   );

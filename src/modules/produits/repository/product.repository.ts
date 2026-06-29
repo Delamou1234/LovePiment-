@@ -123,24 +123,42 @@ export class ProductRepository {
   }
 
   async trouverSimilaires(productId: string, categorieId: string, limit = 4): Promise<ProduitAvecCategorie[]> {
-    return prisma.product.findMany({
+    const include = {
+      categorie: true,
+      variantes: {
+        where: { stock: { gt: 0 } },
+        take: 1,
+        orderBy: { stock: 'desc' as const },
+      },
+    };
+
+    const sameCategory = await prisma.product.findMany({
       where: {
         categorieId,
         actif: true,
         id: { not: productId },
         ...WHERE_PRODUIT_EN_STOCK,
       },
-      include: {
-        categorie: true,
-        variantes: {
-          where: { stock: { gt: 0 } },
-          take: 1,
-          orderBy: { stock: 'desc' },
-        },
-      },
+      include,
       take: limit,
       orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
     });
+
+    if (sameCategory.length >= limit) return sameCategory;
+
+    const excludeIds = [productId, ...sameCategory.map((p) => p.id)];
+    const others = await prisma.product.findMany({
+      where: {
+        actif: true,
+        id: { notIn: excludeIds },
+        ...WHERE_PRODUIT_EN_STOCK,
+      },
+      include,
+      take: limit - sameCategory.length,
+      orderBy: [{ featured: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    return [...sameCategory, ...others];
   }
 
   async creer(dto: CreerProduitDto): Promise<ProduitAvecVariantes> {

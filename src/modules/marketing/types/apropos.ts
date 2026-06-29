@@ -41,12 +41,7 @@ export type AproposPublicConfig = {
   metaDescription: string;
 };
 
-export const DEFAULT_APROPOS_CHIFFRES: AproposChiffre[] = [
-  { value: '1000+', label: 'Clientes satisfaites' },
-  { value: '24–48h', label: 'Délai de livraison' },
-  { value: '100%', label: 'Achats vérifiés' },
-  { value: '7j/7', label: 'Support discret' },
-];
+export const DEFAULT_APROPOS_CHIFFRES: AproposChiffre[] = [];
 
 export const DEFAULT_APROPOS_VALEURS: AproposValeur[] = [
   {
@@ -125,7 +120,7 @@ export type AproposPatchDto = z.infer<typeof aproposPatchSchema>;
 
 export function parseAproposChiffres(raw: unknown): AproposChiffre[] {
   const parsed = z.array(chiffreSchema).safeParse(raw);
-  return parsed.success && parsed.data.length > 0 ? parsed.data : DEFAULT_APROPOS_CHIFFRES;
+  return parsed.success && parsed.data.length > 0 ? parsed.data : [];
 }
 
 export function parseAproposValeurs(raw: unknown): AproposValeur[] {

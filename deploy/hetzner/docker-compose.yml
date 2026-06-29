@@ -1,0 +1,84 @@
+# Déploiement Hetzner — Love Piment& (+ Kabishop)
+# Emplacement conseillé sur le serveur : /opt/boutiques/docker-compose.yml
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./postgres/init-databases.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  lovepiment:
+    build:
+      context: ./lovepiment
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - ./env/lovepiment.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - lovepiment_uploads:/app/public/uploads
+
+  # kabishop:
+  #   build:
+  #     context: ./kabishop
+  #     dockerfile: Dockerfile
+  #   restart: unless-stopped
+  #   env_file:
+  #     - ./env/kabishop.env
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   volumes:
+  #     - kabishop_uploads:/app/public/uploads
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - lovepiment
+      # - kabishop
+
+  # Une seule fois après le premier déploiement :
+  # docker compose --profile setup run --rm admin-setup
+  admin-setup:
+    image: node:22-alpine
+    profiles: [setup]
+    working_dir: /app
+    volumes:
+      - ./lovepiment:/app
+    env_file:
+      - ./env/lovepiment.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "apk add --no-cache libc6-compat &&
+      npm ci &&
+      npx prisma generate &&
+      npx tsx prisma/run-ensure-admin.ts"
+
+volumes:
+  pg_data:
+  lovepiment_uploads:
+  # kabishop_uploads:
+  caddy_data:
+  caddy_config:
