@@ -97,8 +97,10 @@ export class TrackingRepository {
     await this.assignerTransporteurDefaut(orderId, clientVille);
     await this.creerEvenement({
       orderId,
+      type: 'NOTIFICATION',
       statut: 'EN_ATTENTE',
-      message: 'Commande enregistrée — suivi activé.',
+      message:
+        'Bonne nouvelle ! Votre commande est bien enregistrée. Notre équipe Love Piment& prend votre dossier en charge.',
       notifier: true,
     });
   }
@@ -304,6 +306,45 @@ export class TrackingRepository {
             satisfactionStatut: true,
             satisfactionCommentaire: true,
             suiviToken: true,
+          },
+        },
+      },
+    });
+  }
+
+  async listerEvenementsLivreurDepuis(depuis: Date, limit = 20) {
+    return prisma.orderTrackingEvent.findMany({
+      where: {
+        type: 'LIVREUR',
+        createdAt: { gt: depuis },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      include: {
+        order: {
+          select: {
+            id: true,
+            clientNom: true,
+            clientVille: true,
+            courier: { select: { id: true, nom: true } },
+          },
+        },
+      },
+    });
+  }
+
+  async listerDernieresNotificationsLivreur(limit = 15) {
+    return prisma.orderTrackingEvent.findMany({
+      where: { type: 'LIVREUR' },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
+      include: {
+        order: {
+          select: {
+            id: true,
+            clientNom: true,
+            clientVille: true,
+            courier: { select: { id: true, nom: true } },
           },
         },
       },

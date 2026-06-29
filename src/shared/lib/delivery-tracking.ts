@@ -19,7 +19,7 @@ export const LIBELLES_STATUT: Record<OrderStatus, string> = {
 };
 
 export const DESCRIPTIONS_STATUT: Record<OrderStatus, string> = {
-  EN_ATTENTE: 'Votre commande a été enregistrée et sera traitée sous peu.',
+  EN_ATTENTE: 'Votre commande est enregistrée. Notre équipe prend votre dossier en charge.',
   PAYEE: 'Le paiement est validé. Préparation du colis en cours.',
   EN_PREPARATION: 'Nous préparons votre colis avec soin.',
   EXPEDIEE: 'Votre colis est en route vers votre adresse.',

@@ -166,8 +166,8 @@ export class CinetPayProvider implements PaymentProvider {
   validerWebhook(payload: unknown, signature: string): boolean {
     const secret = this.getSecretKey();
     if (!secret) {
-      if (process.env.NODE_ENV === 'production') return false;
-      return true;
+      console.error('[CinetPay] CINETPAY_SECRET_KEY manquant — webhook rejeté');
+      return false;
     }
     if (!payload || typeof payload !== 'object') return false;
     return verifyCinetpayHmacToken(

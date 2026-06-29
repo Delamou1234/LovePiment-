@@ -1,13 +1,13 @@
 import { BoutiqueProviders } from './BoutiqueProviders';
 import { BoutiqueLayoutShell } from './BoutiqueLayoutShell';
-import { productService } from '@/modules/produits/services/product.service';
-import { categorieVersVitrine } from '@/modules/produits/lib/category-showcase';
+import { getCachedHomeCategories } from '@/modules/produits/lib/cached-queries';
 import { buildBoutiqueFooterLinks, buildBoutiqueNavLinks } from '@/modules/produits/lib/boutique-nav';
 
-export const dynamic = 'force-dynamic';
+/** Nav/footer partagés — régénérés toutes les 2 min (invalidation via revalidateBoutique). */
+export const revalidate = 120;
 
 export default async function BoutiqueLayout({ children }: { children: React.ReactNode }) {
-  const categories = (await productService.listerCategoriesVitrine()).map(categorieVersVitrine);
+  const categories = await getCachedHomeCategories();
   const boutiqueNavLinks = buildBoutiqueNavLinks(categories);
   const boutiqueFooterLinks = buildBoutiqueFooterLinks(categories);
 

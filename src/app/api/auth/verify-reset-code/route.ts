@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { passwordResetService } from '@/modules/auth/services/password-reset.service';
+import { enforceRateLimit } from '@/shared/lib/security/enforce-rate-limit';
 
 const verifySchema = z.object({
   email: z.string().email(),
@@ -10,6 +11,9 @@ const verifySchema = z.object({
 /** POST /api/auth/verify-reset-code */
 export async function POST(request: NextRequest) {
   try {
+    const limited = enforceRateLimit(request, 'authResetCode');
+    if (limited) return limited;
+
     const body = await request.json();
     const parsed = verifySchema.safeParse(body);
     if (!parsed.success) {

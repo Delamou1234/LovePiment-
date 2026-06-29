@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { passwordResetService } from '@/modules/auth/services/password-reset.service';
+import { enforceRateLimit } from '@/shared/lib/security/enforce-rate-limit';
 
 const forgotSchema = z.object({
   email: z.string().email(),
@@ -9,6 +10,9 @@ const forgotSchema = z.object({
 /** POST /api/auth/forgot-password */
 export async function POST(request: NextRequest) {
   try {
+    const limited = enforceRateLimit(request, 'authForgotPassword');
+    if (limited) return limited;
+
     const body = await request.json();
     const parsed = forgotSchema.safeParse(body);
     if (!parsed.success) {

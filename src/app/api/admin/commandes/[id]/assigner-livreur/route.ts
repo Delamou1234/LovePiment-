@@ -7,6 +7,7 @@ type Params = Promise<{ id: string }>;
 
 const schema = z.object({
   courierId: z.string().min(1),
+  primeLivreurGn: z.number().min(0).nullable().optional(),
 });
 
 export async function POST(request: NextRequest, { params }: { params: Params }) {
@@ -20,7 +21,9 @@ export async function POST(request: NextRequest, { params }: { params: Params })
   }
 
   try {
-    const order = await courierOrderService.assignerLivreur(id, parsed.data.courierId);
+    const order = await courierOrderService.assignerLivreur(id, parsed.data.courierId, {
+      primeLivreurGn: parsed.data.primeLivreurGn,
+    });
     return NextResponse.json({ ok: true, orderId: order.id, statut: order.statut });
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Assignation impossible';

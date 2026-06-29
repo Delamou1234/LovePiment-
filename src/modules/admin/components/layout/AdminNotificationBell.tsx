@@ -2,31 +2,20 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Bell, ThumbsDown, ThumbsUp, X } from 'lucide-react';
+import { Bell, Package, ThumbsDown, ThumbsUp, X } from 'lucide-react';
 import { ADMIN_TOPBAR_BELL, ADMIN_TOPBAR_LIVE } from '../admin-ui';
+import type { AdminNotification } from '@/modules/admin/types/notifications';
 import { formaterDate } from '@/shared/lib/delivery-tracking';
-
-type SatisfactionNotification = {
-  id: string;
-  message: string;
-  date: string;
-  orderId: string;
-  clientNom: string;
-  clientVille: string;
-  satisfaction: 'SATISFAIT' | 'NON_SATISFAIT' | null;
-  commentaire: string | null;
-  suiviToken: string;
-};
 
 export function AdminNotificationBell() {
   const [open, setOpen] = useState(false);
   const [connected, setConnected] = useState(false);
-  const [notifications, setNotifications] = useState<SatisfactionNotification[]>([]);
-  const [toasts, setToasts] = useState<SatisfactionNotification[]>([]);
+  const [notifications, setNotifications] = useState<AdminNotification[]>([]);
+  const [toasts, setToasts] = useState<AdminNotification[]>([]);
   const seenIds = useRef(new Set<string>());
   const readyRef = useRef(false);
 
-  const pushToast = useCallback((notif: SatisfactionNotification) => {
+  const pushToast = useCallback((notif: AdminNotification) => {
     if (seenIds.current.has(notif.id)) return;
     seenIds.current.add(notif.id);
     if (!readyRef.current) return;
@@ -37,7 +26,7 @@ export function AdminNotificationBell() {
   }, []);
 
   const handleIncoming = useCallback(
-    (items: SatisfactionNotification[]) => {
+    (items: AdminNotification[]) => {
       setNotifications((prev) => {
         const merged = [...items];
         for (const n of prev) {
@@ -57,7 +46,7 @@ export function AdminNotificationBell() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data?.notifications) {
-          for (const n of data.notifications as SatisfactionNotification[]) {
+          for (const n of data.notifications as AdminNotification[]) {
             seenIds.current.add(n.id);
           }
           setNotifications(data.notifications);
@@ -76,8 +65,11 @@ export function AdminNotificationBell() {
     es.onmessage = (event) => {
       try {
         const payload = JSON.parse(event.data);
+        if (payload.type === 'notifications' && payload.notifications) {
+          handleIncoming(payload.notifications as AdminNotification[]);
+        }
         if (payload.type === 'satisfaction' && payload.notifications) {
-          handleIncoming(payload.notifications);
+          handleIncoming(payload.notifications as AdminNotification[]);
         }
       } catch {
         /* ignore */
@@ -95,7 +87,7 @@ export function AdminNotificationBell() {
           type="button"
           onClick={() => setOpen((v) => !v)}
           className={ADMIN_TOPBAR_BELL}
-          aria-label="Notifications avis clients"
+          aria-label="Notifications administration"
           aria-expanded={open}
         >
           <Bell className="h-4 w-4" strokeWidth={1.75} />
@@ -105,7 +97,7 @@ export function AdminNotificationBell() {
         {open && (
           <div className="absolute right-0 top-full z-50 mt-2 w-80 rounded-xl border border-[#F2D4DC] bg-white shadow-lg">
             <div className="flex items-center justify-between border-b border-[#F2D4DC] px-4 py-3">
-              <p className="text-sm font-semibold text-zinc-900">Avis clients</p>
+              <p className="text-sm font-semibold text-zinc-900">Notifications</p>
               <span className="text-[11px] text-zinc-400">
                 {connected ? 'Temps réel' : 'Hors ligne'}
               </span>
@@ -113,11 +105,42 @@ export function AdminNotificationBell() {
             <div className="max-h-80 overflow-y-auto">
               {notifications.length === 0 ? (
                 <p className="px-4 py-6 text-sm text-zinc-500 text-center">
-                  Aucun avis pour le moment.
+                  Aucune notification pour le moment.
                 </p>
               ) : (
                 <ul className="divide-y divide-[#F2D4DC]">
                   {notifications.map((n) => {
+                    if (n.kind === 'livreur') {
+                      return (
+                        <li key={n.id} className="px-4 py-3 hover:bg-[#FFF8F6]">
+                          <div className="flex items-start gap-2">
+                            <Package className="h-4 w-4 text-sky-700 shrink-0 mt-0.5" />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-zinc-900">
+                                Prise en charge colis
+                              </p>
+                              <p className="text-xs text-zinc-600 mt-0.5 leading-relaxed">
+                                <span className="font-semibold text-zinc-800">{n.livreurNom}</span>
+                                {' · colis de '}
+                                <span className="font-semibold text-zinc-800">{n.clientNom}</span>
+                              </p>
+                              <p className="text-xs text-zinc-500 mt-0.5">{n.clientVille}</p>
+                              <p className="text-[10px] text-zinc-400 mt-1">
+                                {formaterDate(new Date(n.date))}
+                              </p>
+                              <Link
+                                href="/admin/commandes"
+                                className="text-[11px] text-[#9B1B2E] hover:underline mt-1 inline-block"
+                                onClick={() => setOpen(false)}
+                              >
+                                Voir commandes →
+                              </Link>
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    }
+
                     const positif = n.satisfaction === 'SATISFAIT';
                     return (
                       <li key={n.id} className="px-4 py-3 hover:bg-[#FFF8F6]">
@@ -159,6 +182,30 @@ export function AdminNotificationBell() {
 
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
         {toasts.map((n) => {
+          if (n.kind === 'livreur') {
+            return (
+              <div
+                key={n.id}
+                className="pointer-events-auto flex items-start gap-3 rounded-xl border border-sky-200 bg-white px-4 py-3 shadow-lg max-w-sm animate-in slide-in-from-right"
+              >
+                <Package className="h-5 w-5 text-sky-700 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-zinc-900">Colis pris en charge</p>
+                  <p className="text-xs text-zinc-600 mt-0.5">
+                    {n.livreurNom} — {n.clientNom}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="text-zinc-400 hover:text-zinc-700"
+                  onClick={() => setToasts((prev) => prev.filter((t) => t.id !== n.id))}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            );
+          }
+
           const positif = n.satisfaction === 'SATISFAIT';
           return (
             <div

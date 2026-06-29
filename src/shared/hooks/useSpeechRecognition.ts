@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 
 interface UseSpeechRecognitionOptions {
   lang?: string;
-  onResult?: (transcript: string) => void;
+  onResult?: (transcript: string, isFinal: boolean) => void;
   onError?: (message: string) => void;
 }
 
@@ -55,11 +55,14 @@ export function useSpeechRecognition({
 
     recognition.onresult = (event) => {
       let transcript = '';
+      let isFinal = false;
       for (let i = event.resultIndex; i < event.results.length; i++) {
         transcript += event.results[i][0].transcript;
+        if (event.results[i].isFinal) isFinal = true;
       }
-      if (transcript.trim()) {
-        onResult?.(transcript.trim());
+      const text = transcript.trim();
+      if (text) {
+        onResult?.(text, isFinal);
       }
     };
 

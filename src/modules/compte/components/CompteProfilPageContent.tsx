@@ -4,7 +4,7 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
-import { CompteSidebar, CompteMobileNav } from '@/modules/compte/components/CompteSidebar';
+import { CompteSidebar } from '@/modules/compte/components/CompteSidebar';
 import { CompteTopBar } from '@/modules/compte/components/CompteTopBar';
 import { CompteProfilForms } from '@/modules/compte/components/CompteProfilForms';
 import { COMPTE_MAIN, COMPTE_MAIN_SCROLL, COMPTE_SHELL } from '@/modules/compte/components/compte-ui';
@@ -79,11 +79,11 @@ export function CompteProfilPageContent() {
       />
 
       <div className={COMPTE_MAIN}>
-        <CompteMobileNav section={section} onMenuOpen={() => setMobileMenuOpen(true)} />
         <CompteTopBar
           profil={profil}
           onProfilUpdate={setProfil}
           onLogout={handleLogout}
+          onMenuOpen={() => setMobileMenuOpen(true)}
         />
 
         <div className={COMPTE_MAIN_SCROLL}>

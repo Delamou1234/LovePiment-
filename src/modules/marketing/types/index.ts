@@ -24,10 +24,12 @@ export type TotauxMarketing = {
 export type CalculRemisesInput = {
   sousTotal: number;
   clientVille: string;
+  clientCommune?: string | null;
   customerId?: string;
   codeCoupon?: string | null;
   pointsUtilises?: number;
   codeParrainage?: string | null;
+  estPremiereCommande?: boolean;
 };
 
 export type CreerCouponDto = {
@@ -37,6 +39,7 @@ export type CreerCouponDto = {
   minCommande?: number | null;
   maxUtilisations?: number | null;
   actif?: boolean;
+  premiereCommandeOnly?: boolean;
   debut?: Date | null;
   fin?: Date | null;
 };

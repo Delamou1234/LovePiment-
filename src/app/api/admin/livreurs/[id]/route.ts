@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { courierRepository } from '@/modules/livraison/repository/courier.repository';
+import { synchroniserMotDePasseClient } from '@/modules/livraison/services/courier-customer.service';
 import { adminUnauthorized, requireAdmin } from '@/modules/admin/lib/require-admin';
 
 type Params = Promise<{ id: string }>;
@@ -35,6 +36,12 @@ export async function PATCH(request: NextRequest, { params }: { params: Params }
   }
 
   const livreur = await courierRepository.mettreAJour(id, parsed.data);
+  if (parsed.data.password) {
+    const row = await courierRepository.trouverParId(livreur.id);
+    if (row?.passwordHash) {
+      await synchroniserMotDePasseClient(livreur.id, row.passwordHash);
+    }
+  }
   return NextResponse.json({ livreur: { id: livreur.id, nom: livreur.nom, actif: livreur.actif } });
 }
 

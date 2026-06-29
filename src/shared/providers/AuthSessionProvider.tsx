@@ -5,11 +5,14 @@ import { usePathname } from 'next/navigation';
 import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import { AVATAR_UPDATED_EVENT } from '@/modules/compte/lib/avatar-events';
 import { confirmLogout, type LogoutRole } from '@/shared/lib/confirm-logout';
+import type { AccountType } from '@/shared/lib/account-type';
 
 export type AuthSessionUser = {
   name: string;
   email: string;
-  role: 'admin' | 'customer';
+  role: 'admin' | 'customer' | 'courier';
+  accountType: AccountType;
+  accountTypeLabel: string;
   avatarUrl?: string | null;
 };
 
@@ -22,7 +25,7 @@ type AuthSessionContextValue = {
 
 const AuthSessionContext = createContext<AuthSessionContextValue | null>(null);
 
-export const AUTH_ME_CACHE_KEY = 'lovepiment_auth_me_v2';
+export const AUTH_ME_CACHE_KEY = 'lovepiment_auth_me_v3';
 
 export function clearAuthMeCache() {
   try {
@@ -40,7 +43,7 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
       const raw = sessionStorage.getItem(AUTH_ME_CACHE_KEY);
       if (raw) {
         const { user: cached } = JSON.parse(raw) as { user: AuthSessionUser | null; ts: number };
-        if (cached?.role === 'customer') return cached;
+        if (cached?.accountTypeLabel) return cached;
       }
     } catch {
       /* ignore */
@@ -65,20 +68,23 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
         user?: {
           name: string;
           email: string;
-          role: 'admin' | 'customer';
+          role: 'admin' | 'customer' | 'courier';
+          accountType?: AccountType;
+          accountTypeLabel?: string;
           avatarUrl?: string | null;
         } | null;
       };
 
-      const nextUser =
-        data.user?.role === 'customer'
-          ? ({
-              name: data.user.name,
-              email: data.user.email,
-              role: 'customer' as const,
-              avatarUrl: data.user.avatarUrl ?? null,
-            } satisfies AuthSessionUser)
-          : null;
+      const nextUser: AuthSessionUser | null = data.user?.accountTypeLabel
+        ? {
+            name: data.user.name,
+            email: data.user.email,
+            role: data.user.role,
+            accountType: data.user.accountType ?? 'client',
+            accountTypeLabel: data.user.accountTypeLabel,
+            avatarUrl: data.user.avatarUrl ?? null,
+          }
+        : null;
 
       setUser(nextUser);
       try {
@@ -98,7 +104,8 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(
     async (role: 'customer' | 'admin' | 'all' = 'customer') => {
-      const confirmRole: LogoutRole = role === 'admin' ? 'admin' : 'customer';
+      const confirmRole: LogoutRole =
+        role === 'admin' ? 'admin' : role === 'all' ? 'customer' : 'customer';
       if (!(await confirmLogout(confirmRole))) return;
 
       await fetch(`/api/auth/logout?role=${role}`, {
@@ -131,7 +138,7 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
     const onAvatarUpdated = (event: Event) => {
       const detail = (event as CustomEvent<{ avatarUrl: string | null }>).detail;
       setUser((prev) => {
-        if (!prev || prev.role !== 'customer') return prev;
+        if (!prev) return prev;
         const next = { ...prev, avatarUrl: detail.avatarUrl ?? null };
         try {
           sessionStorage.setItem(

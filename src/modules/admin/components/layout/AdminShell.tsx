@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AdminMobileNav, AdminSidebar } from './AdminSidebar';
+import { AdminSidebar } from './AdminSidebar';
 import { AdminTopBar } from './AdminTopBar';
 import { AdminMessagerieProvider, useAdminMessagerieContext } from './AdminMessagerieProvider';
 import { ADMIN_MAIN, ADMIN_MAIN_SCROLL, ADMIN_SHELL, type AdminSessionUser } from '../admin-ui';
@@ -38,16 +38,13 @@ function AdminShellInner({ admin, children }: Props) {
       />
 
       <div className={ADMIN_MAIN}>
-        <AdminMobileNav
-          onMenuOpen={() => setMobileMenuOpen(true)}
-          messagerieUnread={totalUnread}
-        />
         <AdminTopBar
           admin={admin}
           onLogout={handleLogout}
           conversations={conversations}
           messagerieUnread={totalUnread}
           stockFaible={stats?.stockFaible ?? 0}
+          onMenuOpen={() => setMobileMenuOpen(true)}
         />
         <AdminStockAlertBanner count={stats?.stockFaible ?? 0} />
         <AdminStockAlertModal count={stats?.stockFaible ?? 0} />

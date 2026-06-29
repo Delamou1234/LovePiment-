@@ -122,6 +122,7 @@ export class TrackingService {
   async listerNotificationsSatisfaction(depuis: Date) {
     const events = await this.repo.listerEvenementsSatisfactionDepuis(depuis);
     return events.map((ev) => ({
+      kind: 'satisfaction' as const,
       id: ev.id,
       message: ev.message,
       date: ev.createdAt.toISOString(),
@@ -137,6 +138,7 @@ export class TrackingService {
   async listerDernieresSatisfactions(limit = 10) {
     const events = await this.repo.listerDernieresSatisfactions(limit);
     return events.map((ev) => ({
+      kind: 'satisfaction' as const,
       id: ev.id,
       message: ev.message,
       date: ev.createdAt.toISOString(),
@@ -147,6 +149,67 @@ export class TrackingService {
       commentaire: ev.order.satisfactionCommentaire,
       suiviToken: ev.order.suiviToken,
     }));
+  }
+
+  async listerNotificationsLivreur(depuis: Date) {
+    const events = await this.repo.listerEvenementsLivreurDepuis(depuis);
+    return events.map((ev) => this.mapLivreurEvent(ev));
+  }
+
+  async listerDernieresNotificationsLivreur(limit = 15) {
+    const events = await this.repo.listerDernieresNotificationsLivreur(limit);
+    return events.map((ev) => this.mapLivreurEvent(ev));
+  }
+
+  async listerNotificationsAdmin(limit = 20) {
+    const [satisfactions, livreur] = await Promise.all([
+      this.listerDernieresSatisfactions(Math.ceil(limit / 2)),
+      this.listerDernieresNotificationsLivreur(Math.ceil(limit / 2)),
+    ]);
+
+    return [...satisfactions, ...livreur]
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, limit);
+  }
+
+  async listerNotificationsAdminDepuis(depuis: Date) {
+    const [satisfactions, livreur] = await Promise.all([
+      this.listerNotificationsSatisfaction(depuis),
+      this.listerNotificationsLivreur(depuis),
+    ]);
+
+    const satisfactionItems = satisfactions.map((n) => ({
+      kind: 'satisfaction' as const,
+      ...n,
+    }));
+
+    return [...satisfactionItems, ...livreur].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
+  }
+
+  private mapLivreurEvent(ev: {
+    id: string;
+    message: string;
+    createdAt: Date;
+    order: {
+      id: string;
+      clientNom: string;
+      clientVille: string;
+      courier: { id: string; nom: string } | null;
+    };
+  }) {
+    return {
+      kind: 'livreur' as const,
+      id: ev.id,
+      message: ev.message,
+      date: ev.createdAt.toISOString(),
+      orderId: ev.order.id,
+      clientNom: ev.order.clientNom,
+      clientVille: ev.order.clientVille,
+      livreurNom: ev.order.courier?.nom ?? 'Livreur',
+      livreurId: ev.order.courier?.id ?? null,
+    };
   }
 
   private toDto(order: NonNullable<Awaited<ReturnType<TrackingRepository['trouverParToken']>>>): SuiviCommandeDto {

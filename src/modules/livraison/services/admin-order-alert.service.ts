@@ -8,8 +8,10 @@ export async function notifierAdminNouvelleCommande(order: {
   clientTelephone: string;
   clientAdresse: string;
   clientVille: string;
+  clientCommune?: string | null;
   montantTotal: unknown;
   modePaiement: string;
+  estPremiereCommande?: boolean;
 }) {
   const to = getContactEmail() ?? getAdminEmail();
   if (!to) return;
@@ -22,9 +24,10 @@ export async function notifierAdminNouvelleCommande(order: {
     <ul>
       <li><strong>Client :</strong> ${order.clientNom}</li>
       <li><strong>Téléphone :</strong> ${order.clientTelephone}</li>
-      <li><strong>Adresse :</strong> ${order.clientAdresse}, ${order.clientVille}</li>
+      <li><strong>Adresse :</strong> ${order.clientAdresse}${order.clientCommune ? `, ${order.clientCommune}` : ''}, ${order.clientVille}</li>
       <li><strong>Montant :</strong> ${montant} GN</li>
       <li><strong>Paiement :</strong> ${order.modePaiement}</li>
+      ${order.estPremiereCommande ? '<li><strong>🎁 Première commande client</strong></li>' : ''}
     </ul>
     <p><a href="${baseUrl}/admin/commandes">Affecter un livreur →</a></p>
   `;

@@ -13,7 +13,7 @@ const AssistantWidget = dynamic(
   { ssr: false },
 );
 
-/** Widgets lourds chargés après le contenu principal (IA, WhatsApp, panier). */
+/** Widgets flottants chargés après le contenu principal (recommandations, WhatsApp, panier). */
 export function BoutiqueWidgets() {
   const pathname = usePathname();
   const [assistantOpen, setAssistantOpen] = useState(false);

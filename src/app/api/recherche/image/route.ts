@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { imageSearchService } from '@/modules/recherche/services/image-search.service';
+import { enforceRateLimit } from '@/shared/lib/security/enforce-rate-limit';
 
 /**
  * POST /api/recherche/image
@@ -7,6 +8,9 @@ import { imageSearchService } from '@/modules/recherche/services/image-search.se
  */
 export async function POST(request: NextRequest) {
   try {
+    const limited = enforceRateLimit(request, 'imageSearch');
+    if (limited) return limited;
+
     const formData = await request.formData();
     const file = formData.get('image');
 

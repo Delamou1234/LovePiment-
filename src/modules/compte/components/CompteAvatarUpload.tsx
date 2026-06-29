@@ -4,6 +4,8 @@ import { useRef, useState } from 'react';
 import { Camera, Loader2, Trash2 } from 'lucide-react';
 import { CompteAvatar } from './CompteAvatar';
 import { notifyAvatarUpdated } from '@/modules/compte/lib/avatar-events';
+import { fetchApi } from '@/shared/lib/client-fetch';
+import { validateClientImageFile } from '@/shared/lib/upload-image';
 import type { CustomerProfile } from '@/modules/compte/types';
 
 type Props = {
@@ -31,21 +33,27 @@ export function CompteAvatarUpload({
   const [error, setError] = useState('');
 
   const upload = async (file: File) => {
+    const validationError = validateClientImageFile(file);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setError('');
     setUploading(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
-      const res = await fetch('/api/compte/avatar', { method: 'POST', body: formData });
+      const res = await fetchApi('/api/compte/avatar', { method: 'POST', body: formData });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.message ?? 'Erreur lors de l\'envoi');
+        setError(data.message ?? "Erreur lors de l'envoi");
         return;
       }
       onProfilUpdate(data.profil as CustomerProfile);
       notifyAvatarUpdated((data.profil as CustomerProfile).avatarUrl);
     } catch {
-      setError('Impossible d\'envoyer la photo');
+      setError("Impossible d'envoyer la photo");
     } finally {
       setUploading(false);
       if (inputRef.current) inputRef.current.value = '';
@@ -57,7 +65,7 @@ export function CompteAvatarUpload({
     setError('');
     setRemoving(true);
     try {
-      const res = await fetch('/api/compte/avatar', { method: 'DELETE' });
+      const res = await fetchApi('/api/compte/avatar', { method: 'DELETE' });
       const data = await res.json();
       if (!res.ok) {
         setError(data.message ?? 'Erreur');
@@ -106,8 +114,9 @@ export function CompteAvatarUpload({
 
   if (variant === 'compact') {
     return (
-      <div className="relative inline-block">
-        {avatarBlock}
+      <div className="inline-flex flex-col items-start gap-1">
+        <div className="relative inline-block">{avatarBlock}</div>
+        {error && <p className="text-xs text-red-600 max-w-[220px]">{error}</p>}
       </div>
     );
   }

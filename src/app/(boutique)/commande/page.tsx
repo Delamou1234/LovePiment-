@@ -4,11 +4,17 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useForm } from 'react-hook-form';
+import { useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { usePanier } from '@/store/panier';
 import { calculerTotauxCommande, formaterPrixGN, libelleLivraisonOfferte } from '@/shared/lib/shipping';
+import {
+  COMMUNES_CONAKRY_REFERENCE,
+  CRENEAUX_LIVRAISON,
+  QUARTIERS_PAR_COMMUNE,
+} from '@/shared/lib/communes-conakry';
+import { lienWhatsAppCommande } from '@/shared/lib/shop-whatsapp';
 import { useLivraisonConfig } from '@/shared/hooks/useLivraisonConfig';
 import { CheckoutMarketingPanel } from '@/modules/marketing/components/CheckoutMarketingPanel';
 import { GeolocationAddressPrompt } from '@/shared/components/GeolocationAddressPrompt';
@@ -21,7 +27,9 @@ import {
   Loader2, 
   ShoppingBag, 
   MapPin,
-  CheckCircle2
+  CheckCircle2,
+  Gift,
+  Banknote,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getShopPhoneDisplay, getShopTelHref, getShopWhatsAppHref } from '@/shared/lib/shop-contact';
@@ -35,11 +43,37 @@ const checkoutSchema = z.object({
     .min(8, 'Numéro de téléphone requis (minimum 8 chiffres)')
     .regex(/^[\d+\s\-()]+$/, 'Format de téléphone invalide (chiffres uniquement)'),
   clientAdresse: z.string().min(5, 'Adresse de livraison précise requise').max(200),
+  clientCommune: z.string().min(2, 'Sélectionnez une commune').max(80),
+  clientQuartier: z.string().max(120).optional(),
+  clientRepere: z.string().max(200).optional(),
   clientVille: z.string().min(2, 'Ville de livraison requise').max(100),
+  creneauLivraison: z.enum(['MATIN', 'APRES_MIDI', 'FLEXIBLE']).default('FLEXIBLE'),
+  notes: z.string().max(500).optional(),
   modePaiement: z.enum(['CINETPAY', 'PAIEMENT_LIVRAISON']),
 });
 
 type CheckoutFormValues = z.infer<typeof checkoutSchema>;
+
+const CHECKOUT_FIELD_ORDER: (keyof CheckoutFormValues)[] = [
+  'clientNom',
+  'clientTelephone',
+  'clientCommune',
+  'clientAdresse',
+  'clientVille',
+];
+
+function focusFirstInvalidField(formErrors: FieldErrors<CheckoutFormValues>) {
+  for (const key of CHECKOUT_FIELD_ORDER) {
+    if (formErrors[key]) {
+      const el = document.getElementById(String(key));
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.focus();
+      }
+      return;
+    }
+  }
+}
 
 function messageErreurPaiement(message: string): string {
   if (message.includes('MINIMUM_REQUIRED_FIELDS')) {
@@ -70,6 +104,11 @@ export default function CheckoutPage() {
   const [totauxMarketing, setTotauxMarketing] = useState<TotauxMarketing | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [geoDismissed, setGeoDismissed] = useState(false);
+  const [checkoutContext, setCheckoutContext] = useState<{
+    estPremiereCommande: boolean;
+    codeBienvenue: string;
+    remiseBienvenuePct: number;
+  } | null>(null);
   const [deliveryCoords, setDeliveryCoords] = useState<{
     latitude: number;
     longitude: number;
@@ -95,6 +134,8 @@ export default function CheckoutPage() {
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
       clientVille: livraisonConfig.villeParDefaut,
+      clientCommune: COMMUNES_CONAKRY_REFERENCE[0],
+      creneauLivraison: 'FLEXIBLE',
       modePaiement: 'CINETPAY',
     },
   });
@@ -117,6 +158,19 @@ export default function CheckoutPage() {
         setProfileLoaded(true);
       })
       .catch(() => setProfileLoaded(true));
+
+    fetch('/api/checkout/context')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data) {
+          setCheckoutContext({
+            estPremiereCommande: Boolean(data.estPremiereCommande),
+            codeBienvenue: data.codeBienvenue ?? 'BIENVENUE10',
+            remiseBienvenuePct: data.remiseBienvenuePct ?? 10,
+          });
+        }
+      })
+      .catch(() => {});
 
     fetch('/api/compte/profil')
       .then((res) => (res.ok ? res.json() : null))
@@ -146,7 +200,9 @@ export default function CheckoutPage() {
   // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form watch pour le checkout
   const selectedPaymentMethod = watch('modePaiement');
   const selectedVille = watch('clientVille') || livraisonConfig.villeParDefaut;
+  const selectedCommune = watch('clientCommune') || '';
   const clientAdresse = watch('clientAdresse');
+  const quartiers = QUARTIERS_PAR_COMMUNE[selectedCommune] ?? [];
 
   const applyCheckoutAddress = (suggestion: GeolocationAddressSuggestion) => {
     setValue('clientAdresse', suggestion.adresse, { shouldValidate: true });
@@ -171,6 +227,7 @@ export default function CheckoutPage() {
     items,
     selectedVille,
     livraisonConfig,
+    selectedCommune,
   );
 
   const totauxFinaux = totauxMarketing ?? {
@@ -213,6 +270,11 @@ export default function CheckoutPage() {
           clientTelephone: values.clientTelephone,
           clientAdresse: values.clientAdresse,
           clientVille: values.clientVille,
+          clientCommune: values.clientCommune,
+          clientQuartier: values.clientQuartier || null,
+          clientRepere: values.clientRepere || null,
+          creneauLivraison: values.creneauLivraison,
+          notes: values.notes || null,
           clientLatitude: deliveryCoords?.latitude ?? null,
           clientLongitude: deliveryCoords?.longitude ?? null,
           modePaiement: values.modePaiement,
@@ -256,8 +318,14 @@ export default function CheckoutPage() {
     } catch (err: unknown) {
       console.error('[Checkout error]', err);
       setErrorMsg(err instanceof Error ? err.message : 'Erreur lors de la validation. Veuillez réessayer.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       setLoading(false);
     }
+  };
+
+  const onInvalid = (formErrors: FieldErrors<CheckoutFormValues>) => {
+    setErrorMsg('Veuillez corriger les champs en rouge avant de continuer.');
+    requestAnimationFrame(() => focusFirstInvalidField(formErrors));
   };
 
   return (
@@ -271,10 +339,27 @@ export default function CheckoutPage() {
         <span className="text-zinc-800 font-bold">Tunnel de commande</span>
       </div>
 
-      <h1 className="text-2xl font-black text-zinc-900 md:text-3xl mb-8">Passer la commande</h1>
+      <h1 className="text-2xl font-black text-zinc-900 md:text-3xl mb-4">Passer la commande</h1>
+
+      {checkoutContext?.estPremiereCommande && (
+        <div className="mb-6 rounded-2xl border border-primary/25 bg-primary/5 px-4 py-3 flex flex-wrap items-center gap-2 text-sm text-zinc-800">
+          <Gift className="h-5 w-5 text-primary shrink-0" />
+          <span>
+            <strong>Première commande</strong> — code{' '}
+            <span className="font-mono font-bold text-primary">{checkoutContext.codeBienvenue}</span>{' '}
+            (−{checkoutContext.remiseBienvenuePct} %) appliqué automatiquement si éligible.
+          </span>
+        </div>
+      )}
 
       {items.length > 0 ? (
-        <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+        <>
+          {errorMsg && (
+            <div role="alert" className="checkout-error-banner">
+              {errorMsg}
+            </div>
+          )}
+        <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           
           {/* ─── COLONNE GAUCHE : ADRESSE & PAIEMENT ────────────────────────── */}
           <div className="lg:col-span-2 space-y-6">
@@ -316,9 +401,37 @@ export default function CheckoutPage() {
                   )}
                 </div>
 
+                {/* Commune */}
+                <div className="space-y-1.5">
+                  <label htmlFor="clientCommune" className="text-xs font-black uppercase text-zinc-500 tracking-wider">Commune</label>
+                  <select id="clientCommune" className="input-shop" {...register('clientCommune')}>
+                    {COMMUNES_CONAKRY_REFERENCE.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.clientCommune && (
+                    <p className="text-xs font-bold text-red-500">{errors.clientCommune.message}</p>
+                  )}
+                </div>
+
+                {/* Quartier */}
+                <div className="space-y-1.5">
+                  <label htmlFor="clientQuartier" className="text-xs font-black uppercase text-zinc-500 tracking-wider">Quartier</label>
+                  <select id="clientQuartier" className="input-shop" {...register('clientQuartier')}>
+                    <option value="">— Choisir —</option>
+                    {quartiers.map((q) => (
+                      <option key={q} value={q}>
+                        {q}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
                 {/* Adresse */}
                 <div className="space-y-1.5 sm:col-span-2">
-                  <label htmlFor="clientAdresse" className="text-xs font-black uppercase text-zinc-500 tracking-wider">Adresse précise</label>
+                  <label htmlFor="clientAdresse" className="text-xs font-black uppercase text-zinc-500 tracking-wider">Rue / immeuble</label>
                   {profileLoaded && !clientAdresse?.trim() && !geoDismissed && (
                     <GeolocationAddressPrompt
                       autoStart
@@ -339,6 +452,42 @@ export default function CheckoutPage() {
                   {errors.clientAdresse && (
                     <p className="text-xs font-bold text-red-500">{errors.clientAdresse.message}</p>
                   )}
+                </div>
+
+                {/* Repère */}
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label htmlFor="clientRepere" className="text-xs font-black uppercase text-zinc-500 tracking-wider">Repère (près de…)</label>
+                  <input
+                    id="clientRepere"
+                    type="text"
+                    placeholder="Ex: près de la mosquée, face au marché…"
+                    className="input-shop"
+                    {...register('clientRepere')}
+                  />
+                </div>
+
+                {/* Créneau */}
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label htmlFor="creneauLivraison" className="text-xs font-black uppercase text-zinc-500 tracking-wider">Créneau de livraison</label>
+                  <select id="creneauLivraison" className="input-shop" {...register('creneauLivraison')}>
+                    {CRENEAUX_LIVRAISON.map((c) => (
+                      <option key={c.value} value={c.value}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Instructions */}
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label htmlFor="notes" className="text-xs font-black uppercase text-zinc-500 tracking-wider">Instructions (optionnel)</label>
+                  <textarea
+                    id="notes"
+                    rows={2}
+                    placeholder="Ex: appelez avant d'arriver, 2e étage…"
+                    className="input-shop resize-none"
+                    {...register('notes')}
+                  />
                 </div>
 
                 {/* Ville */}
@@ -409,11 +558,27 @@ export default function CheckoutPage() {
                   </p>
                 </label>
               </div>
+
+              {selectedPaymentMethod === 'PAIEMENT_LIVRAISON' && (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 space-y-1">
+                  <p className="font-bold flex items-center gap-2">
+                    <Banknote className="h-4 w-4" />
+                    Paiement espèces — à prévoir
+                  </p>
+                  <p>
+                    Préparez <strong>{formattedTotal}</strong> en billets pour le livreur. Le montant exact
+                    est confirmé ci-contre avant validation.
+                  </p>
+                </div>
+              )}
             </div>
 
             <CheckoutMarketingPanel
               sousTotal={sousTotal}
               clientVille={selectedVille}
+              clientCommune={selectedCommune}
+              estPremiereCommande={checkoutContext?.estPremiereCommande}
+              codeBienvenue={checkoutContext?.codeBienvenue}
               pointsDisponibles={pointsFidelite}
               onTotauxChange={handleTotauxChange}
               onMarketingChange={handleMarketingChange}
@@ -500,9 +665,6 @@ export default function CheckoutPage() {
 
               {/* Bouton de confirmation */}
               <div className="pt-2">
-                {errorMsg && (
-                  <p className="text-xs font-bold text-red-500 pb-3 text-center">{errorMsg}</p>
-                )}
                 <Button 
                   type="submit"
                   disabled={loading}
@@ -552,6 +714,7 @@ export default function CheckoutPage() {
           </div>
 
         </form>
+        </>
       ) : (
         /* PANIER VIDE */
         <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-zinc-100 rounded-3xl bg-zinc-50/50">

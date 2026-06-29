@@ -398,12 +398,13 @@ async function main() {
 
   await prisma.coupon.upsert({
     where: { code: 'BIENVENUE10' },
-    update: { actif: true, type: 'POURCENT', valeur: 10, minCommande: 50000 },
+    update: { actif: true, type: 'POURCENT', valeur: 10, minCommande: 50000, premiereCommandeOnly: true },
     create: {
       code: 'BIENVENUE10',
       type: 'POURCENT',
       valeur: 10,
       minCommande: 50000,
+      premiereCommandeOnly: true,
       actif: true,
     },
   });

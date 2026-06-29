@@ -38,7 +38,17 @@ function mapLivraisonFromRow(row: {
   livraisonVilleParDefaut: string;
   livraisonGratuiteActive: boolean;
   livraisonDelaiLabel: string | null;
+  livraisonTarifsCommunes?: unknown;
 }): LivraisonSettingsDto {
+  const tarifsRaw = row.livraisonTarifsCommunes;
+  const tarifsCommunes =
+    tarifsRaw && typeof tarifsRaw === 'object' && !Array.isArray(tarifsRaw)
+      ? (tarifsRaw as Record<string, number>)
+      : {
+          Coyah: 30_000,
+          Kindia: 35_000,
+        };
+
   return {
     villeParDefaut: row.livraisonVilleParDefaut?.trim() || LIVRAISON_CONFIG_DEFAULT.villeParDefaut,
     tarifConakry: row.livraisonTarifConakry ?? LIVRAISON_CONFIG_DEFAULT.tarifConakry,
@@ -47,6 +57,7 @@ function mapLivraisonFromRow(row: {
     seuilGratuit: row.livraisonSeuilGratuit ?? LIVRAISON_CONFIG_DEFAULT.seuilGratuit,
     gratuiteActive: row.livraisonGratuiteActive ?? LIVRAISON_CONFIG_DEFAULT.gratuiteActive,
     delaiLabel: row.livraisonDelaiLabel?.trim() || LIVRAISON_CONFIG_DEFAULT.delaiLabel,
+    tarifsCommunes,
   };
 }
 
@@ -67,6 +78,7 @@ function mapSettingsDto(row: {
   livraisonVilleParDefaut: string;
   livraisonGratuiteActive: boolean;
   livraisonDelaiLabel: string | null;
+  livraisonTarifsCommunes?: unknown;
   updatedAt: Date;
 }): StoreSettingsDto {
   return {
@@ -97,8 +109,8 @@ export class StoreSettingsService {
         appelsActifs: true,
         newsletterActif: true,
         newsletterTitre: 'Offre de bienvenue !',
-        newsletterDescription: 'Inscrivez-vous et recevez des offres exclusives 🧡',
-        newsletterImageUrl: '/images/love-piment-secret.png',
+        newsletterDescription: 'Recevez votre code promo par e-mail en quelques secondes. Offre valable sur votre première commande, livraison discrète à Conakry.',
+        newsletterImageUrl: '/images/love-piment-brand-story.png',
         newsletterRemisePct: 10,
         newsletterCouponCode: 'BIENVENUE10',
         livraisonTarifConakry: LIVRAISON_CONFIG_DEFAULT.tarifConakry,
@@ -171,6 +183,9 @@ export class StoreSettingsService {
         }),
         ...(data.delaiLabel !== undefined && {
           livraisonDelaiLabel: data.delaiLabel?.trim() || null,
+        }),
+        ...(data.tarifsCommunes !== undefined && {
+          livraisonTarifsCommunes: data.tarifsCommunes,
         }),
       },
     });

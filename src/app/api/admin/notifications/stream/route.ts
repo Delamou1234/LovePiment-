@@ -26,11 +26,11 @@ export async function GET(request: Request) {
       const poll = async () => {
         if (closed) return;
         try {
-          const notifications = await trackingService.listerNotificationsSatisfaction(since);
+          const notifications = await trackingService.listerNotificationsAdminDepuis(since);
           const nouvelles = notifications.filter((n) => !sentIds.has(n.id));
           if (nouvelles.length > 0) {
             for (const n of nouvelles) sentIds.add(n.id);
-            send({ type: 'satisfaction', notifications: nouvelles });
+            send({ type: 'notifications', notifications: nouvelles });
           } else {
             send({ type: 'heartbeat', at: new Date().toISOString() });
           }

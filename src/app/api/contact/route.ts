@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { contactService } from '@/modules/contact/services/contact.service';
+import { enforceRateLimit } from '@/shared/lib/security/enforce-rate-limit';
 import { CONTACT_SUJETS, type ContactSubjectKey } from '@/modules/contact/types';
 import { getSession } from '@/shared/lib/auth/session';
 
@@ -17,6 +18,9 @@ const contactSchema = z.object({
 /** POST /api/contact */
 export async function POST(request: NextRequest) {
   try {
+    const limited = enforceRateLimit(request, 'contact');
+    if (limited) return limited;
+
     const body = await request.json();
     const parsed = contactSchema.safeParse(body);
 

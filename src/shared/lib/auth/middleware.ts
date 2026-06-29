@@ -39,6 +39,7 @@ export async function authMiddleware(request: NextRequest) {
   const isLivreurRoute = pathname === '/livreur' || pathname.startsWith('/livreur/');
   const isLivraisonNavRoute = pathname === '/livraison' || pathname.startsWith('/livraison/');
   const isLivreurLoginLegacy = pathname === '/livreur/connexion';
+  const isAdminRoute = pathname === '/admin' || pathname.startsWith('/admin/');
   const isProtectedCustomer = isCheckoutRoute || isCompteRoute;
 
   const hasCustomer = Boolean(snapshot.customer?.id);
@@ -50,6 +51,15 @@ export async function authMiddleware(request: NextRequest) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = '/connexion';
     loginUrl.searchParams.set('redirect', '/livreur');
+    const response = NextResponse.redirect(loginUrl);
+    applyCookieUpdates(response, snapshot);
+    return response;
+  }
+
+  if (isAdminRoute && !hasAdmin) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = '/connexion';
+    loginUrl.searchParams.set('redirect', pathname);
     const response = NextResponse.redirect(loginUrl);
     applyCookieUpdates(response, snapshot);
     return response;
@@ -74,6 +84,12 @@ export async function authMiddleware(request: NextRequest) {
   }
 
   if (isProtectedCustomer && !hasCustomer) {
+    if (hasCourier) {
+      const response = NextResponse.next({ request });
+      applyCookieUpdates(response, snapshot);
+      return response;
+    }
+
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = '/connexion';
     loginUrl.searchParams.set('redirect', pathname);

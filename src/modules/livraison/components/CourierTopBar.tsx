@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { LogOut, Package, RefreshCw, Store, Truck } from 'lucide-react';
+import { LogOut, Menu, Package, RefreshCw, Store, Truck } from 'lucide-react';
 import { DashboardHomeButton } from '@/shared/ui/DashboardHomeButton';
 import { initialesNom } from '@/modules/compte/types';
 import type { CourierProfil } from './livreur-ui';
@@ -22,6 +22,7 @@ type Props = {
   totaux?: CourierTotauxDto;
   onLogout: () => void;
   onRefresh: () => void;
+  onMenuOpen?: () => void;
   refreshing?: boolean;
 };
 
@@ -35,6 +36,7 @@ export function CourierTopBar({
   totaux = TOTAUX_LIVREUR_VIDES,
   onLogout,
   onRefresh,
+  onMenuOpen,
   refreshing,
 }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -51,16 +53,35 @@ export function CourierTopBar({
   }, []);
 
   return (
-    <header className="relative z-30 shrink-0 border-b border-beige-border/80 bg-white/80 px-4 py-2.5 backdrop-blur-md md:px-6 lg:px-8">
-      <div className="flex items-center gap-3 md:gap-4">
+    <header className="relative z-30 shrink-0 border-b border-beige-border/80 bg-white/80 backdrop-blur-md">
+      <div className="flex items-center gap-2 px-3 py-2.5 sm:gap-3 md:gap-4 md:px-6 lg:px-8">
+        {onMenuOpen && (
+          <button
+            type="button"
+            onClick={onMenuOpen}
+            className="courier-topbar-menu lg:hidden"
+            aria-label="Ouvrir le menu"
+          >
+            <Menu className="h-5 w-5" strokeWidth={1.75} />
+          </button>
+        )}
+
         <div className="hidden min-w-0 shrink-0 md:block md:max-w-[160px] lg:max-w-[200px]">
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
             {subtitle}
           </p>
           <h1 className="font-serif text-base font-bold text-zinc-900 truncate lg:text-lg">
             {title}
+            {arretsCount > 0 ? ` (${arretsCount})` : ''}
           </h1>
         </div>
+
+        {onMenuOpen && (
+          <p className="courier-topbar-mobile-title md:hidden">
+            {title}
+            {arretsCount > 0 ? ` (${arretsCount})` : ''}
+          </p>
+        )}
 
         <div className="hidden h-8 w-px shrink-0 bg-beige-border/80 md:block" aria-hidden />
 
@@ -152,6 +173,14 @@ export function CourierTopBar({
             </div>
           )}
         </div>
+      </div>
+
+      <div className="courier-topbar-mobile-stats sm:hidden">
+        <span className="courier-topbar-stat courier-topbar-stat--success">
+          {totaux.montantTermineGn.toLocaleString('fr-FR')} GN livrés
+        </span>
+        <span className="courier-topbar-stat">{tourneesCount} tournée{tourneesCount > 1 ? 's' : ''}</span>
+        <span className="courier-topbar-stat courier-topbar-stat--olive">{arretsCount} arrêt{arretsCount > 1 ? 's' : ''}</span>
       </div>
     </header>
   );

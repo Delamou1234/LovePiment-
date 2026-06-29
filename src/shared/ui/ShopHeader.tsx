@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import type { BoutiqueNavLink } from '@/modules/produits/lib/boutique-nav';
 import { useAuthSession } from '@/shared/providers/AuthSessionProvider';
+import { AccountTypeBadge } from '@/shared/components/AccountTypeBadge';
 import { BrandLogo } from '@/shared/ui/BrandLogo';
 import { getShopPhoneDisplay, getShopTelHref } from '@/shared/lib/shop-contact';
 
@@ -85,6 +86,27 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
     return () => document.removeEventListener('mousedown', onClick);
   }, [pathname, setBoutiqueOpen]);
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (!menuOpen && !searchOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setMenuOpen(false);
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [menuOpen, searchOpen, setMenuOpen]);
+
   const closeMenu = () => setMenuOpen(false);
 
   const handleLogout = async () => {
@@ -95,6 +117,9 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
 
   const navLinkClass = (href: string) =>
     `lp-nav-link${isNavActive(pathname, href, tri) ? ' is-active' : ''}`;
+
+  const mobileNavLinkClass = (href: string) =>
+    `lp-mobile-nav-link${isNavActive(pathname, href, tri) ? ' is-active' : ''}`;
 
   const allNavLinks = [
     ...NAV_BEFORE_CATEGORIES,
@@ -177,6 +202,13 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
             </nav>
 
             <div className="lp-header-actions">
+              {authUser && (
+                <AccountTypeBadge
+                  label={authUser.accountTypeLabel}
+                  type={authUser.accountType}
+                  className="hidden lg:inline-flex"
+                />
+              )}
               <button
                 type="button"
                 onClick={() => setSearchOpen(!searchOpen)}
@@ -208,28 +240,77 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
             </div>
           </div>
 
-          <div className="flex h-16 items-center justify-between lg:hidden">
-            <button type="button" onClick={() => setMenuOpen(!menuOpen)} className="text-white" aria-label="Menu">
-              {menuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
-            <BrandLogo href="/" size="sm" tagline={isHome ? 'Pour femme' : undefined} />
+          <div className="lp-header-mobile flex lg:hidden">
             <button
               type="button"
-              onClick={() => panier.ouvrirPanier()}
-              className="relative text-white"
-              aria-label="Panier"
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="lp-header-mobile-btn"
+              aria-label={menuOpen ? 'Fermer le menu' : 'Ouvrir le menu'}
+              aria-expanded={menuOpen}
             >
-              <ShoppingBag className="h-5 w-5" />
-              {cartProductCountDisplay > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-olive text-[9px] font-bold text-white">
-                  {cartProductCountDisplay}
-                </span>
-              )}
+              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
+
+            <div className="lp-header-mobile-brand">
+              <BrandLogo href="/" size="sm" tagline={isHome ? 'Pour femme' : undefined} />
+            </div>
+
+            <div className="lp-header-mobile-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchOpen(!searchOpen);
+                  if (menuOpen) closeMenu();
+                }}
+                className="lp-header-mobile-btn"
+                aria-label="Rechercher"
+                aria-expanded={searchOpen}
+              >
+                <Search className="h-[1.125rem] w-[1.125rem]" strokeWidth={1.75} />
+              </button>
+              <Link
+                href={authUser ? '/compte' : loginHref}
+                className="lp-header-mobile-btn"
+                aria-label={authUser ? 'Mon compte' : 'Connexion'}
+              >
+                {authUser?.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={authUser.avatarUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
+                ) : (
+                  <User className="h-[1.125rem] w-[1.125rem]" strokeWidth={1.75} />
+                )}
+              </Link>
+              <button
+                type="button"
+                onClick={() => panier.ouvrirPanier()}
+                className="lp-header-mobile-btn lp-header-mobile-btn--cart"
+                aria-label="Panier"
+              >
+                <ShoppingBag className="h-[1.125rem] w-[1.125rem]" strokeWidth={1.75} />
+                {cartProductCountDisplay > 0 && (
+                  <span className="lp-header-mobile-cart-badge">
+                    {cartProductCountDisplay > 99 ? '99+' : cartProductCountDisplay}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
 
+          <nav className="lp-header-tablet-nav hidden md:flex lg:hidden" aria-label="Navigation tablette">
+            {allNavLinks.map((link) => (
+              <Link key={link.name} href={link.href} className={navLinkClass(link.href)}>
+                {link.name}
+              </Link>
+            ))}
+            {boutiqueLinks.length > 0 && (
+              <Link href="/produits" className={`lp-nav-link${boutiqueActive ? ' is-active' : ''}`}>
+                Catégories
+              </Link>
+            )}
+          </nav>
+
           {searchOpen && (
-            <div className="lp-header-search hidden lg:block">
+            <div className="lp-header-search">
               <div className="lp-header-search-inner">
                 <ProductSearchBar
                   autoFocus
@@ -251,48 +332,93 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
         </div>
 
         {menuOpen && (
-          <div className="border-t border-white/10 bg-[#0a0508] lg:hidden">
-            <div className="container-shop space-y-1 py-4">
-              <ProductSearchBar
-                fullWidth
-                className="mb-3 max-w-md mx-auto w-full"
-                inputClassName="lp-search-input--header"
-                onNavigate={closeMenu}
-              />
-              {allNavLinks.map((link) => (
-                <Link key={link.name} href={link.href} onClick={closeMenu} className="block py-2.5 text-sm font-semibold text-white/85">
-                  {link.name}
-                </Link>
-              ))}
-              <p className="pt-2 text-[10px] font-bold uppercase tracking-widest text-white/40">Catégories</p>
-              {boutiqueLinks.map((link) => (
-                <Link key={link.href} href={link.href} onClick={closeMenu} className="block py-2 text-sm text-white/70">
-                  {link.name}
-                </Link>
-              ))}
-              {authUser ? (
-                <>
-                  <Link href="/compte" onClick={closeMenu} className="mt-3 flex items-center gap-3 py-2">
-                    <CustomerAvatar name={authUser.name} avatarUrl={authUser.avatarUrl} size="sm" />
-                    <span className="text-sm text-white">{authUser.name}</span>
-                  </Link>
-                  <button type="button" onClick={handleLogout} className="flex items-center gap-2 py-2 text-sm text-white/60">
-                    <LogOut className="h-4 w-4" /> Déconnexion
-                  </button>
-                </>
-              ) : (
-                <Link href={loginHref} onClick={closeMenu} className="mt-3 block rounded-full bg-olive py-3 text-center text-sm font-semibold text-white">
-                  Connexion
-                </Link>
-              )}
-              <a
-                href={telHref}
-                onClick={closeMenu}
-                className="mt-4 flex items-center justify-center gap-2 rounded-full border border-white/20 py-3 text-sm font-semibold text-white"
-              >
-                <Phone className="h-4 w-4" />
-                Appeler — {phoneDisplay}
-              </a>
+          <div className="lp-mobile-menu lg:hidden" role="dialog" aria-modal="true" aria-label="Menu navigation">
+            <button
+              type="button"
+              className="lp-mobile-backdrop"
+              onClick={closeMenu}
+              aria-label="Fermer le menu"
+            />
+            <div className="lp-mobile-drawer">
+              <div className="lp-mobile-drawer-head">
+                <BrandLogo href="/" size="sm" onClick={closeMenu} />
+                <button
+                  type="button"
+                  onClick={closeMenu}
+                  className="lp-header-mobile-btn"
+                  aria-label="Fermer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="lp-mobile-drawer-body">
+                <ProductSearchBar
+                  fullWidth
+                  className="mb-4 w-full"
+                  inputClassName="lp-search-input--header"
+                  onNavigate={closeMenu}
+                />
+
+                <div className="lp-mobile-drawer-section">
+                  {allNavLinks.map((link) => (
+                    <Link
+                      key={link.name}
+                      href={link.href}
+                      onClick={closeMenu}
+                      className={mobileNavLinkClass(link.href)}
+                    >
+                      {link.name}
+                    </Link>
+                  ))}
+                </div>
+
+                {boutiqueLinks.length > 0 && (
+                  <div className="lp-mobile-drawer-section">
+                    <p className="lp-mobile-drawer-label">Catégories</p>
+                    {boutiqueLinks.map((link) => (
+                      <Link
+                        key={link.href}
+                        href={link.href}
+                        onClick={closeMenu}
+                        className="lp-mobile-nav-link lp-mobile-nav-link--sub"
+                      >
+                        {link.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+
+                <div className="lp-mobile-drawer-section lp-mobile-drawer-section--account">
+                  {authUser ? (
+                    <>
+                      <Link href="/compte" onClick={closeMenu} className="lp-mobile-account">
+                        <CustomerAvatar name={authUser.name} avatarUrl={authUser.avatarUrl} size="sm" />
+                        <span className="lp-mobile-account-meta">
+                          <span className="lp-mobile-account-name">{authUser.name}</span>
+                          <AccountTypeBadge
+                            label={authUser.accountTypeLabel}
+                            type={authUser.accountType}
+                          />
+                        </span>
+                      </Link>
+                      <button type="button" onClick={handleLogout} className="lp-mobile-logout">
+                        <LogOut className="h-4 w-4" />
+                        Déconnexion
+                      </button>
+                    </>
+                  ) : (
+                    <Link href={loginHref} onClick={closeMenu} className="lp-mobile-login">
+                      Connexion
+                    </Link>
+                  )}
+                </div>
+
+                <a href={telHref} onClick={closeMenu} className="lp-mobile-call">
+                  <Phone className="h-4 w-4" />
+                  Appeler — {phoneDisplay}
+                </a>
+              </div>
             </div>
           </div>
         )}

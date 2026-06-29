@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   LayoutDashboard,
   LogOut,
+  Menu,
   MessageSquare,
   Settings,
   ShoppingBag,
@@ -31,6 +32,7 @@ type Props = {
   conversations: ConversationResume[];
   messagerieUnread: number;
   stockFaible?: number;
+  onMenuOpen?: () => void;
 };
 
 const MENU_ITEMS = [
@@ -56,6 +58,7 @@ export function AdminTopBar({
   conversations,
   messagerieUnread,
   stockFaible = 0,
+  onMenuOpen,
 }: Props) {
   const pathname = usePathname();
   const router = useRouter();
@@ -94,9 +97,21 @@ export function AdminTopBar({
 
   return (
     <header className="relative z-30 shrink-0 border-b border-zinc-200/80 bg-white px-4 py-2.5 md:px-6 lg:px-8">
-      <div className="flex items-center gap-3 md:gap-4">
+      <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
+        {onMenuOpen && (
+          <button
+            type="button"
+            onClick={onMenuOpen}
+            className="admin-topbar-menu lg:hidden"
+            aria-label="Ouvrir le menu"
+          >
+            <Menu className="h-5 w-5" strokeWidth={1.75} />
+          </button>
+        )}
+
         {!isDashboard && (
           <>
+            <p className="admin-topbar-mobile-title md:hidden">{pageTitle}</p>
             <div className="hidden min-w-0 shrink-0 md:block md:max-w-[140px] lg:max-w-[180px]">
               <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-zinc-400">
                 Administration
@@ -111,7 +126,7 @@ export function AdminTopBar({
 
         <DashboardHomeButton variant="admin" className="shrink-0" />
 
-        <AdminSearchBar className="min-w-0 flex-1 sm:flex-none sm:w-[180px] md:w-[240px] lg:w-[320px]" />
+        <AdminSearchBar className="admin-topbar-search-wrap min-w-0 flex-1 sm:flex-none sm:w-[180px] md:w-[240px] lg:w-[320px]" />
 
         <div className="hidden min-w-2 flex-1 sm:block" aria-hidden />
 

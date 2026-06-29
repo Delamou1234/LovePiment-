@@ -1,11 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getCachedCategoriesApi } from '@/modules/produits/lib/cached-queries';
 import { categorieVersVitrine } from '@/modules/produits/lib/category-showcase';
-import { noStore } from '@/shared/lib/http-cache';
+import { cachePublic } from '@/shared/lib/http-cache';
 
-export const dynamic = 'force-dynamic';
-
-/** GET /api/categories — catégories actives (données fraîches après mutation admin). */
+/** GET /api/categories — catégories actives (cache 5 min, invalidé après mutation admin). */
 export async function GET() {
   const { vitrine, arbre } = await getCachedCategoriesApi();
 
@@ -25,6 +23,6 @@ export async function GET() {
         })),
       })),
     },
-    { headers: noStore() },
+    { headers: cachePublic(300) },
   );
 }

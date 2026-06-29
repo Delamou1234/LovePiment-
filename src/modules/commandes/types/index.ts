@@ -18,6 +18,11 @@ export type CreerCommandeDto = {
   clientTelephone: string;
   clientAdresse: string;
   clientVille: string;
+  clientCommune?: string | null;
+  clientQuartier?: string | null;
+  clientRepere?: string | null;
+  creneauLivraison?: string | null;
+  notes?: string | null;
   clientLatitude?: number | null;
   clientLongitude?: number | null;
   modePaiement: 'CINETPAY' | 'PAIEMENT_LIVRAISON';

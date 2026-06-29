@@ -1,0 +1,15 @@
+'use client';
+
+import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
+
+/** Active la session client pour un livreur qui navigue sur la boutique. */
+export function CourierShopSessionBootstrap() {
+  useRunAfterMount(() => {
+    void fetch('/api/livreur/compte-client', {
+      method: 'POST',
+      credentials: 'include',
+    }).catch(() => {});
+  }, []);
+
+  return null;
+}

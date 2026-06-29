@@ -10,7 +10,6 @@ import {
   ExternalLink,
   Loader2,
   Pencil,
-  Search,
   Sparkles,
   Star,
   Tag,
@@ -18,6 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import type { FiltrePromo, ProduitPromo } from './promotions-types';
+import { FilterSearchInput } from '@/shared/components/FilterSearchInput';
 
 function formatGn(value: number) {
   return `${value.toLocaleString('fr-FR')} GN`;
@@ -191,16 +191,11 @@ export function AdminPromoProductsSection({ refreshToken = 0 }: Props) {
       </div>
 
       <div className="admin-marketing-toolbar">
-        <div className="admin-marketing-search-wrap">
-          <Search className="admin-marketing-search-icon" strokeWidth={1.75} />
-          <input
-            type="search"
-            value={recherche}
-            onChange={(e) => setRecherche(e.target.value)}
-            placeholder="Rechercher un produit…"
-            className="admin-marketing-search"
-          />
-        </div>
+        <FilterSearchInput
+          value={recherche}
+          onChange={setRecherche}
+          placeholder="Rechercher un produit…"
+        />
         <div className="admin-marketing-filters">
           {FILTRES.map(({ id, label }) => (
             <button

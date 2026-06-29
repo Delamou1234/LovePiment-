@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { recommendationService } from '@/modules/ia/services/recommendation.service';
 import { decoderProfilBeauteDepuisApi } from '@/modules/ia/lib/beauty-profile';
+import { enforceRateLimit } from '@/shared/lib/security/enforce-rate-limit';
 
 const querySchema = z.object({
   viewed: z.string().optional(),
@@ -17,6 +18,9 @@ const querySchema = z.object({
 /** GET /api/ia/recommendations — recommandations personnalisées Gemini */
 export async function GET(request: NextRequest) {
   try {
+    const limited = enforceRateLimit(request, 'iaAssistant');
+    if (limited) return limited;
+
     const params = Object.fromEntries(request.nextUrl.searchParams.entries());
     const parsed = querySchema.safeParse(params);
     if (!parsed.success) {

@@ -1,5 +1,14 @@
-import { AdminClientsPage } from '@/modules/admin/components/clients/AdminClientsPage';
+import { redirect } from 'next/navigation';
 
-export default function Page() {
-  return <AdminClientsPage />;
+/** Ancienne route — redirige vers la gestion unifiée des utilisateurs */
+export default async function AdminClientsRedirect({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
+  const target = q
+    ? `/admin/utilisateurs?tab=clients&q=${encodeURIComponent(q)}`
+    : '/admin/utilisateurs?tab=clients';
+  redirect(target);
 }

@@ -248,6 +248,28 @@ export function AdminDashboardLive({ initialOverview }: AdminDashboardLiveProps)
         </div>
       </div>
 
+      {overview.commandesEnAttente.length > 0 && (
+        <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <p className="font-bold mb-2">⚠ Commandes à traiter en priorité</p>
+          <ul className="space-y-1">
+            {overview.commandesEnAttente.map((c) => (
+              <li key={c.id} className="flex flex-wrap items-center gap-2">
+                <Link
+                  href={`/admin/commandes?open=${encodeURIComponent(c.id)}`}
+                  className="font-semibold hover:underline"
+                >
+                  {c.clientNom}
+                </Link>
+                <span className="text-amber-800">
+                  — {formatGn(c.montantTotal)} · en attente depuis {c.minutesAttente} min
+                  {c.estPremiereCommande ? ' · 1ʳᵉ commande' : ''}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="admin-dash-kpi-grid">
         <KpiCard
           icon={Banknote}

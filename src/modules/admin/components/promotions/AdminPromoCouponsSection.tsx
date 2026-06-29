@@ -9,11 +9,11 @@ import {
   Pencil,
   Plus,
   Power,
-  Search,
   Trash2,
   X,
 } from 'lucide-react';
 import type { Coupon } from '../marketing/marketing-types';
+import { FilterSearchInput } from '@/shared/components/FilterSearchInput';
 
 const emptyCoupon = (): Omit<Coupon, 'id' | 'utilisations'> => ({
   code: '',
@@ -240,16 +240,11 @@ export function AdminPromoCouponsSection({ refreshToken = 0 }: Props) {
       </div>
 
       <div className="admin-marketing-toolbar">
-        <div className="admin-marketing-search-wrap">
-          <Search className="admin-marketing-search-icon" strokeWidth={1.75} />
-          <input
-            type="search"
-            value={recherche}
-            onChange={(e) => setRecherche(e.target.value)}
-            placeholder="Rechercher un code…"
-            className="admin-marketing-search"
-          />
-        </div>
+        <FilterSearchInput
+          value={recherche}
+          onChange={setRecherche}
+          placeholder="Rechercher un code…"
+        />
         <div className="admin-marketing-filters">
           {[
             { id: '' as const, label: 'Tous' },

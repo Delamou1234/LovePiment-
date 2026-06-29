@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { MapPin, Package, Phone } from 'lucide-react';
+import { MapPin, Phone } from 'lucide-react';
 import { BrandLogo } from '@/shared/ui/BrandLogo';
 import {
   getShopPhoneDisplay,
@@ -9,38 +9,21 @@ import {
 
 const FACEBOOK = process.env.NEXT_PUBLIC_FACEBOOK_PAGE_URL ?? 'https://facebook.com/lovepiment';
 
-const INFO_LINKS = [
-  { label: 'À propos de nous', href: '/apropos' },
-  { label: 'Livraison & retours', href: '/cgv' },
-  { label: 'Conditions générales', href: '/cgv' },
-  { label: 'Politique de confidentialité', href: '/confidentialite' },
-  { label: 'Mentions légales', href: '/mentions-legales' },
-  { label: 'FAQ', href: '/contact' },
-];
-
-const COMPTE_LINKS = [
+const UTIL_LINKS = [
+  { label: 'À propos', href: '/apropos' },
+  { label: 'FAQ', href: '/faq' },
+  { label: 'Promotions', href: '/promos' },
   { label: 'Mon compte', href: '/compte' },
-  { label: 'Mes commandes', href: '/compte' },
-  { label: 'Mes adresses', href: '/compte' },
-  { label: 'Mes favoris', href: '/compte' },
-  { label: 'Panier', href: '/panier' },
-];
-
-const AIDE_LINKS = [
-  { label: 'Nous contacter', href: '/contact' },
-  { label: 'Support 7j/7', href: '/messages' },
-  { label: 'Suivi de commande', href: '/compte' },
-  { label: 'Guide d\'utilisation', href: '/apropos' },
+  { label: 'Contact', href: '/contact' },
+  { label: 'CGV', href: '/cgv' },
+  { label: 'Confidentialité', href: '/confidentialite' },
 ];
 
 const SOCIAL = [
   { label: 'Instagram', href: 'https://instagram.com/lovepiment', abbr: 'IG' },
   { label: 'Facebook', href: FACEBOOK, abbr: 'FB' },
   { label: 'TikTok', href: 'https://tiktok.com', abbr: 'TT' },
-  { label: 'Snapchat', href: 'https://snapchat.com', abbr: 'SC' },
 ];
-
-const PAYMENTS = ['Visa', 'MC', 'PayPal', 'Apple Pay'];
 
 function FooterCol({ title, links }: { title: string; links: { label: string; href: string }[] }) {
   return (
@@ -70,10 +53,10 @@ export function ShopFooter({
   const phoneDisplay = getShopPhoneDisplay();
   const categoryLinks =
     boutiqueLinks.length > 0
-      ? boutiqueLinks.slice(0, 6)
+      ? boutiqueLinks.slice(0, 4)
       : [
           { label: 'Sextoys', href: '/produits?categorie=sextoys' },
-          { label: 'Lingerie sexy', href: '/produits?categorie=lingerie' },
+          { label: 'Lingerie', href: '/produits?categorie=lingerie' },
           { label: 'Lubrifiants', href: '/produits?categorie=lubrifiants' },
           { label: 'Accessoires', href: '/produits?categorie=accessoires' },
         ];
@@ -83,12 +66,11 @@ export function ShopFooter({
       <div className="lp-footer-inner">
         <div className="lp-footer-grid">
           <div className="lp-footer-brand-col">
-            <BrandLogo href="/" size="md" />
+            <BrandLogo href="/" size="sm" />
             <p className="lp-footer-desc">
-              Votre boutique intime dédiée au plaisir et au bien-être féminin. Produits premium,
-              livraison discrète à Conakry.
+              Boutique intime à Conakry — livraison discrète, paiement Mobile Money.
             </p>
-            <div className="mt-5 flex flex-wrap gap-2">
+            <div className="lp-footer-social-row">
               {SOCIAL.map(({ label, href, abbr }) => (
                 <a
                   key={label}
@@ -104,85 +86,44 @@ export function ShopFooter({
             </div>
           </div>
 
-          <FooterCol title="Informations" links={INFO_LINKS} />
-          <FooterCol title="Mon compte" links={COMPTE_LINKS} />
+          <FooterCol title="Boutique" links={categoryLinks} />
+          <FooterCol title="Liens utiles" links={UTIL_LINKS} />
 
           <div className="lp-footer-col">
-            <h4 className="lp-footer-col-title">Catégories</h4>
-            <ul className="lp-footer-link-list">
-              {categoryLinks.map(({ label, href }) => (
-                <li key={label}>
-                  <Link href={href} className="lp-footer-link">
-                    {label}
-                  </Link>
-                </li>
-              ))}
+            <h4 className="lp-footer-col-title">Contact</h4>
+            <ul className="lp-footer-contact-list">
+              <li>
+                <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                Conakry, Guinée
+              </li>
+              <li>
+                <a href={telHref} className="lp-footer-contact-link">
+                  <Phone className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                  {phoneDisplay}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={waHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="lp-footer-contact-link"
+                >
+                  WhatsApp
+                </a>
+              </li>
             </ul>
-          </div>
-
-          <div className="lp-footer-col">
-            <h4 className="lp-footer-col-title">Aide & contact</h4>
-            <ul className="lp-footer-link-list">
-              {AIDE_LINKS.map(({ label, href }) => (
-                <li key={label}>
-                  <Link href={href} className="lp-footer-link">
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-
-            <h4 className="lp-footer-col-title lp-footer-col-title--spaced">Paiement sécurisé</h4>
-            <div className="flex flex-wrap gap-2">
-              {PAYMENTS.map((p) => (
-                <span key={p} className="lp-footer-pay-badge">
-                  {p}
-                </span>
-              ))}
-            </div>
-
-            <div className="lp-footer-discreet">
-              <p className="flex items-center gap-2 text-xs font-semibold text-[#ff6eb4]">
-                <Package className="h-4 w-4 shrink-0" />
-                Livraison discrète
-              </p>
-              <p className="mt-1 text-[11px] leading-relaxed text-white/55">
-                Emballage neutre, sans indication du contenu.
-              </p>
-            </div>
-
-            <p className="mt-4 flex items-center gap-2 text-xs text-white/50">
-              <MapPin className="h-3.5 w-3.5 shrink-0" />
-              Conakry, Guinée
+            <p className="lp-footer-discreet-inline">
+              Emballage neutre · Livraison discrète · 18+
             </p>
-            <a
-              href={telHref}
-              className="mt-2 flex items-center gap-2 text-xs text-white/60 transition hover:text-white"
-            >
-              <Phone className="h-3.5 w-3.5 shrink-0" />
-              {phoneDisplay}
-            </a>
-            <a
-              href={waHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-1 block text-xs text-white/50 transition hover:text-white"
-            >
-              WhatsApp support
-            </a>
           </div>
         </div>
       </div>
 
       <div className="lp-footer-bottom">
         <div className="lp-footer-bottom-inner">
-          <p>&copy; {year} Love Piment& — Tous droits réservés.</p>
-          <div className="flex items-center gap-3 text-center sm:text-right">
-            <span>Site réservé aux personnes majeures (18+)</span>
-            <span className="lp-footer-18" aria-label="18 ans et plus">
-              18+
-            </span>
-          </div>
+          <p>&copy; {year} Love Piment&</p>
+          <p className="lp-footer-bottom-note">Réservé aux majeurs (18+)</p>
         </div>
       </div>
     </footer>

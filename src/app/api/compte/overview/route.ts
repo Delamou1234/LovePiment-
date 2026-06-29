@@ -4,12 +4,13 @@ import { customerProfileService } from '@/modules/compte/services/customer-profi
 import { customerDashboardService } from '@/modules/compte/services/customer-dashboard.service';
 import { serialiserWishlistItems } from '@/modules/compte/lib/serialize-wishlist';
 import { avisService } from '@/modules/avis/services/review.service';
-import { getCustomerSession } from '@/shared/lib/auth/session';
+import { getCustomerSessionWithCourierFallback } from '@/shared/lib/auth/customer-from-courier';
+import { assurerSessionLivreurPourClient } from '@/modules/livraison/services/courier-customer.service';
 import { cachePrivate } from '@/shared/lib/http-cache';
 
 /** GET /api/compte/overview — profil + commandes + favoris + adresses + avis (1 requête). */
 export async function GET() {
-  const session = await getCustomerSession();
+  const session = await getCustomerSessionWithCourierFallback();
   if (!session?.id) {
     return NextResponse.json({ message: 'Connexion requise' }, { status: 401 });
   }
@@ -34,6 +35,8 @@ export async function GET() {
     eligibles.length,
   );
 
+  const livreur = await assurerSessionLivreurPourClient(session.id);
+
   return NextResponse.json(
     {
       profil,
@@ -45,6 +48,7 @@ export async function GET() {
       })),
       avisEligibles: eligibles,
       dashboard,
+      livreur,
     },
     { headers: cachePrivate(0) },
   );

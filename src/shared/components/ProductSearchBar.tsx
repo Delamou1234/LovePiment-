@@ -3,15 +3,20 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Camera, Loader2, Mic, MicOff, Search, Tag, X } from 'lucide-react';
+import { Camera, Loader2, Search, Tag, X } from 'lucide-react';
 import type { SuggestionRecherche } from '@/modules/produits/types';
-import { useSpeechRecognition } from '@/shared/hooks/useSpeechRecognition';
+import { useVoiceSearchInput } from '@/shared/hooks/useVoiceSearchInput';
+import { VoiceSearchMicButton } from '@/shared/components/VoiceSearchMicButton';
 import { cn } from '@/lib/utils';
 
 interface ProductSearchBarProps {
   className?: string;
   inputClassName?: string;
   compact?: boolean;
+  /** Masque la recherche par photo (le micro navigateur reste disponible) */
+  hideImageSearch?: boolean;
+  /** @deprecated Utiliser hideImageSearch */
+  textOnly?: boolean;
   fullWidth?: boolean;
   autoFocus?: boolean;
   placeholder?: string;
@@ -32,6 +37,8 @@ export function ProductSearchBar({
   className,
   inputClassName,
   compact = false,
+  hideImageSearch = false,
+  textOnly = false,
   fullWidth = false,
   autoFocus = false,
   placeholder = 'Rechercher un produit...',
@@ -51,7 +58,6 @@ export function ProductSearchBar({
   const [loading, setLoading] = useState(false);
   const [imageLoading, setImageLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
-  const [voiceError, setVoiceError] = useState('');
   const [imageError, setImageError] = useState('');
   const [aiEnhanced, setAiEnhanced] = useState(false);
 
@@ -85,31 +91,41 @@ export function ProductSearchBar({
     if (fileInputRef.current) fileInputRef.current.value = '';
   }, []);
 
-  const { isListening, isSupported, startListening, stopListening } = useSpeechRecognition({
-    lang: 'fr-FR',
-    onResult: (transcript) => {
+  const noImageSearch = hideImageSearch || textOnly;
+
+  const voice = useVoiceSearchInput({
+    onTranscript: (transcript, isFinal) => {
       clearImageSearch();
       setQuery(transcript);
-      setVoiceError('');
+      setIsOpen(true);
       inputRef.current?.focus();
+      if (isFinal && transcript.length >= 2) {
+        navigateToSearch(transcript);
+      }
     },
-    onError: (message) => setVoiceError(message),
   });
 
-  const inputPaddingRight = compact
-    ? isSupported
-      ? 'pr-[4.75rem]'
-      : 'pr-[3.5rem]'
-    : isSupported
-      ? 'pr-[5.75rem]'
-      : 'pr-[4.25rem]';
+  const inputPaddingRight = noImageSearch
+    ? compact
+      ? voice.isSupported
+        ? 'pr-[4.75rem]'
+        : 'pr-9'
+      : voice.isSupported
+        ? 'pr-[5.75rem]'
+        : 'pr-10'
+    : compact
+      ? voice.isSupported
+        ? 'pr-[4.75rem]'
+        : 'pr-[3.5rem]'
+      : voice.isSupported
+        ? 'pr-[5.75rem]'
+        : 'pr-[4.25rem]';
 
   const actionBtnClass = compact ? 'h-6 w-6' : 'h-7 w-7';
   const actionIconClass = compact ? 'h-3 w-3' : 'h-3.5 w-3.5';
 
   const searchByImage = useCallback(async (file: File) => {
     setImageError('');
-    setVoiceError('');
     clearImageSearch();
 
     const preview = URL.createObjectURL(file);
@@ -266,11 +282,7 @@ export function ProductSearchBar({
     }
   };
 
-  const toggleVoice = () => {
-    setVoiceError('');
-    if (isListening) stopListening();
-    else startListening();
-  };
+  const toggleVoice = voice.toggleVoice;
 
   const showDropdown =
     isOpen &&
@@ -312,12 +324,14 @@ export function ProductSearchBar({
         <input
           ref={inputRef}
           type="search"
+          enterKeyHint="search"
+          autoComplete="off"
           role="combobox"
           aria-expanded={showDropdown}
           aria-autocomplete="list"
           aria-controls="search-suggestions"
           placeholder={
-            isListening
+            voice.isListening
               ? 'Parlez maintenant…'
               : searchMode === 'image'
                 ? 'Résultats par image…'
@@ -340,48 +354,40 @@ export function ProductSearchBar({
             fullWidth ? 'w-full py-2.5' : compact ? 'w-48 xl:w-64' : 'w-52 xl:w-72',
             imagePreview ? (compact ? 'pl-12' : 'pl-14') : compact ? 'pl-3' : 'pl-4',
             inputPaddingRight,
-            isListening && 'ring-2 ring-red-200 border-red-300',
+            voice.isListening && 'ring-2 ring-red-200 border-red-300',
             inputClassName,
           )}
         />
 
         <div className="absolute right-1 top-1/2 flex -translate-y-1/2 items-center gap-0.5">
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={imageLoading}
-            className={cn(
-              'flex items-center justify-center rounded-full transition',
-              actionBtnClass,
-              searchMode === 'image'
-                ? 'bg-[#9B1B2E] text-white'
-                : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700',
-            )}
-            aria-label="Rechercher par image"
-            title="Rechercher par photo"
-          >
-            {imageLoading ? (
-              <Loader2 className={cn('animate-spin', actionIconClass)} />
-            ) : (
-              <Camera className={actionIconClass} />
-            )}
-          </button>
-          {isSupported && (
+          {!noImageSearch && (
             <button
               type="button"
-              onClick={toggleVoice}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={imageLoading}
               className={cn(
                 'flex items-center justify-center rounded-full transition',
                 actionBtnClass,
-                isListening
-                  ? 'bg-red-500 text-white animate-pulse'
+                searchMode === 'image'
+                  ? 'bg-[#9B1B2E] text-white'
                   : 'text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700',
               )}
-              aria-label={isListening ? 'Arrêter la dictée vocale' : 'Recherche vocale'}
-              title={isListening ? 'Arrêter' : 'Rechercher à la voix'}
+              aria-label="Rechercher par image"
+              title="Rechercher par photo"
             >
-              {isListening ? <MicOff className={actionIconClass} /> : <Mic className={actionIconClass} />}
+              {imageLoading ? (
+                <Loader2 className={cn('animate-spin', actionIconClass)} />
+              ) : (
+                <Camera className={actionIconClass} />
+              )}
             </button>
+          )}
+          {voice.isSupported && (
+            <VoiceSearchMicButton
+              isListening={voice.isListening}
+              onToggle={toggleVoice}
+              size={compact ? 'sm' : 'md'}
+            />
           )}
           <button
             type="submit"
@@ -400,9 +406,9 @@ export function ProductSearchBar({
         </div>
       </form>
 
-      {(voiceError || imageError) && (
+      {(voice.voiceError || imageError) && (
         <p className="mt-1 text-[11px] text-red-500" role="alert">
-          {voiceError || imageError}
+          {voice.voiceError || imageError}
         </p>
       )}
 
@@ -415,20 +421,10 @@ export function ProductSearchBar({
           {searchMode === 'image' && (
             <div className="border-b border-[#F2D4DC] bg-[#FFF8F6] px-3 py-2">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-[#9B1B2E]">
-                Recherche par image {aiEnhanced ? '· Gemini IA' : ''}
+                Recherche par image
               </p>
               <p className="text-[11px] text-zinc-500 mt-0.5">
-                {aiEnhanced
-                  ? 'Analyse visuelle intelligente de votre photo'
-                  : 'Produits visuellement similaires à votre photo'}
-              </p>
-            </div>
-          )}
-
-          {searchMode === 'text' && aiEnhanced && query.trim().length >= 2 && (
-            <div className="border-b border-[#F2D4DC] bg-[#FFF8F6] px-3 py-2">
-              <p className="text-[11px] font-semibold text-[#9B1B2E]">
-                Suggestions intelligentes · Gemini
+                Produits visuellement similaires à votre photo
               </p>
             </div>
           )}
@@ -549,7 +545,7 @@ export function ProductSearchBar({
       )}
 
       <span className="sr-only" aria-live="polite">
-        {isListening ? 'Écoute en cours, parlez maintenant.' : ''}
+        {voice.isListening ? 'Écoute en cours, parlez maintenant.' : ''}
         {imageLoading ? 'Analyse de l\'image en cours.' : ''}
       </span>
     </div>

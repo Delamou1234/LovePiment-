@@ -2,6 +2,7 @@ import { prisma } from '@/shared/lib/prisma';
 import { adminStatsService, type AdminDashboardStats } from './admin-stats.service';
 import { biAdminService, type BiPeriode } from './bi.service';
 import { avisService } from '@/modules/avis/services/review.service';
+import { STORE_SETTINGS_ID } from './store-settings.service';
 
 const STATUTS_CA = ['PAYEE', 'EN_PREPARATION', 'EXPEDIEE', 'LIVREE'] as const;
 
@@ -53,6 +54,14 @@ export type DashboardOverview = {
     commandesAujourdhui: number;
     produitsAjoutes: number;
   };
+  commandesEnAttente: {
+    id: string;
+    clientNom: string;
+    montantTotal: number;
+    createdAt: string;
+    minutesAttente: number;
+    estPremiereCommande: boolean;
+  }[];
 };
 
 const CATEGORY_COLORS = ['#e91e8c', '#a855f7', '#f59e0b', '#22c55e', '#3b82f6', '#94a3b8'];
@@ -106,6 +115,7 @@ export class DashboardOverviewService {
       stocksParProduit,
       caPrecedentAgg,
       commandesPrecedentesCa,
+      settingsRow,
     ] = await Promise.all([
       adminStatsService.obtenirDashboard(),
       biAdminService.genererRapport(periode),
@@ -182,7 +192,30 @@ export class DashboardOverviewService {
           createdAt: { gte: periodePrecedenteDebut, lt: periodePrecedenteFin },
         },
       }),
+      prisma.storeSettings.findUnique({
+        where: { id: STORE_SETTINGS_ID },
+        select: { alerteCommandeMinutes: true },
+      }),
     ]);
+
+    const alerteMin = settingsRow?.alerteCommandeMinutes ?? 60;
+    const seuilAttente = new Date(Date.now() - alerteMin * 60 * 1000);
+    const commandesEnAttenteRaw = await prisma.order.findMany({
+      where: {
+        statut: { in: ['EN_ATTENTE', 'PAYEE', 'EN_PREPARATION'] },
+        courierId: null,
+        createdAt: { lte: seuilAttente },
+      },
+      orderBy: { createdAt: 'asc' },
+      take: 8,
+      select: {
+        id: true,
+        clientNom: true,
+        montantTotal: true,
+        createdAt: true,
+        estPremiereCommande: true,
+      },
+    });
 
     const stockMap = new Map(stocksParProduit.map((s) => [s.productId, s._sum.stock ?? 0]));
 
@@ -265,6 +298,14 @@ export class DashboardOverviewService {
         commandesAujourdhui: stats.commandesAujourdhui,
         produitsAjoutes: produitsAjoutesAujourdhui,
       },
+      commandesEnAttente: commandesEnAttenteRaw.map((c) => ({
+        id: c.id,
+        clientNom: c.clientNom,
+        montantTotal: Number(c.montantTotal),
+        createdAt: c.createdAt.toISOString(),
+        minutesAttente: Math.floor((Date.now() - c.createdAt.getTime()) / 60_000),
+        estPremiereCommande: c.estPremiereCommande,
+      })),
     };
   }
 }

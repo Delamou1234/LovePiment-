@@ -11,6 +11,7 @@ import { getAppUrl } from '@/shared/lib/app-url';
 import { getShopTelHref, getShopWhatsAppHref } from '@/shared/lib/shop-contact';
 import { CartToast } from '@/shared/components/CartToast';
 import { ProductImageGallery, type RelatedProductThumb } from './ProductImageGallery';
+import { ProductDeliveryInfo } from '@/shared/components/ProductDeliveryInfo';
 import { useProductStock } from '../hooks/useProductStock';
 import {
   ShoppingCart,
@@ -432,6 +433,8 @@ export default function ProductDetailsSection({ product, avisStats, similaires =
                 </div>
               ))}
             </div>
+
+            <ProductDeliveryInfo />
 
             {lastUpdated && (
               <p className="text-center text-[10px] text-zinc-400 lg:text-left">

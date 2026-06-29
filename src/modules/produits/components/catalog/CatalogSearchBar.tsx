@@ -8,6 +8,8 @@ import { Loader2, Search, Tag, X } from 'lucide-react';
 import type { SuggestionRecherche } from '@/modules/produits/types';
 import { buildCatalogUrl, type CatalogSearchParams } from '@/modules/produits/lib/catalog-url';
 import { useSyncedState } from '@/shared/hooks/useSyncedState';
+import { useVoiceSearchInput } from '@/shared/hooks/useVoiceSearchInput';
+import { VoiceSearchMicButton } from '@/shared/components/VoiceSearchMicButton';
 import { cn } from '@/lib/utils';
 
 type Props = {
@@ -73,6 +75,17 @@ export function CatalogSearchBar({ currentParams, defaultQuery = '', className }
     [router, currentParams],
   );
 
+  const voice = useVoiceSearchInput({
+    onTranscript: (text, isFinal) => {
+      setQuery(text);
+      setActiveIndex(-1);
+      setIsOpen(true);
+      if (isFinal && text.trim().length >= 2) {
+        navigateSearch(text);
+      }
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     navigateSearch(query);
@@ -116,8 +129,12 @@ export function CatalogSearchBar({ currentParams, defaultQuery = '', className }
           }}
           onFocus={() => displaySuggestions.length > 0 && setIsOpen(true)}
           onKeyDown={handleKeyDown}
-          placeholder="Rechercher un sextoy, lingerie, lubrifiant..."
-          className="catalog-search"
+          placeholder={voice.voicePlaceholder ?? 'Rechercher un sextoy, lingerie, lubrifiant...'}
+          className={cn(
+            'catalog-search',
+            voice.isSupported && 'has-voice-search',
+            voice.isListening && 'is-voice-listening',
+          )}
           autoComplete="off"
         />
         {query && (
@@ -127,10 +144,22 @@ export function CatalogSearchBar({ currentParams, defaultQuery = '', className }
               setQuery('');
               router.push(buildCatalogUrl(currentParams, { search: null }));
             }}
-            className="absolute right-9 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition"
+            className={cn(
+              'absolute top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition',
+              voice.isSupported ? 'right-14' : 'right-9',
+            )}
           >
             <X className="h-3.5 w-3.5" />
           </button>
+        )}
+        {voice.isSupported && (
+          <div className="absolute right-9 top-1/2 -translate-y-1/2">
+            <VoiceSearchMicButton
+              isListening={voice.isListening}
+              onToggle={voice.toggleVoice}
+              size="sm"
+            />
+          </div>
         )}
         <button
           type="submit"
@@ -139,6 +168,12 @@ export function CatalogSearchBar({ currentParams, defaultQuery = '', className }
           {loading && canSearch ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
         </button>
       </form>
+
+      {voice.voiceError && (
+        <p className="mt-1 text-[11px] text-red-500" role="alert">
+          {voice.voiceError}
+        </p>
+      )}
 
       {dropdownOpen && (
         <div className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-beige-border bg-white shadow-lg shadow-black/5">

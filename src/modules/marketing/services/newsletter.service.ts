@@ -1,7 +1,7 @@
 import { prisma } from '@/shared/lib/prisma';
 import { STORE_SETTINGS_ID, storeSettingsService } from '@/modules/admin/services/store-settings.service';
 
-const DEFAULT_IMAGE = '/images/love-piment-secret.png';
+const DEFAULT_IMAGE = '/images/love-piment-brand-story.png';
 
 export type NewsletterPublicConfig = {
   actif: boolean;
@@ -45,7 +45,7 @@ export class NewsletterService {
       titre: row?.newsletterTitre ?? 'Offre de bienvenue !',
       description:
         row?.newsletterDescription ??
-        'Inscrivez-vous et recevez des offres exclusives 🧡',
+        'Recevez votre code promo par e-mail en quelques secondes. Offre valable sur votre première commande, livraison discrète à Conakry.',
       remisePct,
       couponCode,
       imageUrl: row?.newsletterImageUrl?.trim() || DEFAULT_IMAGE,
@@ -66,7 +66,7 @@ export class NewsletterService {
 
     const config = await this.getPublicConfig();
     return {
-      message: 'Inscription confirmée ! Consultez votre boîte mail.',
+      message: 'Parfait ! Votre code promo est prêt.',
       remisePct: config.remisePct,
       couponCode: config.couponCode,
     };

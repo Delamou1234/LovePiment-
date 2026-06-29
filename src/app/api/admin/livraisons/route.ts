@@ -7,6 +7,7 @@ const createSchema = z.object({
   courierId: z.string().min(1),
   orderIds: z.array(z.string().min(1)).min(1),
   notes: z.string().max(500).optional().nullable(),
+  primesParCommande: z.record(z.string(), z.number().min(0)).optional(),
 });
 
 export async function GET() {

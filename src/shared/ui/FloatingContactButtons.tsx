@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Phone, Sparkles } from 'lucide-react';
+import { Phone, Search } from 'lucide-react';
 import { genererMessageGeneral } from '@/modules/messagerie/providers/whatsapp.provider';
 import { getShopTelHref, getShopWhatsAppHref } from '@/shared/lib/shop-contact';
 
@@ -37,10 +37,10 @@ export function FloatingContactButtons({ onOpenAssistant, className = 'safe-area
           type="button"
           onClick={onOpenAssistant}
           className="flex h-11 w-11 items-center justify-center rounded-full bg-zinc-900 text-white shadow-lg ring-1 ring-black/10 hover:bg-zinc-800 transition hover:scale-105"
-          aria-label="Assistant IA Love Piment&"
-          title="Assistant shopping IA"
+          aria-label="Recommandations et recherche par image"
+          title="Recommandations & recherche photo"
         >
-          <Sparkles className="h-4 w-4" />
+          <Search className="h-4 w-4" />
         </button>
       )}
 

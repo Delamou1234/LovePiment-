@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { orderService } from '@/modules/commandes/services/order.service';
 import { paymentService } from '@/modules/paiement/services/payment.service';
-import { getCustomerSession } from '@/shared/lib/auth/session';
+import { getCustomerSessionWithCourierFallback } from '@/shared/lib/auth/customer-from-courier';
 import { customerAuthRepository } from '@/modules/auth/repository/customer-auth.repository';
+import { enforceRateLimit } from '@/shared/lib/security/enforce-rate-limit';
 
 // ─── Schéma de validation commande ───────────────────────────────────────────
 
@@ -15,6 +16,11 @@ const creerCommandeSchema = z.object({
     .regex(/^[\d+\s\-()]+$/, 'Numéro de téléphone invalide'),
   clientAdresse: z.string().min(5, 'Adresse requise').max(200),
   clientVille: z.string().min(2, 'Ville requise').max(100),
+  clientCommune: z.string().min(2).max(80).optional().nullable(),
+  clientQuartier: z.string().max(120).optional().nullable(),
+  clientRepere: z.string().max(200).optional().nullable(),
+  creneauLivraison: z.enum(['MATIN', 'APRES_MIDI', 'FLEXIBLE']).optional().nullable(),
+  notes: z.string().max(500).optional().nullable(),
   clientLatitude: z.number().min(-90).max(90).optional().nullable(),
   clientLongitude: z.number().min(-180).max(180).optional().nullable(),
   modePaiement: z.enum(['CINETPAY', 'PAIEMENT_LIVRAISON']),
@@ -26,7 +32,7 @@ const creerCommandeSchema = z.object({
       z.object({
         variantId: z.string().min(1),
         quantite: z.number().int().min(1).max(100),
-        prixUnitaire: z.number().min(0),
+        prixUnitaire: z.number().min(0).optional(),
       }),
     )
     .min(1, 'La commande doit contenir au moins un article'),
@@ -36,7 +42,10 @@ export const runtime = 'nodejs';
 
 export async function POST(request: NextRequest) {
   try {
-    const customer = await getCustomerSession();
+    const limited = enforceRateLimit(request, 'checkout');
+    if (limited) return limited;
+
+    const customer = await getCustomerSessionWithCourierFallback();
     if (!customer) {
       return NextResponse.json(
         { message: 'Connexion requise pour passer commande.' },

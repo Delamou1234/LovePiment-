@@ -110,6 +110,12 @@ export type CustomerDashboardData = {
   offreBienvenue: CustomerDashboardOffre | null;
 };
 
+export type CompteLivreurContext = {
+  id: string;
+  nom: string;
+  livraisonsEnCours: number;
+};
+
 export type WishlistItemClient = {
   id: string;
   productId: string;

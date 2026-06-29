@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { newsletterService } from '@/modules/marketing/services/newsletter.service';
+import { enforceRateLimit } from '@/shared/lib/security/enforce-rate-limit';
 
 /** GET /api/marketing/newsletter — configuration publique de la bannière */
 export async function GET() {
@@ -21,6 +22,9 @@ const subscribeSchema = z.object({
 /** POST /api/marketing/newsletter — inscription newsletter */
 export async function POST(request: NextRequest) {
   try {
+    const limited = enforceRateLimit(request, 'newsletter');
+    if (limited) return limited;
+
     const body = await request.json();
     const parsed = subscribeSchema.safeParse(body);
     if (!parsed.success) {

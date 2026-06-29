@@ -1,7 +1,7 @@
 'use client';
 
 import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -13,20 +13,24 @@ import {
   RefreshCw,
   ThumbsDown,
   ThumbsUp,
-  Truck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AdminAssignCourier } from '@/modules/admin/components/commandes/AdminAssignCourier';
+import { AdminAssignLivreurModal } from '@/modules/admin/components/commandes/AdminAssignLivreurModal';
 import { AdminBatchDelivery } from '@/modules/admin/components/commandes/AdminBatchDelivery';
-import { AdminGeoGroupsPanel } from '@/modules/admin/components/commandes/AdminGeoGroupsPanel';
-import { AdminOrderStatusBadges } from '@/modules/admin/components/commandes/AdminOrderStatusBadges';
+import type { AssignLivreurCommande } from '@/modules/admin/components/commandes/assign-livreur.types';
+import { AdminPrimeLivreurField } from '@/modules/admin/components/commandes/AdminPrimeLivreurField';
+import { AdminOrderNotesField } from '@/modules/admin/components/commandes/AdminOrderNotesField';
 import { AdminTourneesMontants } from '@/modules/admin/components/commandes/AdminTourneesMontants';
 import { AdminDeliverySharePanel } from '@/modules/admin/components/commandes/AdminDeliverySharePanel';
+import { AdminOrderStatusBadges } from '@/modules/admin/components/commandes/AdminOrderStatusBadges';
 import {
   FILTRES_COMMANDE_ADMIN,
   formaterDateCourte,
+  libelleStatutCommande,
   type FiltreCommandeAdmin,
 } from '@/modules/admin/lib/order-status-labels';
+import { useFeedback } from '@/shared/providers/FeedbackProvider';
 
 type CommandeAdmin = {
   id: string;
@@ -51,6 +55,11 @@ type CommandeAdmin = {
   assignedAt?: string | null;
   livreurPaiementRecu?: boolean | null;
   penaliteLivreurGn?: number | null;
+  primeLivreurGn?: number | null;
+  estPremiereCommande?: boolean;
+  clientCommune?: string | null;
+  creneauLivraison?: string | null;
+  notesAdmin?: string | null;
   satisfaction?: {
     statut: 'SATISFAIT' | 'NON_SATISFAIT';
     commentaire: string | null;
@@ -122,6 +131,7 @@ function ResumeCard({
 
 export function AdminCommandesPage() {
   const searchParams = useSearchParams();
+  const { showSuccess, showError } = useFeedback();
   const clientId = searchParams.get('clientId')?.trim() ?? '';
   const clientNom = searchParams.get('clientNom')?.trim() ?? '';
   const [commandes, setCommandes] = useState<CommandeAdmin[]>([]);
@@ -131,14 +141,49 @@ export function AdminCommandesPage() {
   const [filtre, setFiltre] = useState<FiltreCommandeAdmin>('toutes');
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [tourneesKey, setTourneesKey] = useState(0);
-  const [geoKey, setGeoKey] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [assignModalOrders, setAssignModalOrders] = useState<AssignLivreurCommande[] | null>(
+    null,
+  );
+  const isFirstLoad = useRef(true);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const toAssignPayload = (cmds: CommandeAdmin[]): AssignLivreurCommande[] =>
+    cmds.map((c) => ({
+      id: c.id,
+      clientNom: c.clientNom,
+      clientVille: c.clientVille,
+      montantTotal: c.montantTotal,
+      createdAt: c.createdAt,
+    }));
+
+  const openAssign = (cmds: AssignLivreurCommande[]) => {
+    if (cmds.length > 0) setAssignModalOrders(cmds);
+  };
+
+  const openAssignByIds = (ids: string[]) => {
+    const cmds = commandes.filter((c) => ids.includes(c.id));
+    openAssign(toAssignPayload(cmds));
+  };
+
+  const handleAssigned = () => {
+    setAssignModalOrders(null);
+    setSelectedIds([]);
+    setTourneesKey((k) => k + 1);
+    void load();
+  };
 
   const load = useCallback(async () => {
-    setLoading(true);
+    const silent = !isFirstLoad.current;
+    if (silent) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
     try {
       const params = new URLSearchParams({
         filtre,
@@ -155,15 +200,23 @@ export function AdminCommandesPage() {
         setCommandes(data.commandes ?? []);
         setResume(data.resume ?? null);
         setPagination(data.pagination ?? null);
+      } else {
+        showError('Impossible de charger les commandes. Réessayez.');
       }
       if (trRes.ok) {
         const data = await trRes.json();
         setTransporteurs(data.transporteurs ?? []);
       }
+    } catch {
+      showError('Erreur réseau lors du chargement des commandes.');
     } finally {
-      setLoading(false);
+      if (isFirstLoad.current) {
+        isFirstLoad.current = false;
+        setLoading(false);
+      }
+      setRefreshing(false);
     }
-  }, [filtre, page, clientId]);
+  }, [filtre, page, clientId, showError]);
 
   useRunAfterMount(() => void load(), [load]);
 
@@ -174,6 +227,14 @@ export function AdminCommandesPage() {
       setExpandedId(openId);
     }
   }, [searchParams, commandes, loading]);
+
+  useEffect(() => {
+    if (!expandedId || !panelRef.current) return;
+    const timer = window.setTimeout(() => {
+      panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [expandedId]);
 
   const changerFiltre = (next: FiltreCommandeAdmin) => {
     setFiltre(next);
@@ -191,7 +252,15 @@ export function AdminCommandesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...data, notifier: true }),
       });
-      if (res.ok) await load();
+      if (res.ok) {
+        showSuccess('Commande mise à jour.');
+        await load();
+      } else {
+        const body = await res.json().catch(() => ({}));
+        showError(body.message ?? 'Échec de la mise à jour.');
+      }
+    } catch {
+      showError('Erreur réseau lors de la mise à jour.');
     } finally {
       setSavingId(null);
     }
@@ -203,7 +272,15 @@ export function AdminCommandesPage() {
       const res = await fetch(`/api/admin/commandes/${id}/paiement-livraison`, {
         method: 'POST',
       });
-      if (res.ok) await load();
+      if (res.ok) {
+        showSuccess('Paiement à la livraison confirmé.');
+        await load();
+      } else {
+        const body = await res.json().catch(() => ({}));
+        showError(body.message ?? 'Impossible de confirmer le paiement.');
+      }
+    } catch {
+      showError('Erreur réseau lors de la confirmation.');
     } finally {
       setSavingId(null);
     }
@@ -212,10 +289,38 @@ export function AdminCommandesPage() {
   const peutSelectionner = (cmd: CommandeAdmin) =>
     !cmd.courierId && cmd.statut !== 'LIVREE' && cmd.statut !== 'ANNULEE';
 
+  const aAssigner = useMemo(
+    () =>
+      commandes.filter(
+        (c) => !c.courierId && c.statut !== 'LIVREE' && c.statut !== 'ANNULEE',
+      ),
+    [commandes],
+  );
+
   const toggleSelection = (id: string) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
     );
+  };
+
+  const assignablesPage = useMemo(
+    () => commandes.filter(peutSelectionner),
+    [commandes],
+  );
+
+  const toutesPageSelectionnees =
+    assignablesPage.length > 0 &&
+    assignablesPage.every((c) => selectedIds.includes(c.id));
+
+  const toggleSelectionPage = () => {
+    if (toutesPageSelectionnees) {
+      const idsPage = new Set(assignablesPage.map((c) => c.id));
+      setSelectedIds((prev) => prev.filter((id) => !idsPage.has(id)));
+    } else {
+      setSelectedIds((prev) => [
+        ...new Set([...prev, ...assignablesPage.map((c) => c.id)]),
+      ]);
+    }
   };
 
   return (
@@ -224,11 +329,11 @@ export function AdminCommandesPage() {
         <div>
           <h1 className="text-2xl font-bold text-zinc-900">Commandes & livraisons</h1>
           <p className="text-zinc-500 text-sm mt-1">
-            Vue complète : paiement, livraison, livreur assigné et statut de chaque commande.
+            Cochez une ou plusieurs commandes, puis « Choisir le livreur » pour assigner et fixer la prime.
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+        <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading || refreshing}>
+          <RefreshCw className={`h-4 w-4 mr-1 ${loading || refreshing ? 'animate-spin' : ''}`} />
           Actualiser
         </Button>
       </div>
@@ -309,11 +414,38 @@ export function AdminCommandesPage() {
         ))}
       </div>
 
-      <section className="rounded-xl border border-zinc-200 bg-white overflow-hidden">
+      {!loading && aAssigner.length > 0 && (
+        <div className="rounded-xl border border-olive/25 bg-olive/5 px-4 py-3 text-sm text-zinc-700">
+          <strong className="text-zinc-900">{aAssigner.length} commande{aAssigner.length > 1 ? 's' : ''}</strong>{' '}
+          en attente d&apos;un livreur — cochez-les dans le tableau ci-dessous, puis cliquez sur{' '}
+          <strong className="text-olive">Choisir le livreur</strong>.
+        </div>
+      )}
+
+      {!loading && <AdminTourneesMontants refreshKey={tourneesKey} />}
+
+      <section className={`rounded-xl border border-zinc-200 bg-white overflow-hidden relative ${refreshing ? 'opacity-70' : ''}`}>
+        {refreshing && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/40 pointer-events-none">
+            <Loader2 className="h-6 w-6 animate-spin text-olive" />
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 border-b border-zinc-200 text-left">
               <tr>
+                <th className="px-3 py-3 w-10">
+                  {assignablesPage.length > 0 && (
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-zinc-300"
+                      checked={toutesPageSelectionnees}
+                      onChange={toggleSelectionPage}
+                      aria-label="Tout sélectionner sur cette page"
+                      title="Tout sélectionner sur cette page"
+                    />
+                  )}
+                </th>
                 <th className="px-4 py-3 font-semibold text-zinc-600">Date</th>
                 <th className="px-4 py-3 font-semibold text-zinc-600">Client</th>
                 <th className="px-4 py-3 font-semibold text-zinc-600">Montant</th>
@@ -327,19 +459,35 @@ export function AdminCommandesPage() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-zinc-400">
+                  <td colSpan={9} className="px-4 py-12 text-center text-zinc-400">
                     <Loader2 className="h-6 w-6 animate-spin mx-auto" />
                   </td>
                 </tr>
               ) : commandes.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-zinc-500">
+                  <td colSpan={9} className="px-4 py-12 text-center text-zinc-500">
                     Aucune commande pour ce filtre.
                   </td>
                 </tr>
               ) : (
                 commandes.map((cmd) => (
-                  <tr key={cmd.id} className="border-b border-zinc-100 hover:bg-zinc-50/80">
+                  <tr
+                    key={cmd.id}
+                    className={`border-b border-zinc-100 hover:bg-zinc-50/80 ${
+                      selectedIds.includes(cmd.id) ? 'bg-olive/5' : ''
+                    }`}
+                  >
+                    <td className="px-3 py-3">
+                      {peutSelectionner(cmd) ? (
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-zinc-300"
+                          checked={selectedIds.includes(cmd.id)}
+                          onChange={() => toggleSelection(cmd.id)}
+                          aria-label={`Sélectionner ${cmd.clientNom}`}
+                        />
+                      ) : null}
+                    </td>
                     <td className="px-4 py-3 text-xs text-zinc-500 whitespace-nowrap">
                       {formaterDateCourte(cmd.createdAt)}
                     </td>
@@ -387,9 +535,17 @@ export function AdminCommandesPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-zinc-600">
-                      {cmd.courierNom ?? '—'}
+                      {cmd.courierNom ? (
+                        cmd.courierNom
+                      ) : peutSelectionner(cmd) ? (
+                        <span className="text-amber-700 font-medium">À assigner</span>
+                      ) : (
+                        '—'
+                      )}
                     </td>
-                    <td className="px-4 py-3 text-xs font-medium text-zinc-700">{cmd.statut}</td>
+                    <td className="px-4 py-3 text-xs font-medium text-zinc-700">
+                      {libelleStatutCommande(cmd.statut)}
+                    </td>
                     <td className="px-4 py-3">
                       <button
                         type="button"
@@ -438,36 +594,8 @@ export function AdminCommandesPage() {
         )}
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-5">
-        <h2 className="font-semibold text-zinc-900 mb-3 flex items-center gap-2">
-          <Truck className="h-4 w-4" />
-          Transporteurs ({transporteurs.length})
-        </h2>
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {transporteurs.map((t) => (
-            <div key={t.id} className="rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2 text-sm">
-              <p className="font-medium text-zinc-900">{t.nom}</p>
-              <p className="text-xs text-zinc-500">
-                Délai {t.delaiMinHeures}–{t.delaiMaxHeures}h
-                {t.telephone ? ` · ${t.telephone}` : ''}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <AdminGeoGroupsPanel
-        refreshKey={geoKey}
-        onSelectGroup={(ids) => {
-          setSelectedIds(ids);
-          window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-        }}
-      />
-
-      <AdminTourneesMontants refreshKey={tourneesKey} />
-
       {!loading && expandedId && (
-        <div className="space-y-4">
+        <div ref={panelRef} className="space-y-4 scroll-mt-4">
           <h2 className="text-lg font-semibold text-zinc-900">Gestion de la commande</h2>
           {commandes
             .filter((cmd) => cmd.id === expandedId)
@@ -508,6 +636,12 @@ export function AdminCommandesPage() {
                         courierNom={cmd.courierNom}
                         livreurPaiementRecu={cmd.livreurPaiementRecu}
                       />
+
+                      {cmd.estPremiereCommande && (
+                        <span className="inline-flex items-center rounded-full bg-violet-100 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-violet-800">
+                          1ʳᵉ commande
+                        </span>
+                      )}
 
                       {cmd.suiviResume && (
                         <p className="text-xs text-zinc-500 flex items-center gap-1">
@@ -551,6 +685,11 @@ export function AdminCommandesPage() {
                         Pénalité livreur : {cmd.penaliteLivreurGn.toLocaleString('fr-FR')} GN
                       </p>
                     )}
+                    {cmd.primeLivreurGn != null && cmd.primeLivreurGn > 0 && (
+                      <p className="text-[10px] font-semibold text-olive mt-0.5">
+                        Prime livreur : {cmd.primeLivreurGn.toLocaleString('fr-FR')} GN
+                      </p>
+                    )}
                     {cmd.suiviToken && (
                       <Link
                         href={`/suivi/${cmd.suiviToken}`}
@@ -578,18 +717,29 @@ export function AdminCommandesPage() {
                   )}
 
                 <AdminAssignCourier
-                  orderId={cmd.id}
-                  courierId={cmd.courierId}
                   courierNom={cmd.courierNom}
-                  deliveryRunLabel={cmd.deliveryRunLabel}
                   disabled={
                     savingId === cmd.id || cmd.statut === 'ANNULEE' || cmd.statut === 'LIVREE'
                   }
-                  onAssigned={() => {
-                    setTourneesKey((k) => k + 1);
-                    void load();
-                  }}
+                  onAssign={() => openAssignByIds([cmd.id])}
                 />
+
+                {cmd.courierId &&
+                  cmd.statut !== 'ANNULEE' &&
+                  cmd.statut !== 'LIVREE' && (
+                    <AdminPrimeLivreurField
+                      orderId={cmd.id}
+                      primeLivreurGn={cmd.primeLivreurGn}
+                      disabled={savingId === cmd.id}
+                      onSaved={(prime) =>
+                        setCommandes((prev) =>
+                          prev.map((c) =>
+                            c.id === cmd.id ? { ...c, primeLivreurGn: prime } : c,
+                          ),
+                        )
+                      }
+                    />
+                  )}
 
                 <AdminDeliverySharePanel
                   orderId={cmd.id}
@@ -600,6 +750,16 @@ export function AdminCommandesPage() {
                   montantTotal={String(cmd.montantTotal)}
                   disabled={
                     savingId === cmd.id || cmd.statut === 'ANNULEE' || cmd.statut === 'LIVREE'
+                  }
+                />
+
+                <AdminOrderNotesField
+                  orderId={cmd.id}
+                  notesAdmin={cmd.notesAdmin}
+                  onSaved={(notes) =>
+                    setCommandes((prev) =>
+                      prev.map((c) => (c.id === cmd.id ? { ...c, notesAdmin: notes } : c)),
+                    )
                   }
                 />
 
@@ -617,7 +777,7 @@ export function AdminCommandesPage() {
                     >
                       {STATUTS.map((s) => (
                         <option key={s} value={s}>
-                          {s}
+                          {libelleStatutCommande(s)}
                         </option>
                       ))}
                     </select>
@@ -668,21 +828,23 @@ export function AdminCommandesPage() {
         </div>
       )}
 
-      {!loading && commandes.length > 0 && !expandedId && (
+      {!loading && commandes.length > 0 && !expandedId && selectedIds.length === 0 && (
         <p className="text-sm text-zinc-500 text-center py-2">
-          Cliquez sur « Gérer » dans le tableau pour assigner un livreur ou modifier une commande.
+          Cochez les commandes à envoyer, puis utilisez le bouton « Choisir le livreur » en bas de l&apos;écran.
         </p>
       )}
 
       <AdminBatchDelivery
         selectedIds={selectedIds}
-        disabled={loading}
+        onAssign={() => openAssignByIds(selectedIds)}
         onClear={() => setSelectedIds([])}
-        onDone={() => {
-          setTourneesKey((k) => k + 1);
-          setGeoKey((k) => k + 1);
-          void load();
-        }}
+      />
+
+      <AdminAssignLivreurModal
+        open={assignModalOrders !== null}
+        commandes={assignModalOrders ?? []}
+        onClose={() => setAssignModalOrders(null)}
+        onAssigned={handleAssigned}
       />
     </div>
   );

@@ -1,12 +1,28 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useState } from 'react';
-import { Lock, Send } from 'lucide-react';
+import {
+  ArrowRight,
+  Check,
+  Copy,
+  Lock,
+  Package,
+  Sparkles,
+  Truck,
+  Zap,
+} from 'lucide-react';
 import type { NewsletterPublicConfig } from '@/modules/marketing/services/newsletter.service';
 
 const HEART_CLIP_ID = 'lp-newsletter-heart-clip';
-const PORTRAIT_IMAGE = '/images/newsletter-woman-cutout.png';
+const PORTRAIT_IMAGE = '/images/newsletter-woman.png';
+
+const TRUST_POINTS = [
+  { icon: Truck, label: 'Colis 100 % discret' },
+  { icon: Zap, label: 'Code reçu instantanément' },
+  { icon: Package, label: 'Livraison rapide Conakry' },
+] as const;
 
 function NeonHeartBadge({
   remisePct,
@@ -18,7 +34,7 @@ function NeonHeartBadge({
   isExternal: boolean;
 }) {
   return (
-    <div className="lp-neon-heart-badge relative aspect-[120/110] w-[9rem] shrink-0 md:w-[10.5rem]">
+    <div className="lp-neon-heart-badge relative aspect-[120/110] w-[10rem] shrink-0 sm:w-[11rem] md:w-[12rem]">
       <svg width="0" height="0" aria-hidden className="absolute">
         <defs>
           <clipPath id={HEART_CLIP_ID} clipPathUnits="objectBoundingBox">
@@ -35,11 +51,11 @@ function NeonHeartBadge({
           src={imageUrl}
           alt=""
           fill
-          className="object-cover object-[center_35%]"
+          className="object-cover object-center scale-110"
           unoptimized={isExternal}
-          sizes="(max-width: 768px) 144px, 168px"
+          sizes="(max-width: 768px) 160px, 192px"
         />
-        <div className="absolute inset-0 bg-[#3d0818]/40" aria-hidden />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#3d0818]/70 via-[#3d0818]/25 to-transparent" aria-hidden />
       </div>
 
       <svg
@@ -56,8 +72,9 @@ function NeonHeartBadge({
         />
       </svg>
 
-      <span className="absolute inset-0 z-10 flex items-center justify-center font-serif text-3xl font-bold text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)] md:text-4xl">
-        -{remisePct}%
+      <span className="absolute inset-0 z-10 flex flex-col items-center justify-center text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.9)]">
+        <span className="font-serif text-4xl font-bold leading-none md:text-[2.75rem]">-{remisePct}%</span>
+        <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.14em] text-white/90">1ère commande</span>
       </span>
     </div>
   );
@@ -76,10 +93,13 @@ export function LandingNewsletter({
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const [issuedCode, setIssuedCode] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   if (!actif) return null;
 
   const isExternal = imageUrl.startsWith('http');
+  const displayCode = issuedCode ?? couponCode;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -87,6 +107,7 @@ export function LandingNewsletter({
 
     setStatus('loading');
     setMessage('');
+    setCopied(false);
 
     try {
       const res = await fetch('/api/marketing/newsletter', {
@@ -101,13 +122,12 @@ export function LandingNewsletter({
         return;
       }
 
+      const code = data.couponCode ?? couponCode;
+      setIssuedCode(code);
       setStatus('success');
       setEmail('');
-      const code = data.couponCode ?? couponCode;
       setMessage(
-        code
-          ? `${data.message ?? 'Merci !'} Utilisez le code ${code} à la caisse.`
-          : (data.message ?? 'Merci pour votre inscription !'),
+        data.message ?? 'Votre code promo est prêt — utilisez-le dès maintenant à la caisse.',
       );
     } catch {
       setStatus('error');
@@ -115,9 +135,21 @@ export function LandingNewsletter({
     }
   }
 
+  async function copyCode() {
+    if (!displayCode) return;
+    try {
+      await navigator.clipboard.writeText(displayCode);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* ignore */
+    }
+  }
+
   return (
-    <section className="lp-newsletter relative overflow-hidden">
+    <section className="lp-newsletter relative overflow-hidden" aria-labelledby="lp-newsletter-title">
       <div className="lp-newsletter-gradient absolute inset-0" aria-hidden />
+      <div className="lp-newsletter-glow absolute inset-0" aria-hidden />
 
       <div className="lp-newsletter-portrait" aria-hidden>
         <div className="lp-newsletter-portrait-media">
@@ -125,12 +157,11 @@ export function LandingNewsletter({
             src={PORTRAIT_IMAGE}
             alt=""
             fill
-            unoptimized
+            priority={false}
             className="lp-newsletter-portrait-img"
             sizes="(min-width: 1280px) 420px, (min-width: 1024px) 360px"
           />
         </div>
-        <div className="lp-newsletter-portrait-fade" />
       </div>
 
       <div className="container-shop relative z-10">
@@ -140,54 +171,94 @@ export function LandingNewsletter({
           </div>
 
           <div className="lp-newsletter-content min-w-0 text-center lg:text-left">
-            <h2 className="font-serif text-xl font-bold uppercase tracking-wide text-white md:text-2xl lg:text-[1.65rem]">
+            <p className="lp-newsletter-eyebrow">
+              <Sparkles className="h-3.5 w-3.5" aria-hidden />
+              Offre réservée aux nouvelles clientes
+            </p>
+
+            <h2 id="lp-newsletter-title" className="lp-newsletter-title">
               {titre}
             </h2>
 
-            <p className="mt-2 text-sm text-white md:text-base">
-              <span className="font-bold text-[#ff8ec4]">-{remisePct}%</span>{' '}
-              <span className="text-white">sur votre première commande.</span>
+            <p className="lp-newsletter-lead">
+              <span className="lp-newsletter-lead-accent">-{remisePct}%</span>
+              <span> sur votre première commande</span>
             </p>
 
-            <p className="mt-1.5 text-sm text-white/85">{description}</p>
+            <p className="lp-newsletter-desc">{description}</p>
 
-            <form
-              className="mx-auto mt-5 flex max-w-md overflow-hidden rounded-lg shadow-lg lg:mx-0"
-              onSubmit={handleSubmit}
-            >
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={status === 'loading'}
-                placeholder="Votre adresse e-mail"
-                className="min-w-0 flex-1 border-0 bg-white px-4 py-3.5 text-sm text-zinc-800 outline-none placeholder:text-zinc-400 disabled:opacity-70"
-              />
-              <button
-                type="submit"
-                disabled={status === 'loading'}
-                className="inline-flex shrink-0 items-center justify-center gap-2 bg-[#e91e8c] px-5 py-3.5 text-[11px] font-bold uppercase tracking-[0.08em] text-white transition hover:bg-[#c9187a] disabled:opacity-70 sm:px-6"
-              >
-                {status === 'loading' ? 'Envoi…' : "S'inscrire"}
-                <Send className="h-4 w-4" />
-              </button>
-            </form>
+            <ul className="lp-newsletter-trust" aria-label="Avantages">
+              {TRUST_POINTS.map(({ icon: Icon, label }) => (
+                <li key={label}>
+                  <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} aria-hidden />
+                  {label}
+                </li>
+              ))}
+            </ul>
 
-            {message && (
-              <p
-                className={`mt-3 text-xs md:text-sm ${
-                  status === 'error' ? 'text-red-200' : 'text-emerald-200'
-                }`}
-                role="status"
-              >
-                {message}
-              </p>
+            {status === 'success' ? (
+              <div className="lp-newsletter-success mx-auto lg:mx-0">
+                <p className="lp-newsletter-success-title">
+                  <Check className="h-4 w-4 shrink-0" aria-hidden />
+                  C&apos;est bon, votre réduction vous attend !
+                </p>
+                {displayCode && (
+                  <div className="lp-newsletter-code-row">
+                    <code className="lp-newsletter-code">{displayCode}</code>
+                    <button type="button" onClick={() => void copyCode()} className="lp-newsletter-code-copy">
+                      {copied ? (
+                        <>
+                          <Check className="h-3.5 w-3.5" />
+                          Copié
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-3.5 w-3.5" />
+                          Copier
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+                <p className="lp-newsletter-success-msg">{message}</p>
+                <Link href="/produits" className="lp-newsletter-cta-shop">
+                  Commencer mes achats
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            ) : (
+              <>
+                <form className="lp-newsletter-form mx-auto lg:mx-0" onSubmit={handleSubmit}>
+                  <label htmlFor="newsletter-email" className="sr-only">
+                    Adresse e-mail
+                  </label>
+                  <input
+                    id="newsletter-email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={status === 'loading'}
+                    placeholder="votre@email.com"
+                    autoComplete="email"
+                    className="lp-newsletter-input"
+                  />
+                  <button type="submit" disabled={status === 'loading'} className="lp-newsletter-submit">
+                    {status === 'loading' ? 'Envoi…' : `Recevoir mon -${remisePct}%`}
+                  </button>
+                </form>
+
+                {message && status === 'error' && (
+                  <p className="lp-newsletter-error" role="alert">
+                    {message}
+                  </p>
+                )}
+              </>
             )}
 
-            <p className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-white/70 lg:justify-start">
-              <Lock className="h-3 w-3 shrink-0" />
-              Pas de spam, promis !
+            <p className="lp-newsletter-privacy">
+              <Lock className="h-3 w-3 shrink-0" aria-hidden />
+              Gratuit · Pas de spam · Désinscription en 1 clic
             </p>
           </div>
         </div>

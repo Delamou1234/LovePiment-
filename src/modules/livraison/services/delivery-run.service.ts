@@ -1,6 +1,6 @@
 import { prisma } from '@/shared/lib/prisma';
 import { deliveryNavigationService } from './delivery-navigation.service';
-import { trackingService } from './tracking.service';
+import { trackingRepository } from '../repository/tracking.repository';
 
 function sommeMontantsTournee(
   orders: {
@@ -74,6 +74,7 @@ export class DeliveryRunService {
     courierId: string;
     orderIds: string[];
     notes?: string | null;
+    primesParCommande?: Record<string, number | null | undefined>;
   }) {
     const courier = await prisma.courier.findFirst({
       where: { id: data.courierId, actif: true },
@@ -100,7 +101,8 @@ export class DeliveryRunService {
 
     for (let i = 0; i < orders.length; i++) {
       const order = orders[i]!;
-      await deliveryNavigationService.geocoderCommande(order.id);
+      const prime = data.primesParCommande?.[order.id];
+      void deliveryNavigationService.geocoderCommande(order.id).catch(() => {});
       await prisma.order.update({
         where: { id: order.id },
         data: {
@@ -108,11 +110,14 @@ export class DeliveryRunService {
           deliveryRunId: run.id,
           ordreLivraison: i + 1,
           assignedAt,
+          ...(prime != null && prime >= 0 ? { primeLivreurGn: prime } : {}),
         },
       });
-      await trackingService.mettreAJourStatut(order.id, 'EXPEDIEE', {
-        message: `Tournée ${label} — livreur ${courier.nom} (${courier.telephone}).`,
-        notifier: true,
+      await trackingRepository.creerEvenement({
+        orderId: order.id,
+        type: 'NOTIFICATION',
+        message: `Livreur ${courier.nom} (${courier.telephone}) — en route.`,
+        notifier: false,
       });
     }
 
@@ -156,7 +161,7 @@ export class DeliveryRunService {
 
     for (let i = 0; i < orders.length; i++) {
       const order = orders[i]!;
-      await deliveryNavigationService.geocoderCommande(order.id);
+      void deliveryNavigationService.geocoderCommande(order.id).catch(() => {});
       await prisma.order.update({
         where: { id: order.id },
         data: {
@@ -166,9 +171,11 @@ export class DeliveryRunService {
           assignedAt,
         },
       });
-      await trackingService.mettreAJourStatut(order.id, 'EXPEDIEE', {
-        message: `Ajoutée à la tournée ${run.label ?? run.id} — livreur ${run.courier.nom}.`,
-        notifier: true,
+      await trackingRepository.creerEvenement({
+        orderId: order.id,
+        type: 'NOTIFICATION',
+        message: `Livreur ${run.courier.nom} — en route.`,
+        notifier: false,
       });
     }
 

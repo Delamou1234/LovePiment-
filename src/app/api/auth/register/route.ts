@@ -9,10 +9,12 @@ import { customerAuthRepository } from '@/modules/auth/repository/customer-auth.
 import { marketingService } from '@/modules/marketing/services/marketing.service';
 import { storeSettingsService } from '@/modules/admin/services/store-settings.service';
 import { getSafeRedirectForCustomer } from '@/shared/lib/auth-redirect';
+import { passwordSchema } from '@/shared/lib/security/password-policy';
+import { enforceRateLimit } from '@/shared/lib/security/enforce-rate-limit';
 
 const registerSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(6, 'Minimum 6 caractères'),
+  password: passwordSchema,
   nom: z.string().min(2).max(100),
   telephone: z.string().max(30).optional(),
   redirect: z.string().optional(),
@@ -26,6 +28,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const limited = enforceRateLimit(request, 'authRegister');
+    if (limited) return limited;
+
     const body = await request.json();
     const parsed = registerSchema.safeParse(body);
     if (!parsed.success) {
@@ -48,7 +53,10 @@ export async function POST(request: NextRequest) {
         );
       }
       return NextResponse.json(
-        { message: 'Un compte existe déjà avec cet e-mail.' },
+        {
+          message:
+            'Impossible de créer le compte. Si vous êtes déjà inscrite, connectez-vous ou utilisez « Mot de passe oublié ».',
+        },
         { status: 409 },
       );
     }

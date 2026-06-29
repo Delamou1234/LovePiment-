@@ -1,16 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { passwordResetService } from '@/modules/auth/services/password-reset.service';
+import { passwordSchema } from '@/shared/lib/security/password-policy';
+import { enforceRateLimit } from '@/shared/lib/security/enforce-rate-limit';
 
 const resetSchema = z.object({
   email: z.string().email(),
   code: z.string().regex(/^\d{8}$/, 'Le code doit contenir 8 chiffres'),
-  password: z.string().min(6, 'Minimum 6 caractères'),
+  password: passwordSchema,
 });
 
 /** POST /api/auth/reset-password */
 export async function POST(request: NextRequest) {
   try {
+    const limited = enforceRateLimit(request, 'authResetCode');
+    if (limited) return limited;
+
     const body = await request.json();
     const parsed = resetSchema.safeParse(body);
     if (!parsed.success) {

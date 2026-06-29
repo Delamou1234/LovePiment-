@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { CompteAdressesSection } from './CompteAdressesSection';
 import { CompteWishlistSection } from './CompteWishlistSection';
 import { CompteCommandesSection } from './CompteCommandesSection';
-import { CompteSidebar, CompteMobileNav } from './CompteSidebar';
+import { CompteSidebar } from './CompteSidebar';
 import { CompteTopBar } from './CompteTopBar';
 import { CompteDashboard } from './CompteDashboard';
 import { CompteFideliteSection } from '@/modules/marketing/components/CompteFideliteSection';
@@ -16,7 +16,9 @@ import { CompteAvisSection } from '@/modules/avis/components/CompteAvisSection';
 import { COMPTE_MAIN, COMPTE_MAIN_SCROLL, COMPTE_NAV_GROUPS, COMPTE_SHELL, type CompteSectionId } from './compte-ui';
 import { fetchApi } from '@/shared/lib/client-fetch';
 import { confirmLogout } from '@/shared/lib/confirm-logout';
+import { Button } from '@/components/ui/button';
 import type {
+  CompteLivreurContext,
   CustomerDashboardData,
   CustomerOrderResume,
   CustomerProfile,
@@ -32,43 +34,45 @@ export function ComptePageContent() {
   const [commandes, setCommandes] = useState<CustomerOrderResume[]>([]);
   const [wishlist, setWishlist] = useState<WishlistItemClient[]>([]);
   const [dashboard, setDashboard] = useState<CustomerDashboardData | null>(null);
+  const [livreur, setLivreur] = useState<CompteLivreurContext | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const redirectingRef = useRef(false);
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadOverview = useCallback(async () => {
+    setLoadError(null);
+    setLoading(true);
+    try {
+      const res = await fetchApi('/api/compte/overview');
 
-    async function load() {
-      try {
-        const res = await fetchApi('/api/compte/overview');
-
-        if (cancelled) return;
-
-        if (res.status === 401) {
-          if (!redirectingRef.current) {
-            redirectingRef.current = true;
-            router.replace('/connexion?redirect=/compte');
-          }
-          return;
+      if (res.status === 401) {
+        if (!redirectingRef.current) {
+          redirectingRef.current = true;
+          router.replace('/connexion?redirect=/compte');
         }
-
-        if (res.ok) {
-          const data = await res.json();
-          setProfil(data.profil as CustomerProfile);
-          setCommandes(data.commandes ?? []);
-          setWishlist(data.wishlist ?? []);
-          setDashboard(data.dashboard ?? null);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+        return;
       }
-    }
 
-    load();
-    return () => {
-      cancelled = true;
-    };
+      if (res.ok) {
+        const data = await res.json();
+        setProfil(data.profil as CustomerProfile);
+        setCommandes(data.commandes ?? []);
+        setWishlist(data.wishlist ?? []);
+        setDashboard(data.dashboard ?? null);
+        setLivreur(data.livreur ?? null);
+      } else {
+        setLoadError('Impossible de charger votre espace. Vérifiez votre connexion.');
+      }
+    } catch {
+      setLoadError('Erreur réseau. Réessayez dans un instant.');
+    } finally {
+      setLoading(false);
+    }
   }, [router]);
+
+  useEffect(() => {
+    void loadOverview();
+  }, [loadOverview]);
 
   useRunAfterMount(() => {
     const requested = searchParams.get('section');
@@ -98,7 +102,14 @@ export function ComptePageContent() {
     router.replace('/');
   };
 
-  const goTo = (id: CompteSectionId) => setSection(id);
+  const goTo = (id: CompteSectionId) => {
+    setSection(id);
+    if (id === 'dashboard') {
+      router.replace('/compte', { scroll: false });
+    } else {
+      router.replace(`/compte?section=${id}`, { scroll: false });
+    }
+  };
 
   const refreshOverview = async () => {
     const res = await fetchApi('/api/compte/overview');
@@ -114,9 +125,21 @@ export function ComptePageContent() {
     (i) => i.kind === 'section' && i.id === section,
   );
 
+  if (loadError) {
+    return (
+      <div className="compte-area flex min-h-[60vh] flex-col items-center justify-center gap-4 bg-[#f4f5f7] px-4 text-center text-zinc-900">
+        <p className="text-sm text-zinc-600 max-w-sm">{loadError}</p>
+        <Button type="button" variant="outline" onClick={() => void loadOverview()}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Réessayer
+        </Button>
+      </div>
+    );
+  }
+
   if (loading || !profil || !dashboard) {
     return (
-      <div className="compte-area flex min-h-[60vh] flex-col items-center justify-center gap-3 bg-[#f7f2f5] text-zinc-900">
+      <div className="compte-area flex min-h-[60vh] flex-col items-center justify-center gap-3 bg-[#f4f5f7] text-zinc-900">
         <Loader2 className="h-8 w-8 animate-spin text-[#e91e8c]" />
         <p className="text-sm text-zinc-600">Chargement de votre espace…</p>
       </div>
@@ -129,25 +152,29 @@ export function ComptePageContent() {
       <CompteSidebar
         profil={profil}
         section={section}
-        offreBienvenue={dashboard?.offreBienvenue}
-        onSectionChange={setSection}
+        livreur={livreur}
+        onSectionChange={goTo}
         onLogout={handleLogout}
         mobileOpen={mobileMenuOpen}
         onMobileClose={() => setMobileMenuOpen(false)}
+        badges={{
+          favoris: wishlist.length,
+          commandesEnCours: dashboard?.stats.enCours,
+        }}
       />
 
       <div className={COMPTE_MAIN}>
-        <CompteMobileNav
-          section={section}
-          onMenuOpen={() => setMobileMenuOpen(true)}
-        />
         <CompteTopBar
           profil={profil}
           activeSection={section}
           onProfilUpdate={setProfil}
           onLogout={handleLogout}
           onGoToSection={goTo}
-          minimal={section === 'dashboard'}
+          onMenuOpen={() => setMobileMenuOpen(true)}
+          badges={{
+            favoris: wishlist.length,
+            commandesEnCours: dashboard?.stats.enCours,
+          }}
         />
 
         <div className={COMPTE_MAIN_SCROLL}>

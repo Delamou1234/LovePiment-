@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { ShopHeader } from '@/shared/ui/ShopHeader';
 import { ShopFooter } from '@/shared/ui/ShopFooter';
 import { BoutiqueWidgets } from './BoutiqueWidgets';
+import { CourierShopSessionBootstrap } from '@/modules/livraison/components/CourierShopSessionBootstrap';
 import type { BoutiqueNavLink } from '@/modules/produits/lib/boutique-nav';
 
 type Props = {
@@ -29,6 +30,7 @@ export function BoutiqueLayoutShell({ boutiqueNavLinks, boutiqueFooterLinks, chi
       <Suspense fallback={<HeaderFallback />}>
         <ShopHeader boutiqueLinks={boutiqueNavLinks} />
       </Suspense>
+      <CourierShopSessionBootstrap />
       <main className="flex-grow">{children}</main>
       {!hideFooter && <ShopFooter boutiqueLinks={boutiqueFooterLinks} />}
       <BoutiqueWidgets />

@@ -36,6 +36,18 @@ export function OrderSatisfactionForm({
           {positif ? 'Merci pour votre avis positif !' : 'Merci, votre retour a été transmis à notre équipe.'}
         </p>
         {positif && (
+          <div className="mt-4 rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-900 space-y-2">
+            <p className="font-semibold">Vous aimez Love Piment& ?</p>
+            <p className="text-violet-800">
+              Parrainez une amie depuis{' '}
+              <a href="/compte" className="font-bold underline">
+                Mon compte → Fidélité
+              </a>{' '}
+              : elle obtient −5 % sur sa 1ʳᵉ commande, vous gagnez des points.
+            </p>
+          </div>
+        )}
+        {positif && (
           <p className="text-xs text-emerald-700 mt-2">
             Notez vos produits en détail depuis{' '}
             <a href="/compte" className="font-bold underline">

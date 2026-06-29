@@ -3,17 +3,19 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
+  AlertTriangle,
   CheckCircle2,
   ExternalLink,
   Loader2,
   MapPin,
   Navigation,
+  Package,
   Phone,
   RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { LivraisonNavigationDto } from '@/modules/livraison/services/delivery-navigation.service';
-import { confirmAction, confirmDeliveryCopy } from '@/shared/lib/confirm-action';
+import { confirmAction, confirmDeliveryCopy, confirmPickupCopy } from '@/shared/lib/confirm-action';
 import { distanceKm, formaterDistance } from '@/shared/lib/geolocation/distance';
 import {
   googleMapsNavigationUrl,
@@ -35,6 +37,7 @@ export function DeliveryNavigationView({ token, initialData }: Props) {
   const [geoError, setGeoError] = useState<string | null>(null);
   const [watchId, setWatchId] = useState<number | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [priseEnChargeBusy, setPriseEnChargeBusy] = useState(false);
 
   const paiementEspecesEnAttente =
     livraison.modePaiement === 'PAIEMENT_LIVRAISON' &&
@@ -89,6 +92,27 @@ export function DeliveryNavigationView({ token, initialData }: Props) {
     if (watchId != null) navigator.geolocation.clearWatch(watchId);
     setWatchId(null);
     setTracking(false);
+  };
+
+  const confirmerPriseEnCharge = async () => {
+    const confirmed = await confirmAction(confirmPickupCopy(livraison.clientNom));
+    if (!confirmed) return;
+
+    setPriseEnChargeBusy(true);
+    try {
+      const res = await fetch(`/api/livreur/commandes/${livraison.id}/prise-en-charge`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.message ?? 'Impossible de confirmer la prise en charge.');
+        return;
+      }
+      await refresh();
+    } finally {
+      setPriseEnChargeBusy(false);
+    }
   };
 
   const confirmerLivraison = async (paiementRecu?: boolean) => {
@@ -242,16 +266,49 @@ export function DeliveryNavigationView({ token, initialData }: Props) {
         )}
       </div>
 
-      {peutConfirmerLivraison && (
+      {peutConfirmerLivraison && !livraison.priseEnCharge && (
+        <div className="rounded-2xl border border-amber-300 bg-amber-50 p-5 shadow-sm space-y-3">
+          <h2 className="text-sm font-bold text-amber-950 flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Prise en charge du colis
+          </h2>
+          <p className="text-sm text-amber-900 leading-relaxed">
+            Avant de partir, confirmez que vous avez récupéré le colis. Vous en serez seul
+            responsable jusqu&apos;à la livraison.
+          </p>
+          <Button
+            type="button"
+            disabled={priseEnChargeBusy}
+            className="rounded-full bg-amber-700 hover:bg-amber-800"
+            onClick={confirmerPriseEnCharge}
+          >
+            {priseEnChargeBusy ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <Package className="h-4 w-4 mr-2" />
+                J&apos;ai pris le colis
+              </>
+            )}
+          </Button>
+        </div>
+      )}
+
+      {peutConfirmerLivraison && livraison.priseEnCharge && (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-5 shadow-sm space-y-3">
           <h2 className="text-sm font-bold text-emerald-900 flex items-center gap-2">
             <CheckCircle2 className="h-4 w-4" />
             Confirmation de livraison
           </h2>
           <p className="text-sm text-emerald-800">
-            Une fois le colis remis au client, confirmez la livraison ici. Seul le livreur assigné
-            peut valider cette étape.
+            Colis en votre charge. Une fois remis au client, confirmez la livraison ici.
           </p>
+          {paiementEspecesEnAttente && (
+            <p className="text-xs text-amber-900 flex items-start gap-1.5">
+              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              Déclarez si le client a payé en espèces.
+            </p>
+          )}
 
           {paiementEspecesEnAttente ? (
             <div className="grid gap-2 sm:grid-cols-2">

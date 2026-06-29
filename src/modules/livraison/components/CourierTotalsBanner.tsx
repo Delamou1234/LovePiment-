@@ -1,6 +1,6 @@
 'use client';
 
-import { Banknote, Package, Truck } from 'lucide-react';
+import { Banknote, Coins, Package, Truck } from 'lucide-react';
 import type { CourierTotauxDto } from '@/modules/livraison/services/courier-order.service';
 
 type Props = {
@@ -15,6 +15,8 @@ export const TOTAUX_LIVREUR_VIDES: CourierTotauxDto = {
   livraisonsEnCours: 0,
   montantEnCoursGn: 0,
   especesAEncaisserGn: 0,
+  primesTermineesGn: 0,
+  primesEnCoursGn: 0,
 };
 
 export function CourierTotalsBanner({ totaux, variant = 'bar' }: Props) {
@@ -54,6 +56,24 @@ export function CourierTotalsBanner({ totaux, variant = 'bar' }: Props) {
       hint: 'Livraisons en cours',
       className: 'border-amber-200 bg-amber-50 text-amber-900',
       show: totaux.especesAEncaisserGn > 0,
+    },
+    {
+      key: 'primes-terminees',
+      icon: Coins,
+      label: 'Primes gagnées',
+      value: `${totaux.primesTermineesGn.toLocaleString('fr-FR')} GN`,
+      hint: 'Livraisons terminées',
+      className: 'border-violet-200 bg-violet-50 text-violet-900',
+      show: totaux.primesTermineesGn > 0,
+    },
+    {
+      key: 'primes-en-cours',
+      icon: Coins,
+      label: 'Primes en cours',
+      value: `${totaux.primesEnCoursGn.toLocaleString('fr-FR')} GN`,
+      hint: 'Livraisons à terminer',
+      className: 'border-violet-200/80 bg-violet-50/80 text-violet-800',
+      show: totaux.primesEnCoursGn > 0,
     },
   ].filter((item) => item.show);
 

@@ -16,6 +16,7 @@ export type LivraisonNavigationDto = {
   statutPaiement: string;
   coordinates: GeoCoordinates | null;
   transporteur: { nom: string; telephone: string | null } | null;
+  priseEnCharge: boolean;
 };
 
 async function resolveCoordinates(
@@ -148,6 +149,8 @@ export class DeliveryNavigationService {
       modePaiement: string;
       statutPaiement: string;
       carrier: { nom: string; telephone: string | null } | null;
+      livreurPriseEnChargeAt?: Date | null;
+      livreurPriseEnChargeAck?: boolean | null;
     },
     coordinates: GeoCoordinates | null,
   ): LivraisonNavigationDto {
@@ -166,6 +169,7 @@ export class DeliveryNavigationService {
       transporteur: order.carrier
         ? { nom: order.carrier.nom, telephone: order.carrier.telephone }
         : null,
+      priseEnCharge: Boolean(order.livreurPriseEnChargeAt && order.livreurPriseEnChargeAck),
     };
   }
 }

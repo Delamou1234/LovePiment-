@@ -119,10 +119,40 @@ export class MarketingService {
     };
   }
 
-  async validerCoupon(code: string, sousTotal: number): Promise<CouponClient> {
+  async listerOffresPubliques(limit = 8) {
+    const coupons = await this.repo.listerCouponsActifsPublics(limit);
+    return coupons.map((c) => ({
+      code: c.code,
+      type: c.type as 'POURCENT' | 'MONTANT_FIXE',
+      valeur: Number(c.valeur),
+      minCommande: c.minCommande ? Number(c.minCommande) : null,
+      fin: c.fin?.toISOString() ?? null,
+      libelle:
+        c.type === 'POURCENT'
+          ? `−${Math.round(Number(c.valeur))}%`
+          : `−${Number(c.valeur).toLocaleString('fr-FR')} GN`,
+    }));
+  }
+
+  async validerCoupon(
+    code: string,
+    sousTotal: number,
+    options?: { customerId?: string; estPremiereCommande?: boolean },
+  ): Promise<CouponClient> {
     const coupon = await this.repo.trouverCouponParCode(code);
     if (!coupon) {
       throw new Error('Code promo invalide ou expiré');
+    }
+
+    if (coupon.premiereCommandeOnly) {
+      let premiere = options?.estPremiereCommande;
+      if (premiere === undefined && options?.customerId) {
+        const payees = await this.repo.compterCommandesPayees(options.customerId);
+        premiere = payees === 0;
+      }
+      if (!premiere) {
+        throw new Error('Ce code est réservé à votre première commande');
+      }
     }
 
     const minCommande = coupon.minCommande ? Number(coupon.minCommande) : null;
@@ -163,7 +193,10 @@ export class MarketingService {
     let codeParrainageUtilise: string | null = null;
 
     if (input.codeCoupon?.trim()) {
-      const coupon = await this.validerCoupon(input.codeCoupon, sousTotal);
+      const coupon = await this.validerCoupon(input.codeCoupon, sousTotal, {
+        customerId: input.customerId,
+        estPremiereCommande: input.estPremiereCommande,
+      });
       remiseCoupon = coupon.remiseEstimee;
       couponId = coupon.id;
     }
@@ -212,13 +245,17 @@ export class MarketingService {
     }
 
     const livraisonConfig = await storeSettingsService.getLivraisonConfig();
-    const fraisLivraison = calculerFraisLivraison(
-      apresCoupon,
-      input.clientVille,
-      livraisonConfig,
-    );
+    const fraisLivraison = calculerFraisLivraison({
+      sousTotal: apresCoupon,
+      ville: input.clientVille,
+      commune: input.clientCommune,
+      config: livraisonConfig,
+    });
     const montantTotal = apresCoupon + fraisLivraison;
-    const pointsGagnes = Math.floor(montantTotal / 1000) * LOYALTY.POINTS_PAR_1000_GN;
+    let pointsGagnes = Math.floor(montantTotal / 1000) * LOYALTY.POINTS_PAR_1000_GN;
+    if (input.estPremiereCommande) {
+      pointsGagnes *= 2;
+    }
 
     return {
       sousTotal,

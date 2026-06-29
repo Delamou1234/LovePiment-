@@ -15,7 +15,6 @@ import {
   Plus,
   Power,
   RefreshCw,
-  Search,
   Sparkles,
   Tag,
   Trash2,
@@ -27,6 +26,7 @@ import {
   type ProduitForm,
 } from '@/modules/admin/components/catalogue/AdminProductEditor';
 import { STOCK_FAIBLE_SEUIL } from '@/modules/admin/lib/stock-threshold';
+import { FilterSearchInput } from '@/shared/components/FilterSearchInput';
 import { useAdminStats } from '@/modules/admin/components/layout/AdminStatsProvider';
 import type {
   FiltreProduitAdmin,
@@ -223,16 +223,11 @@ export function AdminProduitsPage() {
       </div>
 
       <div className="admin-marketing-toolbar">
-        <div className="admin-marketing-search-wrap">
-          <Search className="admin-marketing-search-icon" strokeWidth={1.75} />
-          <input
-            type="search"
-            value={recherche}
-            onChange={(e) => setRecherche(e.target.value)}
-            placeholder="Rechercher produit, marque, SKU, catégorie…"
-            className="admin-marketing-search"
-          />
-        </div>
+        <FilterSearchInput
+          value={recherche}
+          onChange={setRecherche}
+          placeholder="Rechercher produit, marque, SKU, catégorie…"
+        />
         <div className="admin-marketing-filters">
           {FILTRES.map(({ id, label }) => (
             <button

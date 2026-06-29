@@ -75,6 +75,9 @@ export function LandingHero({
                 Découvrir la boutique
                 <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
               </Link>
+              <Link href="/promos" className="lp-hero-btn-ghost">
+                Voir les promos
+              </Link>
             </div>
           </div>
         </div>

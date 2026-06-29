@@ -8,6 +8,7 @@ import {
   Calendar,
   ChevronDown,
   ChevronUp,
+  Coins,
   Loader2,
   MapPin,
   Package,
@@ -111,6 +112,12 @@ export function CourierDeliveredOrderCard({ livraison }: { livraison: CourierHis
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {livraison.primeLivreurGn != null && livraison.primeLivreurGn > 0 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-semibold text-violet-800">
+                <Coins className="h-3 w-3" />
+                +{livraison.primeLivreurGn.toLocaleString('fr-FR')} GN
+              </span>
+            )}
             {livraison.modePaiement === 'PAIEMENT_LIVRAISON' &&
               livraison.livreurPaiementRecu != null && (
                 <span

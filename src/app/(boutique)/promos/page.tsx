@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     'Offres en cours sur la boutique Love Piment& à Conakry — prix réduits synchronisés avec le catalogue.',
 };
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 type SearchParams = Promise<{
   categorie?: string;

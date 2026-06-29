@@ -13,7 +13,7 @@ import {
   ShoppingBag,
   Tag,
   Truck,
-  Users,
+  UserCog,
 } from 'lucide-react';
 
 export const ADMIN_CARD =
@@ -64,8 +64,8 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     title: 'Ventes',
     items: [
       { href: '/admin/commandes', label: 'Commandes', icon: ShoppingBag },
+      { href: '/admin/utilisateurs', label: 'Utilisateurs', icon: UserCog },
       { href: '/admin/livreurs', label: 'Livreurs', icon: Truck },
-      { href: '/admin/clients', label: 'Clients', icon: Users },
     ],
   },
   {

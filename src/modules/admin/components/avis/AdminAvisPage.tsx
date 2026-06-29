@@ -14,13 +14,13 @@ import {
   MessageSquare,
   Pencil,
   RefreshCw,
-  Search,
   Star,
   Trash2,
   X,
   XCircle,
 } from 'lucide-react';
 import type { AvisAdmin } from '@/modules/avis/types';
+import { FilterSearchInput } from '@/shared/components/FilterSearchInput';
 
 type FiltreStatut = '' | 'EN_ATTENTE' | 'APPROUVE' | 'REFUSE';
 
@@ -178,16 +178,14 @@ export function AdminAvisPage() {
       </div>
 
       <div className="admin-avis-toolbar">
-        <div className="admin-avis-search-wrap">
-          <Search className="admin-avis-search-icon" strokeWidth={1.75} />
-          <input
-            type="search"
-            value={recherche}
-            onChange={(e) => setRecherche(e.target.value)}
-            placeholder="Rechercher produit, client, commentaire…"
-            className="admin-avis-search"
-          />
-        </div>
+        <FilterSearchInput
+          value={recherche}
+          onChange={setRecherche}
+          placeholder="Rechercher produit, client, commentaire…"
+          wrapClassName="admin-avis-search-wrap"
+          iconClassName="admin-avis-search-icon"
+          inputClassName="admin-avis-search"
+        />
         <div className="admin-avis-filters">
           {FILTRES.map(({ id, label }) => (
             <button

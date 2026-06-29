@@ -33,6 +33,7 @@ export function LivraisonConfigProvider({ children }: { children: React.ReactNod
             data.livraison.gratuiteActive ?? LIVRAISON_CONFIG_DEFAULT.gratuiteActive,
           ),
           delaiLabel: data.livraison.delaiLabel ?? LIVRAISON_CONFIG_DEFAULT.delaiLabel,
+          tarifsCommunes: data.livraison.tarifsCommunes ?? null,
         };
         setConfig(next);
         setRuntimeLivraisonConfig(next);

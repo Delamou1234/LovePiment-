@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { CompteSidebar, CompteMobileNav } from '@/modules/compte/components/CompteSidebar';
+import { CompteSidebar } from '@/modules/compte/components/CompteSidebar';
 import { CompteTopBar } from '@/modules/compte/components/CompteTopBar';
 import { SupportChatShell } from '@/modules/messagerie/components/SupportChatShell';
 import { COMPTE_CARD, COMPTE_MAIN, COMPTE_MAIN_FILL, COMPTE_SHELL } from '@/modules/compte/components/compte-ui';
@@ -79,11 +79,11 @@ export function CompteMessagesPageContent() {
       />
 
       <div className={COMPTE_MAIN}>
-        <CompteMobileNav section={section} onMenuOpen={() => setMobileMenuOpen(true)} />
         <CompteTopBar
           profil={profil}
           onProfilUpdate={setProfil}
           onLogout={handleLogout}
+          onMenuOpen={() => setMobileMenuOpen(true)}
         />
 
         <div className={COMPTE_MAIN_FILL}>

@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation';
 import { Loader2, Package, Search, ShoppingBag, User } from 'lucide-react';
 import type { AdminSearchResults } from '@/modules/admin/types/admin-search';
 import { libelleStatutCommande } from '@/modules/admin/lib/order-status-labels';
+import { useVoiceSearchInput } from '@/shared/hooks/useVoiceSearchInput';
+import { VoiceSearchMicButton } from '@/shared/components/VoiceSearchMicButton';
+import { cn } from '@/lib/utils';
 
 type FlatItem =
   | AdminSearchResults['commandes'][number]
@@ -52,13 +55,20 @@ export function AdminSearchBar({ className = '' }: Props) {
   const hasResults = flatItems.length > 0;
   const showDropdown = isOpen && canSearch;
 
+  const voice = useVoiceSearchInput({
+    onTranscript: (text) => {
+      setQuery(text);
+      setIsOpen(true);
+    },
+  });
+
   const navigateTo = useCallback(
     (item: FlatItem) => {
       setIsOpen(false);
       if (item.type === 'commande') {
         router.push(`/admin/commandes?open=${item.id}`);
       } else if (item.type === 'client') {
-        router.push(`/admin/clients?q=${encodeURIComponent(item.email || item.nom)}`);
+        router.push(`/admin/utilisateurs?tab=clients&q=${encodeURIComponent(item.email || item.nom)}`);
       } else {
         router.push(`/admin/produits?edit=${item.id}`);
       }
@@ -243,13 +253,26 @@ export function AdminSearchBar({ className = '' }: Props) {
             if (trimmed.length >= 2) setIsOpen(true);
           }}
           onKeyDown={handleKeyDown}
-          placeholder="Rechercher (commande, client, produit…)"
-          className="admin-search-input"
+          placeholder={voice.voicePlaceholder ?? 'Rechercher (commande, client, produit…)'}
+          className={cn(
+            'admin-search-input',
+            voice.isSupported && 'has-voice-search',
+            voice.isListening && 'is-voice-listening',
+          )}
           role="combobox"
           aria-expanded={showDropdown}
           aria-controls="admin-search-results"
           aria-autocomplete="list"
         />
+        {voice.isSupported && (
+          <div className="admin-search-voice-slot">
+            <VoiceSearchMicButton
+              isListening={voice.isListening}
+              onToggle={voice.toggleVoice}
+              size="sm"
+            />
+          </div>
+        )}
         <button type="submit" className="admin-search-submit" aria-label="Rechercher">
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -258,6 +281,12 @@ export function AdminSearchBar({ className = '' }: Props) {
           )}
         </button>
       </form>
+
+      {voice.voiceError && (
+        <p className="mt-1 text-[11px] text-red-500" role="alert">
+          {voice.voiceError}
+        </p>
+      )}
 
       {showDropdown && (
         <div id="admin-search-results" role="listbox" className="admin-search-dropdown">

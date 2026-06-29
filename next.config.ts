@@ -1,9 +1,18 @@
 import type { NextConfig } from 'next';
+import { SECURITY_HEADERS } from './src/shared/lib/security/security-headers';
 
 const nextConfig: NextConfig = {
   output: 'standalone',
   poweredByHeader: false,
   compress: true,
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: SECURITY_HEADERS,
+      },
+    ];
+  },
   images: {
     qualities: [75, 85, 90],
     formats: ['image/avif', 'image/webp'],
@@ -31,6 +40,8 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-select',
       '@radix-ui/react-tabs',
       '@radix-ui/react-tooltip',
+      'zod',
+      'react-hook-form',
     ],
   },
   // Next.js 16 build (Vercel) uses Turbopack by default; webpack reste pour `npm run dev`.

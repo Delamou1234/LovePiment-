@@ -1,5 +1,6 @@
 import { prisma } from '@/shared/lib/prisma';
 import { marketingService } from '@/modules/marketing/services/marketing.service';
+import { marketingRepository } from '@/modules/marketing/repository/marketing.repository';
 import { decrementerStockPourArticles, restaurerStockPourArticles } from '@/modules/produits/lib/order-stock';
 import type { CommandeAvecItems, CreerCommandeDto, FiltresCommandes } from '../types';
 import type { Pagination } from '@/types';
@@ -24,13 +25,21 @@ export class OrderRepository {
       0,
     );
 
+    let estPremiereCommande = false;
+    if (dto.customerId) {
+      const payees = await marketingRepository.compterCommandesPayees(dto.customerId);
+      estPremiereCommande = payees === 0;
+    }
+
     const totaux = await marketingService.calculerTotaux({
       sousTotal: sousTotalBrut,
       clientVille: dto.clientVille,
+      clientCommune: dto.clientCommune,
       customerId: dto.customerId,
       codeCoupon: dto.codeCoupon,
       pointsUtilises: dto.pointsUtilises,
       codeParrainage: dto.codeParrainage,
+      estPremiereCommande,
     });
 
     const crediterPoints = dto.modePaiement === 'PAIEMENT_LIVRAISON';
@@ -45,6 +54,12 @@ export class OrderRepository {
           clientTelephone: dto.clientTelephone,
           clientAdresse: dto.clientAdresse,
           clientVille: dto.clientVille,
+          clientCommune: dto.clientCommune?.trim() || null,
+          clientQuartier: dto.clientQuartier?.trim() || null,
+          clientRepere: dto.clientRepere?.trim() || null,
+          creneauLivraison: dto.creneauLivraison?.trim() || null,
+          notes: dto.notes?.trim() || null,
+          estPremiereCommande,
           clientLatitude: dto.clientLatitude ?? undefined,
           clientLongitude: dto.clientLongitude ?? undefined,
           modePaiement: dto.modePaiement,

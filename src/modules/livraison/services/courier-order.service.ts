@@ -25,6 +25,9 @@ export type CourierOrderDto = {
   livraisonNavToken: string;
   livreeLe?: string | null;
   livreurPaiementRecu?: boolean | null;
+  priseEnCharge: boolean;
+  priseEnChargeLe?: string | null;
+  primeLivreurGn: number | null;
 };
 
 export type CourierOrderPublicDto = Omit<CourierOrderDto, 'montantTotal'>;
@@ -48,6 +51,8 @@ export type CourierTotauxDto = {
   livraisonsEnCours: number;
   montantEnCoursGn: number;
   especesAEncaisserGn: number;
+  primesTermineesGn: number;
+  primesEnCoursGn: number;
 };
 
 export type CourierTourneeDto = {
@@ -57,6 +62,7 @@ export type CourierTourneeDto = {
   commandesCount: number;
   montantTotal: number;
   especesAEncaisser: number;
+  primeTotal: number;
   commandes: CourierOrderPublicDto[];
 };
 
@@ -85,6 +91,9 @@ function toCourierOrder(order: {
   ordreLivraison?: number | null;
   livreeLe?: Date | null;
   livreurPaiementRecu?: boolean | null;
+  livreurPriseEnChargeAt?: Date | null;
+  livreurPriseEnChargeAck?: boolean | null;
+  primeLivreurGn?: unknown;
   items: unknown[];
 }): Omit<CourierOrderDto, 'coordinates'> & {
   clientLatitude: unknown;
@@ -112,6 +121,10 @@ function toCourierOrder(order: {
     itemsCount: order.items.length,
     livreeLe: order.livreeLe?.toISOString() ?? null,
     livreurPaiementRecu: order.livreurPaiementRecu ?? null,
+    priseEnCharge: Boolean(order.livreurPriseEnChargeAt && order.livreurPriseEnChargeAck),
+    priseEnChargeLe: order.livreurPriseEnChargeAt?.toISOString() ?? null,
+    primeLivreurGn:
+      order.primeLivreurGn != null ? Number(order.primeLivreurGn) : null,
   };
 }
 
@@ -198,6 +211,7 @@ export class CourierOrderService {
             : cmds
                 .filter((c) => c.paiementEspecesEnAttente)
                 .reduce((s, c) => s + c.montantTotal, 0);
+        const primeTotal = cmds.reduce((s, c) => s + (c.primeLivreurGn ?? 0), 0);
         return {
           id: run.id,
           label: run.label ?? `Tournée #${run.id.slice(-6).toUpperCase()}`,
@@ -205,6 +219,7 @@ export class CourierOrderService {
           commandesCount: cmds.length,
           montantTotal,
           especesAEncaisser,
+          primeTotal,
           commandes: cmds.map(sansMontant),
         };
       })
@@ -255,7 +270,8 @@ export class CourierOrderService {
   }
 
   async obtenirTotauxLivreur(courierId: string): Promise<CourierTotauxDto> {
-    const [terminees, enCours, aggTermine, aggEnCours] = await Promise.all([
+    const [terminees, enCours, aggTermine, aggEnCours, aggPrimesTermine, aggPrimesEnCours] =
+      await Promise.all([
       prisma.order.findMany({
         where: { courierId, statut: 'LIVREE' },
         select: {
@@ -285,6 +301,17 @@ export class CourierOrderService {
         _sum: { montantTotal: true },
         _count: true,
       }),
+      prisma.order.aggregate({
+        where: { courierId, statut: 'LIVREE' },
+        _sum: { primeLivreurGn: true },
+      }),
+      prisma.order.aggregate({
+        where: {
+          courierId,
+          statut: { in: ['PAYEE', 'EN_PREPARATION', 'EXPEDIEE'] },
+        },
+        _sum: { primeLivreurGn: true },
+      }),
     ]);
 
     const especesEncaisseesGn = terminees
@@ -309,7 +336,27 @@ export class CourierOrderService {
       livraisonsEnCours: aggEnCours._count,
       montantEnCoursGn: Number(aggEnCours._sum.montantTotal ?? 0),
       especesAEncaisserGn,
+      primesTermineesGn: Number(aggPrimesTermine._sum.primeLivreurGn ?? 0),
+      primesEnCoursGn: Number(aggPrimesEnCours._sum.primeLivreurGn ?? 0),
     };
+  }
+
+  async definirPrimeLivreur(orderId: string, primeLivreurGn: number | null) {
+    const order = await prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) throw new Error('Commande introuvable');
+    if (!order.courierId) {
+      throw new Error('Assignez d\'abord un livreur à cette commande.');
+    }
+    if (order.statut === 'LIVREE' || order.statut === 'ANNULEE') {
+      throw new Error('Impossible de modifier la prime d\'une commande clôturée.');
+    }
+    if (primeLivreurGn != null && (primeLivreurGn < 0 || !Number.isFinite(primeLivreurGn))) {
+      throw new Error('Montant de prime invalide.');
+    }
+    return prisma.order.update({
+      where: { id: orderId },
+      data: { primeLivreurGn },
+    });
   }
 
   async obtenirPourLivreur(courierId: string, orderId: string) {
@@ -342,14 +389,78 @@ export class CourierOrderService {
     };
   }
 
-  async assignerLivreur(orderId: string, courierId: string) {
+  async assignerLivreur(
+    orderId: string,
+    courierId: string,
+    options?: { primeLivreurGn?: number | null },
+  ) {
+    const primesParCommande =
+      options?.primeLivreurGn != null && options.primeLivreurGn >= 0
+        ? { [orderId]: options.primeLivreurGn }
+        : undefined;
     await deliveryRunService.creerTournee({
       courierId,
       orderIds: [orderId],
+      primesParCommande,
     });
     const order = await prisma.order.findUnique({ where: { id: orderId } });
     if (!order) throw new Error('Assignation impossible');
     return order;
+  }
+
+  async marquerPriseEnCharge(courierId: string, orderId: string) {
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, courierId },
+      include: { courier: { select: { nom: true } } },
+    });
+    if (!order) return null;
+
+    if (!order.courierId) {
+      throw new Error('Aucun livreur assigné à cette commande.');
+    }
+
+    if (order.statut === 'LIVREE' || order.statut === 'ANNULEE') {
+      throw new Error('Cette commande est déjà clôturée.');
+    }
+
+    if (order.livreurPriseEnChargeAt && order.livreurPriseEnChargeAck) {
+      throw new Error('Vous avez déjà pris en charge ce colis.');
+    }
+
+    const now = new Date();
+    await prisma.order.update({
+      where: { id: orderId },
+      data: {
+        livreurPriseEnChargeAt: now,
+        livreurPriseEnChargeAck: true,
+      },
+    });
+
+    const livreurNom = order.courier?.nom ?? 'Le livreur';
+
+    await trackingRepository.creerEvenement({
+      orderId,
+      type: 'LIVREUR',
+      message: `${livreurNom} a pris en charge le colis de ${order.clientNom} (${order.clientVille}). Responsabilité livreur confirmée.`,
+      notifier: false,
+    });
+
+    if (order.statut !== 'EXPEDIEE') {
+      await trackingService.mettreAJourStatut(orderId, 'EXPEDIEE', {
+        message: `${livreurNom} a récupéré votre colis — il est en route vers vous.`,
+        notifier: true,
+      });
+    } else {
+      await trackingRepository.creerEvenement({
+        orderId,
+        type: 'STATUT',
+        statut: 'EXPEDIEE',
+        message: `${livreurNom} confirme la prise en charge du colis.`,
+        notifier: true,
+      });
+    }
+
+    return prisma.order.findUnique({ where: { id: orderId } });
   }
 
   async marquerLivree(
@@ -377,6 +488,12 @@ export class CourierOrderService {
     const statutsLivrables = new Set<OrderStatus>(['PAYEE', 'EN_PREPARATION', 'EXPEDIEE']);
     if (!statutsLivrables.has(order.statut)) {
       throw new Error('Cette commande ne peut pas être livrée dans son état actuel.');
+    }
+
+    if (!order.livreurPriseEnChargeAt || !order.livreurPriseEnChargeAck) {
+      throw new Error(
+        'Vous devez d\'abord signaler la prise en charge du colis avant de le marquer comme livré.',
+      );
     }
 
     const espècesEnAttente =

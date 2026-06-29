@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { orderService } from '@/modules/commandes/services/order.service';
 import { computeOrderReceiptTotals } from '@/shared/lib/order-receipt';
+import { OrderConfirmationWelcome } from '@/shared/components/OrderConfirmationWelcome';
 
 // ─── CONFIRMATION PAGE (SERVER COMPONENT) ────────────────────────────────────
 
@@ -94,7 +95,16 @@ export default async function ConfirmationPage({
   const waLink = `https://wa.me/${whatsappNum}?text=${encodeURIComponent(waMessage)}`;
 
   return (
-    <div className="container-shop py-8 space-y-8 max-w-3xl animate-fadeIn">
+    <>
+      <OrderConfirmationWelcome
+        orderId={order.id}
+        clientNom={order.clientNom}
+        suiviToken={order.suiviToken}
+        modePaiement={order.modePaiement}
+        statutPaiement={order.statutPaiement}
+      />
+
+      <div className="container-shop py-8 space-y-8 max-w-3xl animate-fadeIn">
       {/* ─── BREADCRUMB ────────────────────────────────────────────────── */}
       <div className="flex items-center gap-1.5 text-xs text-zinc-500">
         <Link href="/" className="hover:text-primary transition font-medium">Accueil</Link>
@@ -110,7 +120,9 @@ export default async function ConfirmationPage({
         <div className="space-y-1.5">
           <h1 className="text-2xl font-black text-zinc-950 md:text-3xl">Merci pour votre commande !</h1>
           <p className="text-zinc-500 text-sm max-w-md mx-auto leading-relaxed">
-            Votre commande a été enregistrée avec succès sous la référence <span className="font-extrabold text-zinc-900">#{order.id}</span>.
+            Votre commande <span className="font-extrabold text-zinc-900">#{order.id}</span> est
+            enregistrée. Notre équipe prend votre dossier en charge — vous serez informée à chaque
+            étape.
           </p>
         </div>
 
@@ -262,6 +274,7 @@ export default async function ConfirmationPage({
         </Link>
       </div>
 
-    </div>
+      </div>
+    </>
   );
 }

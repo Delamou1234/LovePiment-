@@ -65,3 +65,12 @@ export function confirmDeliveryCopy(
     confirmLabel: 'Oui, colis livré',
   };
 }
+
+export function confirmPickupCopy(clientNom: string): ActionConfirmOptions {
+  return {
+    title: 'Colis récupéré ?',
+    message: `Confirmez que vous avez bien récupéré le colis de ${clientNom} avant de partir en livraison.`,
+    confirmLabel: 'Oui, c\'est bon',
+    cancelLabel: 'Pas encore',
+  };
+}

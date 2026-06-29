@@ -3,14 +3,26 @@ import { adminAuthRepository } from '@/modules/auth/repository/admin-auth.reposi
 import {
   clearSessionCookie,
   getAdminSession,
+  getCourierSession,
   getCustomerSessionWithRefresh,
   setSessionCookie,
 } from '@/shared/lib/auth/session';
+import { getCustomerSessionWithCourierFallback } from '@/shared/lib/auth/customer-from-courier';
 import { customerAuthRepository } from '@/modules/auth/repository/customer-auth.repository';
+import { resoudreContexteLivreurClient } from '@/modules/livraison/services/courier-customer.service';
+import { libelleTypeCompte, type AccountType } from '@/shared/lib/account-type';
 
 /** GET /api/auth/me — session + profil client depuis la base */
 export async function GET() {
-  const { user: session, refreshedToken, role } = await getCustomerSessionWithRefresh();
+  const refreshed = await getCustomerSessionWithRefresh();
+  let session = refreshed.user;
+  let refreshedToken = refreshed.refreshedToken;
+  let role: 'customer' = refreshed.role;
+
+  if (!session) {
+    session = await getCustomerSessionWithCourierFallback();
+    if (session) role = 'customer';
+  }
 
   const buildResponse = (body: object, clear = false) => {
     const response = NextResponse.json(body);
@@ -38,6 +50,22 @@ export async function GET() {
           email: admin.email,
           name: admin.nom,
           role: 'admin' as const,
+          accountType: 'admin' satisfies AccountType,
+          accountTypeLabel: libelleTypeCompte('admin'),
+        },
+      });
+    }
+
+    const courierSession = await getCourierSession();
+    if (courierSession?.id) {
+      return NextResponse.json({
+        user: {
+          id: courierSession.id,
+          email: courierSession.email,
+          name: courierSession.name,
+          role: 'courier' as const,
+          accountType: 'livreur' satisfies AccountType,
+          accountTypeLabel: libelleTypeCompte('livreur'),
         },
       });
     }
@@ -55,6 +83,8 @@ export async function GET() {
   }
 
   const derniereCommande = await customerAuthRepository.trouverDerniereCommande(customer.id);
+  const livreur = await resoudreContexteLivreurClient(customer.id);
+  const accountType: AccountType = livreur ? 'client-livreur' : 'client';
 
   return buildResponse({
     user: {
@@ -62,6 +92,8 @@ export async function GET() {
       email: customer.email,
       name: customer.nom,
       role: 'customer' as const,
+      accountType,
+      accountTypeLabel: libelleTypeCompte(accountType),
       telephone: customer.telephone,
       avatarUrl: customer.avatarUrl,
       viaGoogle: Boolean(customer.googleId),

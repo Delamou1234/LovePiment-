@@ -13,13 +13,13 @@ import {
   MessageCircle,
   Phone,
   RefreshCw,
-  Search,
   ShoppingBag,
   Users,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ADMIN_BTN_PRIMARY } from '@/modules/admin/components/admin-ui';
+import { FilterSearchInput } from '@/shared/components/FilterSearchInput';
 import { getShopTelHref, normaliserNumeroAppel } from '@/shared/lib/shop-contact';
 
 type Client = {
@@ -53,7 +53,7 @@ function whatsappHref(telephone: string | null, nom: string) {
   return `https://wa.me/${num}?text=${encodeURIComponent(text)}`;
 }
 
-export function AdminClientsPage() {
+export function AdminClientsPage({ embedded = false }: { embedded?: boolean }) {
   const searchParams = useSearchParams();
   const filtreUrl = searchParams.get('q')?.trim().toLowerCase() ?? '';
   const [clients, setClients] = useState<Client[]>([]);
@@ -99,35 +99,45 @@ export function AdminClientsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-zinc-900">
-            <Users className="h-6 w-6" />
-            Gestion des clients
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            {clientsFiltres.length} client{clientsFiltres.length > 1 ? 's' : ''} — comptes inscrits
-            avec historique de commandes liées.
-          </p>
+    <div className={embedded ? 'space-y-4' : 'space-y-6'}>
+      {!embedded && (
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="flex items-center gap-2 text-2xl font-bold text-zinc-900">
+              <Users className="h-6 w-6" />
+              Gestion des clients
+            </h1>
+            <p className="mt-1 text-sm text-zinc-500">
+              {clientsFiltres.length} client{clientsFiltres.length > 1 ? 's' : ''} — comptes inscrits
+              avec historique de commandes liées.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Actualiser
+          </Button>
         </div>
-        <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
-          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          Actualiser
-        </Button>
-      </div>
+      )}
+
+      {embedded && (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-zinc-500">
+            {clientsFiltres.length} client{clientsFiltres.length > 1 ? 's' : ''} inscrit
+            {clientsFiltres.length > 1 ? 's' : ''} — historique de commandes et fidélité.
+          </p>
+          <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Actualiser
+          </Button>
+        </div>
+      )}
 
       <div className="admin-marketing-toolbar">
-        <div className="admin-marketing-search-wrap">
-          <Search className="admin-marketing-search-icon" strokeWidth={1.75} />
-          <input
-            type="search"
-            value={recherche}
-            onChange={(e) => setRecherche(e.target.value)}
-            placeholder="Rechercher par nom, e-mail ou téléphone…"
-            className="admin-marketing-search"
-          />
-        </div>
+        <FilterSearchInput
+          value={recherche}
+          onChange={setRecherche}
+          placeholder="Rechercher par nom, e-mail ou téléphone…"
+        />
       </div>
 
       <div className="admin-marketing-table-card">

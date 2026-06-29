@@ -10,6 +10,8 @@ import { ProductAiRecommendationsLazy } from '@/modules/ia/components/ProductAiR
 import { avisService } from '@/modules/avis/services/review.service';
 import { getSession } from '@/shared/lib/auth/session';
 
+export const revalidate = 120;
+
 type Params = Promise<{ slug: string }>;
 
 export default async function ProductDetailPage({ params }: { params: Params }) {

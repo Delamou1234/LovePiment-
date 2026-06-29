@@ -11,9 +11,9 @@ import {
   MessageSquare,
   Phone,
   RefreshCw,
-  Search,
 } from 'lucide-react';
 import { normaliserNumeroAppel } from '@/shared/lib/shop-contact';
+import { FilterSearchInput } from '@/shared/components/FilterSearchInput';
 import type { ContactMessageResume, ContactStatusKey } from '@/modules/contact/types';
 
 const STATUT_LABELS: Record<ContactStatusKey, string> = {
@@ -179,16 +179,11 @@ export function AdminContactPage() {
       </div>
 
       <div className="admin-marketing-toolbar">
-        <div className="admin-marketing-search-wrap">
-          <Search className="admin-marketing-search-icon" strokeWidth={1.75} />
-          <input
-            type="search"
-            value={recherche}
-            onChange={(e) => setRecherche(e.target.value)}
-            placeholder="Rechercher un message…"
-            className="admin-marketing-search"
-          />
-        </div>
+        <FilterSearchInput
+          value={recherche}
+          onChange={setRecherche}
+          placeholder="Rechercher un message…"
+        />
         <div className="admin-marketing-filters">
           {FILTRES.map(({ id, label }) => (
             <button

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { courierAuthRepository, courierRepository } from '@/modules/livraison/repository/courier.repository';
+import { assurerCompteClientPourLivreur } from '@/modules/livraison/services/courier-customer.service';
 import { adminUnauthorized, requireAdmin } from '@/modules/admin/lib/require-admin';
 
 const createSchema = z.object({
@@ -67,6 +68,7 @@ export async function POST(request: NextRequest) {
   }
 
   const livreur = await courierRepository.creer(parsed.data);
+  await assurerCompteClientPourLivreur(livreur.id);
 
   let emailEnvoye = true;
   try {

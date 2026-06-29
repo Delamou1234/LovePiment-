@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
   if (!admin) return adminUnauthorized();
 
   const rayonKm = Number(request.nextUrl.searchParams.get('rayonKm') ?? '2.5');
-  const geocoder = request.nextUrl.searchParams.get('geocoder') !== 'false';
+  const geocoder = request.nextUrl.searchParams.get('geocoder') === 'true';
 
   try {
     const result = await orderGeoClusteringService.regrouperCommandesEligibles({

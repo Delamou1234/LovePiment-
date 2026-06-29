@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, History, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CourierDeliveredOrderCard } from '@/modules/livraison/components/CourierDeliveredOrderCard';
-import { CourierMobileNav, CourierSidebar } from '@/modules/livraison/components/CourierSidebar';
+import { CourierSidebar } from '@/modules/livraison/components/CourierSidebar';
 import { CourierTopBar } from '@/modules/livraison/components/CourierTopBar';
 import {
   COMPTE_CARD,
@@ -125,7 +125,6 @@ export function CourierHistoryPage() {
       />
 
       <div className={COMPTE_MAIN}>
-        <CourierMobileNav title="Historique" totaux={totaux} onMenuOpen={() => setMobileMenuOpen(true)} />
         <CourierTopBar
           profil={profil}
           title="Historique"
@@ -136,6 +135,7 @@ export function CourierHistoryPage() {
           totaux={totaux}
           onLogout={handleLogout}
           onRefresh={refresh}
+          onMenuOpen={() => setMobileMenuOpen(true)}
           refreshing={refreshing}
         />
         <CourierTotalsBanner totaux={totaux} />

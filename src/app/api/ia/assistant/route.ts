@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { assistantService } from '@/modules/ia/services/assistant.service';
+import { enforceRateLimit } from '@/shared/lib/security/enforce-rate-limit';
 
 const bodySchema = z.object({
   message: z.string().min(1).max(2000),
@@ -18,6 +19,9 @@ const bodySchema = z.object({
 /** POST /api/ia/assistant — chatbot shopping Gemini */
 export async function POST(request: NextRequest) {
   try {
+    const limited = enforceRateLimit(request, 'iaAssistant');
+    if (limited) return limited;
+
     const body = await request.json();
     const parsed = bodySchema.safeParse(body);
     if (!parsed.success) {

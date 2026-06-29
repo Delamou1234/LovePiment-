@@ -5,7 +5,7 @@ import { useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Banknote, Loader2, MapPin, Route, Truck } from 'lucide-react';
 import { CourierOrderCard } from '@/modules/livraison/components/CourierOrderCard';
-import { CourierMobileNav, CourierSidebar } from '@/modules/livraison/components/CourierSidebar';
+import { CourierSidebar } from '@/modules/livraison/components/CourierSidebar';
 import { CourierTopBar } from '@/modules/livraison/components/CourierTopBar';
 import {
   COMPTE_CARD,
@@ -22,7 +22,7 @@ import type {
   CourierTourneeDto,
   CourierTotauxDto,
 } from '@/modules/livraison/services/courier-order.service';
-import { confirmAction, confirmDeliveryCopy } from '@/shared/lib/confirm-action';
+import { confirmAction, confirmDeliveryCopy, confirmPickupCopy } from '@/shared/lib/confirm-action';
 import { confirmLogout } from '@/shared/lib/confirm-logout';
 import { CourierTotalsBanner, TOTAUX_LIVREUR_VIDES } from '@/modules/livraison/components/CourierTotalsBanner';
 
@@ -113,6 +113,30 @@ export function CourierPageContent() {
     return iso?.commande ?? null;
   };
 
+  const marquerPriseEnCharge = async (id: string) => {
+    const cmd = trouverCommande(id);
+    if (!cmd) return;
+
+    const confirmed = await confirmAction(confirmPickupCopy(cmd.clientNom));
+    if (!confirmed) return;
+
+    setBusyId(id);
+    try {
+      const res = await fetch(`/api/livreur/commandes/${id}/prise-en-charge`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.message ?? 'Impossible de confirmer la prise en charge.');
+        return;
+      }
+      await load();
+    } finally {
+      setBusyId(null);
+    }
+  };
+
   const marquerLivree = async (id: string, paiementRecu?: boolean) => {
     const cmd = trouverCommande(id);
     if (!cmd) return;
@@ -162,12 +186,6 @@ export function CourierPageContent() {
       />
 
       <div className={COMPTE_MAIN}>
-        <CourierMobileNav
-          title="En cours"
-          arretsCount={totalArrets}
-          totaux={totaux}
-          onMenuOpen={() => setMobileMenuOpen(true)}
-        />
         <CourierTopBar
           profil={profil}
           title="En cours"
@@ -178,6 +196,7 @@ export function CourierPageContent() {
           totaux={totaux}
           onLogout={handleLogout}
           onRefresh={() => void load(true)}
+          onMenuOpen={() => setMobileMenuOpen(true)}
           refreshing={refreshing}
         />
         <CourierTotalsBanner totaux={totaux} />
@@ -253,6 +272,11 @@ export function CourierPageContent() {
                           Espèces : {tournee.especesAEncaisser.toLocaleString('fr-FR')} GN
                         </p>
                       )}
+                      {tournee.primeTotal > 0 && (
+                        <p className="text-xs font-semibold text-violet-800 mt-1">
+                          Primes : {tournee.primeTotal.toLocaleString('fr-FR')} GN
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="space-y-3">
@@ -261,6 +285,7 @@ export function CourierPageContent() {
                         key={cmd.id}
                         cmd={cmd}
                         busyId={busyId}
+                        onPriseEnCharge={marquerPriseEnCharge}
                         onLivrer={marquerLivree}
                         showOrdre
                       />
@@ -289,7 +314,12 @@ export function CourierPageContent() {
                           )}
                         </div>
                       </div>
-                      <CourierOrderCard cmd={liv.commande} busyId={busyId} onLivrer={marquerLivree} />
+                      <CourierOrderCard
+                        cmd={liv.commande}
+                        busyId={busyId}
+                        onPriseEnCharge={marquerPriseEnCharge}
+                        onLivrer={marquerLivree}
+                      />
                     </div>
                   ))}
                 </section>

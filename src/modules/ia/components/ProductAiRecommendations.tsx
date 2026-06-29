@@ -19,7 +19,6 @@ export function ProductAiRecommendations({
   const sectionRef = useRef<HTMLElement>(null);
   const [visible, setVisible] = useState(false);
   const [products, setProducts] = useState<ProduitRecommande[]>([]);
-  const [poweredByAi, setPoweredByAi] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -55,7 +54,6 @@ export function ProductAiRecommendations({
       .then((res) => (res.ok ? res.json() : { products: [] }))
       .then((data) => {
         setProducts(data.products ?? []);
-        setPoweredByAi(Boolean(data.poweredByAi));
       })
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
@@ -79,9 +77,7 @@ export function ProductAiRecommendations({
     <section ref={sectionRef} className="border-t border-[#F2D4DC]/60 pt-12">
       <div className="flex items-center gap-2 mb-6">
         <Sparkles className="h-4 w-4 text-[#9B1B2E]" />
-        <h2 className="text-lg font-bold text-zinc-900">
-          {poweredByAi ? 'Recommandations IA' : 'Vous aimerez aussi'}
-        </h2>
+        <h2 className="text-lg font-bold text-zinc-900">Vous aimerez aussi</h2>
       </div>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {products.map((p) => (

@@ -16,7 +16,7 @@ import {
   ChevronRight 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { confirmPanierVider } from '@/shared/lib/confirm-action';
+import { confirmPanierRetirer, confirmPanierVider } from '@/shared/lib/confirm-action';
 
 // ─── CART PAGE (CLIENT COMPONENT) ───────────────────────────────────────────
 
@@ -44,6 +44,12 @@ export default function CartPage() {
   const formattedSubtotal = formaterPrixGN(sousTotal);
   const formattedShipping = livraisonGratuite ? 'Offerte' : formaterPrixGN(fraisLivraison);
   const formattedTotal = formaterPrixGN(total);
+
+  const handleRetirer = async (variantId: string, nomProduit: string) => {
+    if (await confirmPanierRetirer(nomProduit)) {
+      panier.retirerItem(variantId);
+    }
+  };
 
   return (
     <div className={`container-shop py-8 animate-fadeIn${items.length > 0 ? ' cart-page-with-bar lg:pb-8' : ''}`}>
@@ -127,7 +133,8 @@ export default function CartPage() {
                           </button>
                         </div>
                         <button
-                          onClick={() => panier.retirerItem(item.variantId)}
+                          type="button"
+                          onClick={() => void handleRetirer(item.variantId, item.nomProduit)}
                           className="text-zinc-400 hover:text-red-500 p-1"
                         >
                           <Trash2 className="h-4.5 w-4.5" />
@@ -139,7 +146,8 @@ export default function CartPage() {
                     {/* Quantité & Total (Desktop) */}
                     <div className="hidden sm:flex flex-col items-end justify-between self-stretch shrink-0">
                       <button
-                        onClick={() => panier.retirerItem(item.variantId)}
+                        type="button"
+                        onClick={() => void handleRetirer(item.variantId, item.nomProduit)}
                         className="text-zinc-300 hover:text-red-500 transition duration-150"
                       >
                         <Trash2 className="h-5 w-5" />

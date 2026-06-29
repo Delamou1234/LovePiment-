@@ -60,6 +60,22 @@ export function isCourierRedirect(redirect: string | null | undefined): boolean 
   return path === '/livreur' || path.startsWith('/livreur/');
 }
 
+export function isShopRedirect(redirect: string | null | undefined): boolean {
+  if (!redirect) return false;
+  const path = redirect.split('?')[0];
+  return (
+    path === '/panier' ||
+    path.startsWith('/panier/') ||
+    path === '/produits' ||
+    path.startsWith('/produits/') ||
+    path === '/promos' ||
+    path.startsWith('/promos/') ||
+    isCheckoutRedirect(redirect) ||
+    path === '/compte' ||
+    path.startsWith('/compte/')
+  );
+}
+
 /** Redirection après connexion si l'utilisateur a déjà une session. */
 export function resolveAuthenticatedRedirect(
   sessions: { customer: boolean; admin: boolean; courier: boolean },
@@ -75,6 +91,9 @@ export function resolveAuthenticatedRedirect(
   }
   if (customer && (isCheckoutRedirect(redirectParam) || redirectParam?.startsWith('/compte'))) {
     return getPostLoginRedirect('customer', redirectParam);
+  }
+  if (courier && isShopRedirect(redirectParam)) {
+    return getSafeRedirect(redirectParam, '/produits');
   }
   if (courier && !customer && !admin) return '/livreur';
   if (admin && !customer && !courier) return '/admin';
@@ -93,7 +112,9 @@ export function getPostLoginRedirect(
     return isAdminRedirect(redirect) ? getSafeRedirect(redirect, '/admin') : '/admin';
   }
   if (role === 'courier') {
-    return isCourierRedirect(redirect) ? getSafeRedirect(redirect, '/livreur') : '/livreur';
+    if (isCourierRedirect(redirect)) return getSafeRedirect(redirect, '/livreur');
+    if (isShopRedirect(redirect)) return getSafeRedirect(redirect, '/produits');
+    return '/livreur';
   }
   const fallback = isCheckoutRedirect(redirect) ? '/commande' : '/compte';
   return getSafeRedirectForCustomer(redirect, fallback);

@@ -17,7 +17,6 @@ export function HomeRecommendations() {
   const sectionRef = useRef<HTMLElement>(null);
   const [visible, setVisible] = useState(false);
   const [products, setProducts] = useState<ProduitRecommande[]>([]);
-  const [poweredByAi, setPoweredByAi] = useState(false);
   const [loading, setLoading] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -63,7 +62,6 @@ export function HomeRecommendations() {
       .then((res) => (res.ok ? res.json() : { products: [] }))
       .then((data) => {
         setProducts(data.products ?? []);
-        setPoweredByAi(Boolean(data.poweredByAi));
       })
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
@@ -92,7 +90,7 @@ export function HomeRecommendations() {
           <div className="space-y-1">
             <p className="text-[11px] font-bold uppercase tracking-widest text-[#9B1B2E] flex items-center gap-1.5">
               <Sparkles className="h-3.5 w-3.5" />
-              {poweredByAi ? 'Recommandations IA' : 'Pour vous'}
+              Pour vous
             </p>
             <h2 className="text-2xl font-black text-zinc-900 md:text-3xl">
               Recommandations personnalisées

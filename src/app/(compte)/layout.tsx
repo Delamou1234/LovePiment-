@@ -2,11 +2,11 @@ import { redirect } from 'next/navigation';
 import { customerAuthRepository } from '@/modules/auth/repository/customer-auth.repository';
 import { isValidCustomerSession } from '@/shared/lib/auth/customer-session';
 import { redirectUrlApresSessionExpiree } from '@/shared/lib/auth/stale-session';
-import { getCustomerSession } from '@/shared/lib/auth/session';
+import { getCustomerSessionWithCourierFallback } from '@/shared/lib/auth/customer-from-courier';
 import { BoutiqueProviders } from '@/app/(boutique)/BoutiqueProviders';
 
 export default async function CompteShellLayout({ children }: { children: React.ReactNode }) {
-  const customer = await getCustomerSession();
+  const customer = await getCustomerSessionWithCourierFallback();
   if (!isValidCustomerSession(customer)) {
     redirect(redirectUrlApresSessionExpiree('/compte'));
   }

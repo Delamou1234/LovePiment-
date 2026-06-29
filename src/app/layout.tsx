@@ -3,6 +3,7 @@ import './globals.css';
 import { GoogleAnalytics } from '@/shared/components/GoogleAnalytics';
 import { GlobalPageTracker } from '@/shared/components/GlobalPageTracker';
 import { AppProviders } from '@/shared/providers/AppProviders';
+import { fontClassNames, inter } from '@/shared/lib/fonts';
 
 export const metadata: Metadata = {
   title: {
@@ -55,7 +56,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className="font-sans" data-scroll-behavior="smooth">
+    <html lang="fr" className={`${fontClassNames} ${inter.className}`} data-scroll-behavior="smooth">
       <body className="antialiased">
         <AppProviders>
           <GoogleAnalytics />

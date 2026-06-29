@@ -3,6 +3,7 @@ import { orderService } from '@/modules/commandes/services/order.service';
 import { paymentService } from '@/modules/paiement/services/payment.service';
 import { CinetPayProvider } from '@/modules/paiement/providers/cinetpay.provider';
 import { parseCinetpayFormData } from '@/shared/lib/cinetpay-hmac';
+import { enforceRateLimit } from '@/shared/lib/security/enforce-rate-limit';
 import { prisma } from '@/shared/lib/prisma';
 
 const cinetpay = new CinetPayProvider();
@@ -13,6 +14,9 @@ const cinetpay = new CinetPayProvider();
  */
 export async function POST(request: NextRequest) {
   try {
+    const limited = enforceRateLimit(request, 'webhook');
+    if (limited) return limited;
+
     const body = await request.formData();
     const fields = parseCinetpayFormData(body);
     const cpm_trans_id = fields.cpm_trans_id;
@@ -35,7 +39,7 @@ export async function POST(request: NextRequest) {
 
     if (!commande) {
       console.warn(`[Webhook CinetPay] Commande introuvable pour tx: ${cpm_trans_id}`);
-      return NextResponse.json({ message: 'Commande introuvable' }, { status: 404 });
+      return NextResponse.json({ message: 'OK' });
     }
 
     if (
@@ -49,6 +53,10 @@ export async function POST(request: NextRequest) {
     }
 
     if (cpm_result === '00') {
+      if (commande.statutPaiement === 'REUSSIE') {
+        return NextResponse.json({ message: 'OK' });
+      }
+
       const verification = await cinetpay.verifierStatut({ transactionId: cpm_trans_id });
       if (verification.success && verification.statut === 'REUSSIE') {
         await orderService.confirmerPaiement(commande.id, cpm_trans_id);
@@ -57,7 +65,7 @@ export async function POST(request: NextRequest) {
         console.warn(`[Webhook CinetPay] Statut API non confirmé pour ${commande.id}`);
         return NextResponse.json({ message: 'Paiement non confirmé' }, { status: 409 });
       }
-    } else {
+    } else if (commande.statutPaiement !== 'REUSSIE') {
       await orderService.echecPaiement(commande.id);
       console.log(`[Webhook CinetPay] Paiement échoué pour commande ${commande.id}`);
     }

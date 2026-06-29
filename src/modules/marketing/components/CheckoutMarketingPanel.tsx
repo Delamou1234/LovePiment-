@@ -11,6 +11,9 @@ import { useFeatureFlags } from '@/shared/hooks/useFeatureFlags';
 type Props = {
   sousTotal: number;
   clientVille: string;
+  clientCommune?: string;
+  estPremiereCommande?: boolean;
+  codeBienvenue?: string;
   pointsDisponibles: number;
   onTotauxChange: (totaux: TotauxMarketing | null) => void;
   onMarketingChange: (data: {
@@ -23,6 +26,9 @@ type Props = {
 export function CheckoutMarketingPanel({
   sousTotal,
   clientVille,
+  clientCommune,
+  estPremiereCommande,
+  codeBienvenue,
   pointsDisponibles,
   onTotauxChange,
   onMarketingChange,
@@ -48,6 +54,13 @@ export function CheckoutMarketingPanel({
       .catch(() => {});
   }, [parrainageActif]);
 
+  useEffect(() => {
+    if (!estPremiereCommande || !codeBienvenue) return;
+    setCodeCoupon(codeBienvenue);
+    setCouponOk(true);
+    setCouponMsg(`Offre première commande (−${codeBienvenue})`);
+  }, [estPremiereCommande, codeBienvenue]);
+
   const recalculer = useCallback(async () => {
     setLoadingTotaux(true);
     try {
@@ -57,6 +70,8 @@ export function CheckoutMarketingPanel({
         body: JSON.stringify({
           sousTotal,
           clientVille,
+          clientCommune: clientCommune || null,
+          estPremiereCommande,
           codeCoupon: couponOk ? codeCoupon : null,
           pointsUtilises,
           codeParrainage: parrainageActif ? codeParrainage.trim() || null : null,
@@ -80,6 +95,8 @@ export function CheckoutMarketingPanel({
   }, [
     sousTotal,
     clientVille,
+    clientCommune,
+    estPremiereCommande,
     codeCoupon,
     couponOk,
     pointsUtilises,

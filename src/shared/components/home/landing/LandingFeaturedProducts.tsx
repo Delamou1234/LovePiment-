@@ -20,7 +20,7 @@ export type LandingProduct = {
   featured?: boolean;
 };
 
-function LandingProductCard({
+export function LandingProductCard({
   product,
   isNew,
 }: {

@@ -3,11 +3,11 @@
 import Link from 'next/link';
 import { BrandLogo } from '@/shared/ui/BrandLogo';
 import { usePathname } from 'next/navigation';
-import { HelpCircle, History, Home, LogOut, Truck, X } from 'lucide-react';
+import { HelpCircle, History, Home, LayoutDashboard, LogOut, Package, Settings, ShoppingBag, Truck, X } from 'lucide-react';
 import { initialesNom } from '@/modules/compte/types';
 import {
   COMPTE_SIDEBAR_WIDTH,
-  COURIER_NAV_GROUPS,
+  construireGroupesSidebarLivreur,
   type CourierNavItem,
   type CourierProfil,
 } from './livreur-ui';
@@ -23,6 +23,11 @@ const NAV_BTN_IDLE = 'text-white/75 hover:bg-white/10 hover:text-white';
 const LINK_ICONS: Record<string, typeof Home> = {
   '/': Home,
   '/contact': HelpCircle,
+  '/produits': ShoppingBag,
+  '/panier': ShoppingBag,
+  '/compte': LayoutDashboard,
+  '/compte?section=commandes': Package,
+  '/compte/profil': Settings,
 };
 
 const SECTION_ICONS = {
@@ -47,6 +52,7 @@ function SidebarContent({
   onMobileClose,
 }: Omit<Props, 'mobileOpen'>) {
   const pathname = usePathname();
+  const navGroups = construireGroupesSidebarLivreur();
 
   const renderItem = (item: CourierNavItem) => {
     const badge =
@@ -118,7 +124,7 @@ function SidebarContent({
 
       <nav className="flex-1 px-1.5 py-2 overflow-hidden">
         <div className="space-y-2">
-          {COURIER_NAV_GROUPS.map((group) => (
+          {navGroups.map((group) => (
             <div key={group.title}>
               <p className="px-2 mb-0.5 text-[8px] font-bold uppercase tracking-wider text-white/35">
                 {group.title}

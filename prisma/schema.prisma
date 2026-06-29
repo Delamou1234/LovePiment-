@@ -42,6 +42,7 @@ enum TrackingEventType {
   NOTIFICATION
   TRANSPORTEUR
   SATISFACTION
+  LIVREUR
 }
 
 enum OrderSatisfaction {
@@ -199,6 +200,11 @@ model Order {
   clientTelephone String        @map("client_telephone")
   clientAdresse   String        @map("client_adresse")
   clientVille     String        @map("client_ville")
+  clientCommune   String?       @map("client_commune")
+  clientQuartier  String?       @map("client_quartier")
+  clientRepere    String?       @map("client_repere")
+  creneauLivraison String?      @map("creneau_livraison")
+  estPremiereCommande Boolean   @default(false) @map("est_premiere_commande")
   clientLatitude  Decimal?      @db.Decimal(10, 7) @map("client_latitude")
   clientLongitude Decimal?      @db.Decimal(10, 7) @map("client_longitude")
   // Commande
@@ -233,11 +239,15 @@ model Order {
   assignedAt      DateTime?     @map("assigned_at")
   livreurPaiementRecu      Boolean?  @map("livreur_paiement_recu")
   livreurPaiementDeclareAt DateTime? @map("livreur_paiement_declare_at")
+  livreurPriseEnChargeAt   DateTime? @map("livreur_prise_en_charge_at")
+  livreurPriseEnChargeAck  Boolean?  @map("livreur_prise_en_charge_ack")
   penaliteLivreurGn        Decimal?  @db.Decimal(10, 0) @map("penalite_livreur_gn")
+  primeLivreurGn           Decimal?  @db.Decimal(10, 0) @map("prime_livreur_gn")
   // Référence CinetPay (si applicable)
   cinetpayTxId    String?       @unique @map("cinetpay_tx_id")
   // Notes internes
   notes           String?
+  notesAdmin      String?       @map("notes_admin")
   // Avis client après livraison
   satisfactionStatut       OrderSatisfaction? @map("satisfaction_statut")
   satisfactionCommentaire  String?            @map("satisfaction_commentaire")
@@ -319,9 +329,11 @@ model Courier {
   actif             Boolean             @default(true)
   notesAdmin        String?             @map("notes_admin")
   penalitesCumuleesGn Decimal           @default(0) @db.Decimal(12, 0) @map("penalites_cumulees_gn")
+  customerId          String?             @unique @map("customer_id")
   createdAt         DateTime            @default(now()) @map("created_at")
   updatedAt         DateTime            @updatedAt @map("updated_at")
 
+  customer            Customer?           @relation(fields: [customerId], references: [id], onDelete: SetNull)
   commandes         Order[]
   tournees          DeliveryRun[]
 
@@ -392,6 +404,9 @@ model StoreSettings {
   livraisonVilleParDefaut    String  @default("Conakry") @map("livraison_ville_par_defaut")
   livraisonGratuiteActive    Boolean @default(true) @map("livraison_gratuite_active")
   livraisonDelaiLabel        String? @default("24–48 h") @map("livraison_delai_label")
+  livraisonTarifsCommunes    Json?   @map("livraison_tarifs_communes")
+  alerteCommandeMinutes      Int     @default(60) @map("alerte_commande_minutes")
+  statsCommandesLivrees      Int     @default(0) @map("stats_commandes_livrees")
   aproposHeroKicker          String? @map("apropos_hero_kicker")
   aproposHeroTitre           String? @map("apropos_hero_titre")
   aproposHeroAccent          String? @map("apropos_hero_accent")
@@ -461,6 +476,7 @@ model Customer {
   avatarCouleur   String?  @default("olive") @map("avatar_couleur")
   beautyProfile   Json?    @map("beauty_profile")
   pointsFidelite  Int      @default(0) @map("points_fidelite")
+  notesAdmin      String?  @map("notes_admin")
   codeParrainage  String?  @unique @map("code_parrainage")
   parrainId       String?  @map("parrain_id")
   parrain         Customer?  @relation("Parrainage", fields: [parrainId], references: [id], onDelete: SetNull)
@@ -473,6 +489,7 @@ model Customer {
   wishlist            WishlistItem[]
   avis                ProductReview[]
   passwordResetTokens PasswordResetToken[]
+  courierAccount      Courier?
 
   @@index([nom])
   @@index([email])
@@ -537,6 +554,7 @@ model Coupon {
   minCommande     Decimal?   @db.Decimal(10, 0) @map("min_commande")
   maxUtilisations Int?       @map("max_utilisations")
   utilisations    Int        @default(0)
+  premiereCommandeOnly Boolean @default(false) @map("premiere_commande_only")
   actif           Boolean    @default(true)
   debut           DateTime?
   fin             DateTime?

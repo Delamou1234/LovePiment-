@@ -2,7 +2,7 @@ export const COMPTE_INPUT =
   'w-full rounded-xl border border-[#ead6de] bg-white px-4 py-3 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-[#e91e8c] focus:ring-2 focus:ring-[#e91e8c]/10';
 
 export const COMPTE_CARD =
-  'rounded-2xl border border-[#ead6de] bg-white shadow-[0_4px_24px_rgba(110,16,32,0.06)]';
+  'rounded-xl border border-zinc-200/80 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.04)]';
 
 export const COMPTE_CARD_PAD = 'p-5 md:p-6';
 
@@ -65,7 +65,7 @@ export type CompteNavGroup = {
   items: CompteNavItem[];
 };
 
-/** Navigation sidebar — ordre maquette Love Piment& */
+/** Navigation client — sections et liens de l'espace compte. */
 export const COMPTE_SIDEBAR_NAV: CompteNavItem[] = [
   { kind: 'section', id: 'dashboard', label: 'Tableau de bord' },
   { kind: 'section', id: 'commandes', label: 'Mes commandes' },
@@ -76,6 +76,41 @@ export const COMPTE_SIDEBAR_NAV: CompteNavItem[] = [
   { kind: 'section', id: 'fidelite', label: 'Mes offres & bons' },
   { kind: 'link', href: '/compte/messages', label: "Centre d'aide" },
 ];
+
+export type CompteLivreurNavItem = {
+  id: 'livraisons' | 'historique';
+  href: string;
+  label: string;
+};
+
+/** Liens espace livreur (compte client + livreur). */
+export const COMPTE_LIVREUR_NAV: CompteLivreurNavItem[] = [
+  { id: 'livraisons', href: '/livreur', label: 'Livraisons en cours' },
+  { id: 'historique', href: '/livreur/historique', label: 'Historique livreur' },
+];
+
+/** Groupes sidebar selon le type de compte (client seul ou client + livreur). */
+export function construireGroupesSidebarCompte(estLivreur: boolean): CompteNavGroup[] {
+  const groupeClient: CompteNavGroup = {
+    title: estLivreur ? 'Mon espace client' : undefined,
+    items: COMPTE_SIDEBAR_NAV,
+  };
+
+  if (!estLivreur) {
+    return [groupeClient];
+  }
+
+  const groupeLivreur: CompteNavGroup = {
+    title: 'Espace livreur',
+    items: COMPTE_LIVREUR_NAV.map((item) => ({
+      kind: 'link' as const,
+      href: item.href,
+      label: item.label,
+    })),
+  };
+
+  return [groupeLivreur, groupeClient];
+}
 
 export const COMPTE_NAV_GROUPS: CompteNavGroup[] = [
   {
@@ -89,7 +124,7 @@ export const VIP_NEXT_TIER = 2000;
 export const COMPTE_SIDEBAR_WIDTH = 'lg:w-[260px]';
 export const COMPTE_SIDEBAR_OFFSET = 'lg:ml-[260px]';
 
-export const COMPTE_SHELL = 'compte-area h-dvh overflow-hidden bg-[#f7f2f5] text-zinc-900';
+export const COMPTE_SHELL = 'compte-area h-dvh overflow-hidden bg-[#f4f5f7] text-zinc-900';
 export const COMPTE_MAIN = `flex h-dvh flex-col overflow-hidden ${COMPTE_SIDEBAR_OFFSET}`;
 export const COMPTE_MAIN_SCROLL = 'flex-1 min-h-0 overflow-y-auto p-4 md:p-6 lg:p-8';
 export const COMPTE_MAIN_FILL = 'flex flex-1 min-h-0 flex-col overflow-hidden p-4 md:p-6 lg:p-8';

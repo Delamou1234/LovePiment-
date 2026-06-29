@@ -13,6 +13,12 @@ export class CourierAuthRepository {
     return prisma.courier.findUnique({ where: { id } });
   }
 
+  async trouverParCustomerId(customerId: string) {
+    return prisma.courier.findFirst({
+      where: { customerId, actif: true },
+    });
+  }
+
   async verifierConnexion(email: string, password: string) {
     const courier = await this.trouverParEmail(email);
     if (!courier?.actif || !courier.passwordHash) return null;

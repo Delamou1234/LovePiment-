@@ -8,7 +8,9 @@ import {
 import { adminAuthRepository } from '@/modules/auth/repository/admin-auth.repository';
 import { customerAuthRepository } from '@/modules/auth/repository/customer-auth.repository';
 import { courierAuthRepository } from '@/modules/livraison/repository/courier.repository';
+import { assurerCompteClientPourLivreur } from '@/modules/livraison/services/courier-customer.service';
 import { getPostLoginRedirect } from '@/shared/lib/auth-redirect';
+import { enforceRateLimit } from '@/shared/lib/security/enforce-rate-limit';
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -26,6 +28,9 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const limited = enforceRateLimit(request, 'authLogin');
+    if (limited) return limited;
+
     const body = await request.json();
     const parsed = loginSchema.safeParse(body);
     if (!parsed.success) {
@@ -45,6 +50,18 @@ export async function POST(request: NextRequest) {
       const safeRedirect = getPostLoginRedirect('customer', redirect);
       const response = NextResponse.json({ ok: true, redirect: safeRedirect, role: 'customer' });
       setSessionCookie(response, token, 'customer');
+
+      const livreurLie = await courierAuthRepository.trouverParCustomerId(customer.id);
+      if (livreurLie) {
+        const courierToken = createSessionToken({
+          id: livreurLie.id,
+          email: livreurLie.email,
+          name: livreurLie.nom,
+          role: 'courier',
+        });
+        setSessionCookie(response, courierToken, 'courier');
+      }
+
       return response;
     }
 
@@ -64,6 +81,7 @@ export async function POST(request: NextRequest) {
 
     const courier = await courierAuthRepository.verifierConnexion(email, password);
     if (courier) {
+      const customer = await assurerCompteClientPourLivreur(courier.id);
       const token = createSessionToken({
         id: courier.id,
         email: courier.email,
@@ -73,6 +91,15 @@ export async function POST(request: NextRequest) {
       const safeRedirect = getPostLoginRedirect('courier', redirect);
       const response = NextResponse.json({ ok: true, redirect: safeRedirect, role: 'courier' });
       setSessionCookie(response, token, 'courier');
+      if (customer) {
+        const customerToken = createSessionToken({
+          id: customer.id,
+          email: customer.email,
+          name: customer.nom,
+          role: 'customer',
+        });
+        setSessionCookie(response, customerToken, 'customer');
+      }
       return response;
     }
 

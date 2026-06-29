@@ -1,0 +1,1 @@
+ALTER TYPE "TrackingEventType" ADD VALUE 'LIVREUR';
