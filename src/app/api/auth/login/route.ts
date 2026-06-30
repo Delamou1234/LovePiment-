@@ -11,6 +11,11 @@ import { courierAuthRepository } from '@/modules/livraison/repository/courier.re
 import { assurerCompteClientPourLivreur } from '@/modules/livraison/services/courier-customer.service';
 import { getPostLoginRedirect } from '@/shared/lib/auth-redirect';
 import { enforceRateLimit } from '@/shared/lib/security/enforce-rate-limit';
+import {
+  construireUtilisateurAdminAuth,
+  construireUtilisateurClientAuth,
+  construireUtilisateurLivreurAuth,
+} from '@/modules/auth/services/auth-me.service';
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -48,7 +53,13 @@ export async function POST(request: NextRequest) {
         role: 'customer',
       });
       const safeRedirect = getPostLoginRedirect('customer', redirect);
-      const response = NextResponse.json({ ok: true, redirect: safeRedirect, role: 'customer' });
+      const user = await construireUtilisateurClientAuth(customer.id);
+      const response = NextResponse.json({
+        ok: true,
+        redirect: safeRedirect,
+        role: 'customer',
+        user,
+      });
       setSessionCookie(response, token, 'customer');
 
       const livreurLie = await courierAuthRepository.trouverParCustomerId(customer.id);
@@ -74,7 +85,13 @@ export async function POST(request: NextRequest) {
         role: 'admin',
       });
       const safeRedirect = getPostLoginRedirect('admin', redirect);
-      const response = NextResponse.json({ ok: true, redirect: safeRedirect, role: 'admin' });
+      const user = await construireUtilisateurAdminAuth(admin.id, admin.email);
+      const response = NextResponse.json({
+        ok: true,
+        redirect: safeRedirect,
+        role: 'admin',
+        user,
+      });
       setSessionCookie(response, token, 'admin');
       return response;
     }
@@ -89,7 +106,16 @@ export async function POST(request: NextRequest) {
         role: 'courier',
       });
       const safeRedirect = getPostLoginRedirect('courier', redirect);
-      const response = NextResponse.json({ ok: true, redirect: safeRedirect, role: 'courier' });
+      const response = NextResponse.json({
+        ok: true,
+        redirect: safeRedirect,
+        role: 'courier',
+        user: construireUtilisateurLivreurAuth({
+          id: courier.id,
+          email: courier.email,
+          name: courier.nom,
+        }),
+      });
       setSessionCookie(response, token, 'courier');
       if (customer) {
         const customerToken = createSessionToken({

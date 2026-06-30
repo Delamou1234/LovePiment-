@@ -16,6 +16,8 @@ export type CreerCommandeDto = {
   customerId?: string;
   clientNom: string;
   clientTelephone: string;
+  /** Numéro Orange Money pour le paiement (sinon = clientTelephone). */
+  paymentTelephone?: string | null;
   clientAdresse: string;
   clientVille: string;
   clientCommune?: string | null;
@@ -25,7 +27,7 @@ export type CreerCommandeDto = {
   notes?: string | null;
   clientLatitude?: number | null;
   clientLongitude?: number | null;
-  modePaiement: 'CINETPAY' | 'PAIEMENT_LIVRAISON';
+  modePaiement: 'ORANGE_MONEY';
   items: {
     variantId: string;
     quantite: number;

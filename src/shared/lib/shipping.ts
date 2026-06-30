@@ -99,13 +99,8 @@ export function libelleLivraisonOfferte(config?: LivraisonConfig): string {
   return `Livraison offerte dès ${formaterPrixGN(cfg.seuilGratuit)} à ${cfg.villeParDefaut}`;
 }
 
-export function libelleFraisLivraison(
-  frais: number,
-  commune?: string | null,
-  config?: LivraisonConfig,
-): string {
+export function libelleFraisLivraison(frais: number, commune?: string | null): string {
   if (frais === 0) return 'Offerte';
-  const cfg = getEffectiveLivraisonConfig(config);
   const base = formaterPrixGN(frais);
   if (commune) return `${base} (${commune})`;
   return base;

@@ -56,7 +56,8 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
   const tri = searchParams.get('tri');
   const panier = usePanier();
   const cartProductCountDisplay = usePanier(selectDistinctProductCount);
-  const { user: authUser, logout } = useAuthSession();
+  const { user: authUser, hydrated, logout } = useAuthSession();
+  const showSession = hydrated && authUser;
   const [menuOpen, setMenuOpen] = usePathBoundOpen(pathname);
   const [boutiqueOpen, setBoutiqueOpen] = usePathBoundOpen(pathname);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -68,6 +69,7 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
   const boutiqueActive = pathname.startsWith('/produits') || pathname.startsWith('/promos');
   const isHome = pathname === '/';
   const [scrolled, setScrolled] = useState(false);
+  const cartBadgeCount = hydrated ? cartProductCountDisplay : 0;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16);
@@ -202,7 +204,7 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
             </nav>
 
             <div className="lp-header-actions">
-              {authUser && (
+              {showSession && (
                 <AccountTypeBadge
                   label={authUser.accountTypeLabel}
                   type={authUser.accountType}
@@ -218,8 +220,8 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
               >
                 <Search className="h-[1.125rem] w-[1.125rem]" strokeWidth={1.75} />
               </button>
-              <Link href={authUser ? '/compte' : loginHref} className="lp-header-icon-btn" aria-label={authUser ? 'Mon compte' : 'Connexion'}>
-                {authUser?.avatarUrl ? (
+              <Link href={showSession ? '/compte' : loginHref} className="lp-header-icon-btn" aria-label={showSession ? 'Mon compte' : 'Connexion'}>
+                {showSession && authUser.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={authUser.avatarUrl} alt="" className="h-7 w-7 rounded-full object-cover" />
                 ) : (
@@ -234,7 +236,7 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
               >
                 <ShoppingBag className="h-[1.125rem] w-[1.125rem]" strokeWidth={1.75} />
                 <span className="lp-header-cart-badge">
-                  {cartProductCountDisplay > 99 ? '99+' : cartProductCountDisplay}
+                  {cartBadgeCount > 99 ? '99+' : cartBadgeCount}
                 </span>
               </button>
             </div>
@@ -269,11 +271,11 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
                 <Search className="h-[1.125rem] w-[1.125rem]" strokeWidth={1.75} />
               </button>
               <Link
-                href={authUser ? '/compte' : loginHref}
+                href={showSession ? '/compte' : loginHref}
                 className="lp-header-mobile-btn"
-                aria-label={authUser ? 'Mon compte' : 'Connexion'}
+                aria-label={showSession ? 'Mon compte' : 'Connexion'}
               >
-                {authUser?.avatarUrl ? (
+                {showSession && authUser.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={authUser.avatarUrl} alt="" className="h-6 w-6 rounded-full object-cover" />
                 ) : (
@@ -287,9 +289,9 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
                 aria-label="Panier"
               >
                 <ShoppingBag className="h-[1.125rem] w-[1.125rem]" strokeWidth={1.75} />
-                {cartProductCountDisplay > 0 && (
+                {cartBadgeCount > 0 && (
                   <span className="lp-header-mobile-cart-badge">
-                    {cartProductCountDisplay > 99 ? '99+' : cartProductCountDisplay}
+                    {cartBadgeCount > 99 ? '99+' : cartBadgeCount}
                   </span>
                 )}
               </button>
@@ -390,7 +392,7 @@ export function ShopHeader({ boutiqueLinks = [] }: ShopHeaderProps) {
                 )}
 
                 <div className="lp-mobile-drawer-section lp-mobile-drawer-section--account">
-                  {authUser ? (
+                  {showSession ? (
                     <>
                       <Link href="/compte" onClick={closeMenu} className="lp-mobile-account">
                         <CustomerAvatar name={authUser.name} avatarUrl={authUser.avatarUrl} size="sm" />

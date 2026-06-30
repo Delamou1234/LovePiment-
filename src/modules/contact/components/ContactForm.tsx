@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CONTACT_SUJETS } from '@/modules/contact/types';
+import { useCustomerSession } from '@/shared/providers/AuthSessionProvider';
 import {
   getShopPhoneDisplay,
   getShopTelHref,
@@ -39,6 +40,7 @@ const inputClass =
 export function ContactForm() {
   const [sent, setSent] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const { customer, hydrated, loading } = useCustomerSession();
 
   const {
     register,
@@ -51,21 +53,15 @@ export function ContactForm() {
   });
 
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        const user = data?.user;
-        if (!user || user.role !== 'customer') return;
-        reset({
-          nom: user.name ?? '',
-          email: user.email ?? '',
-          telephone: user.telephone ?? '',
-          sujet: 'GENERAL',
-          message: '',
-        });
-      })
-      .catch(() => {});
-  }, [reset]);
+    if (!hydrated || loading || !customer) return;
+    reset({
+      nom: customer.name ?? '',
+      email: customer.email ?? '',
+      telephone: customer.telephone ?? '',
+      sujet: 'GENERAL',
+      message: '',
+    });
+  }, [customer, hydrated, loading, reset]);
 
   const onSubmit = async (values: ContactFormValues) => {
     setErrorMsg('');

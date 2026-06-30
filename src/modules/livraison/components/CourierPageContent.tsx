@@ -137,13 +137,11 @@ export function CourierPageContent() {
     }
   };
 
-  const marquerLivree = async (id: string, paiementRecu?: boolean) => {
+  const marquerLivree = async (id: string) => {
     const cmd = trouverCommande(id);
     if (!cmd) return;
 
-    const confirmed = await confirmAction(
-      confirmDeliveryCopy(cmd.clientNom, paiementRecu),
-    );
+    const confirmed = await confirmAction(confirmDeliveryCopy(cmd.clientNom));
     if (!confirmed) return;
 
     setBusyId(id);
@@ -152,7 +150,7 @@ export function CourierPageContent() {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(paiementRecu !== undefined ? { paiementRecu } : {}),
+        body: JSON.stringify({}),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));

@@ -3,6 +3,7 @@ import './globals.css';
 import { GoogleAnalytics } from '@/shared/components/GoogleAnalytics';
 import { GlobalPageTracker } from '@/shared/components/GlobalPageTracker';
 import { AppProviders } from '@/shared/providers/AppProviders';
+import { PwaClientShell } from '@/shared/components/pwa/PwaClientShell';
 import { fontClassNames, inter } from '@/shared/lib/fonts';
 
 export const metadata: Metadata = {
@@ -11,7 +12,7 @@ export const metadata: Metadata = {
     template: '%s | Love Piment&',
   },
   description:
-    'Boutique intime pour adultes à Conakry : sextoys, lingerie, lubrifiants. Livraison discrète, paiement Mobile Money.',
+    'Boutique intime pour adultes à Conakry : sextoys, lingerie, lubrifiants. Livraison discrète, paiement Orange Money.',
   keywords: ['boutique intime', 'sextoys', 'lingerie', 'lubrifiant', 'Conakry', 'Guinée', 'Love Piment&'],
   authors: [{ name: 'Love Piment&' }],
   creator: 'Love Piment&',
@@ -40,6 +41,23 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  manifest: '/manifest.webmanifest',
+  appleWebApp: {
+    capable: true,
+    title: 'Love Piment&',
+    statusBarStyle: 'black-translucent',
+  },
+  icons: {
+    icon: [
+      { url: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/icons/icon-512.png', sizes: '512x512', type: 'image/png' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    apple: [{ url: '/icons/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
 };
 
 export const viewport: Viewport = {
@@ -61,6 +79,7 @@ export default function RootLayout({
         <AppProviders>
           <GoogleAnalytics />
           <GlobalPageTracker />
+          <PwaClientShell />
           {children}
         </AppProviders>
       </body>

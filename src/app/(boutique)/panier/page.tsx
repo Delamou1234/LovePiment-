@@ -253,7 +253,7 @@ export default function CartPage() {
                 <ShieldCheck className="h-4.5 w-4.5 text-primary shrink-0" />
                 <span>Paiements mobiles autorisés</span>
               </div>
-              <p>Règlement sécurisé Mobile Money (Orange Money, CinetPay) ou paiement comptant en espèces à la livraison.</p>
+              <p>Règlement sécurisé Orange Money (compte marchand).</p>
             </div>
           </div>
 

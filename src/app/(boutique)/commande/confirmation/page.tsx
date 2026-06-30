@@ -13,13 +13,17 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { orderService } from '@/modules/commandes/services/order.service';
+import { paymentService } from '@/modules/paiement/services/payment.service';
 import { computeOrderReceiptTotals } from '@/shared/lib/order-receipt';
+import { libelleModePaiement } from '@/shared/lib/payment-labels';
 import { OrderConfirmationWelcome } from '@/shared/components/OrderConfirmationWelcome';
+import { PaymentStatusPoller } from '@/shared/components/paiement/PaymentStatusPoller';
 
 // ─── CONFIRMATION PAGE (SERVER COMPONENT) ────────────────────────────────────
 
 type SearchParams = Promise<{
   id?: string;
+  cancel?: string;
 }>;
 
 export default async function ConfirmationPage({
@@ -29,6 +33,7 @@ export default async function ConfirmationPage({
 }) {
   const resolvedParams = await searchParams;
   const orderId = resolvedParams.id;
+  const annuleParClient = resolvedParams.cancel === '1';
 
   if (!orderId) {
     notFound();
@@ -58,6 +63,17 @@ export default async function ConfirmationPage({
     );
   }
 
+  if (annuleParClient && order.statutPaiement !== 'REUSSIE') {
+    await orderService.marquerPaiementEchoue(order.id);
+    order = { ...order, statutPaiement: 'ECHOUEE' };
+  } else if (order.statutPaiement !== 'REUSSIE') {
+    const sync = await paymentService.synchroniserPaiementCommande(order.id);
+    order = { ...order, statutPaiement: sync.statutPaiement, statut: sync.statutCommande };
+  }
+
+  const paiementReussi = order.statutPaiement === 'REUSSIE';
+  const paiementEchoue = order.statutPaiement === 'ECHOUEE';
+
   const { montantTotal, fraisLivraison, sousTotalArticles } = computeOrderReceiptTotals({
     montantTotal: order.montantTotal,
     fraisLivraison: order.fraisLivraison,
@@ -85,7 +101,7 @@ export default async function ConfirmationPage({
     `*Client* : ${order.clientNom}\n` +
     `*Téléphone* : ${order.clientTelephone}\n` +
     `*Adresse de livraison* : ${order.clientAdresse}, ${order.clientVille}\n` +
-    `*Mode de paiement* : ${order.modePaiement === 'CINETPAY' ? 'Paiement en ligne (CinetPay)' : 'Paiement à la livraison'}\n` +
+    `*Mode de paiement* : ${libelleModePaiement(order.modePaiement)}\n` +
     `*Statut du paiement* : ${order.statutPaiement === 'REUSSIE' ? '✅ PAYÉ' : '⏳ EN ATTENTE'}\n` +
     `*Montant Total* : ${formattedTotal}\n\n` +
     `*Articles commandés* :\n${articlesListText}\n\n` +
@@ -100,11 +116,18 @@ export default async function ConfirmationPage({
         orderId={order.id}
         clientNom={order.clientNom}
         suiviToken={order.suiviToken}
-        modePaiement={order.modePaiement}
         statutPaiement={order.statutPaiement}
       />
 
       <div className="container-shop py-8 space-y-8 max-w-3xl animate-fadeIn">
+      {!paiementReussi && (
+        <PaymentStatusPoller
+          commandeId={order.id}
+          initialStatutPaiement={order.statutPaiement}
+          telephoneContact={order.clientTelephone}
+          telephonePaiementInitial={order.paymentTelephone ?? order.clientTelephone}
+        />
+      )}
       {/* ─── BREADCRUMB ────────────────────────────────────────────────── */}
       <div className="flex items-center gap-1.5 text-xs text-zinc-500">
         <Link href="/" className="hover:text-primary transition font-medium">Accueil</Link>
@@ -161,9 +184,11 @@ export default async function ConfirmationPage({
             <li><span className="text-zinc-400">Adresse de livraison :</span> {order.clientAdresse}</li>
             <li><span className="text-zinc-400">Ville :</span> {order.clientVille}</li>
             <li className="pt-2 border-t border-zinc-200/60 leading-relaxed text-[11px] text-zinc-500">
-              {order.modePaiement === 'PAIEMENT_LIVRAISON' 
-                ? '🚚 Notre livreur vous contactera par téléphone sur le numéro indiqué avant son passage.'
-                : '💳 Paiement sécurisé validé. Votre colis est en cours de préparation.'}
+              {paiementReussi
+                ? '💳 Paiement Orange Money validé. Votre colis est en cours de préparation.'
+                : paiementEchoue
+                  ? '⚠️ Paiement non finalisé. Utilisez le bouton ci-dessus pour réessayer.'
+                  : '⏳ Paiement Orange Money en cours de validation. Saisissez votre code OTP sur la page Orange si demandé.'}
             </li>
           </ul>
         </div>
@@ -177,18 +202,22 @@ export default async function ConfirmationPage({
             <li>
               <span className="text-zinc-400">Moyen de paiement :</span>{' '}
               <span className="font-bold text-zinc-800">
-                {order.modePaiement === 'CINETPAY' ? 'Mobile Money (CinetPay)' : 'Paiement à la livraison'}
+                {libelleModePaiement(order.modePaiement)}
               </span>
             </li>
             <li>
               <span className="text-zinc-400">Statut du paiement :</span>{' '}
-              {order.statutPaiement === 'REUSSIE' ? (
+              {paiementReussi ? (
                 <span className="rounded bg-green-50 px-2 py-0.5 text-[10px] font-bold text-success border border-green-200">
                   Réussi
                 </span>
+              ) : paiementEchoue ? (
+                <span className="rounded bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-700 border border-red-200">
+                  Échoué
+                </span>
               ) : (
                 <span className="rounded bg-amber-50 px-2 py-0.5 text-[10px] font-bold text-amber-700 border border-amber-200">
-                  En attente / À la livraison
+                  En attente
                 </span>
               )}
             </li>

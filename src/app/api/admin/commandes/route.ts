@@ -70,6 +70,7 @@ export async function GET(request: NextRequest) {
         id: c.id,
         clientNom: c.clientNom,
         clientTelephone: c.clientTelephone,
+        paymentTelephone: c.paymentTelephone ?? null,
         clientAdresse: c.clientAdresse,
         clientVille: c.clientVille,
         statut: c.statut,

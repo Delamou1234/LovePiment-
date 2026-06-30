@@ -5,7 +5,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
-  Banknote,
   ChevronLeft,
   ChevronRight,
   Loader2,
@@ -21,6 +20,7 @@ import { AdminBatchDelivery } from '@/modules/admin/components/commandes/AdminBa
 import type { AssignLivreurCommande } from '@/modules/admin/components/commandes/assign-livreur.types';
 import { AdminPrimeLivreurField } from '@/modules/admin/components/commandes/AdminPrimeLivreurField';
 import { AdminOrderNotesField } from '@/modules/admin/components/commandes/AdminOrderNotesField';
+import { AdminPaymentTracesPanel } from '@/modules/admin/components/commandes/AdminPaymentTracesPanel';
 import { AdminTourneesMontants } from '@/modules/admin/components/commandes/AdminTourneesMontants';
 import { AdminDeliverySharePanel } from '@/modules/admin/components/commandes/AdminDeliverySharePanel';
 import { AdminOrderStatusBadges } from '@/modules/admin/components/commandes/AdminOrderStatusBadges';
@@ -36,6 +36,7 @@ type CommandeAdmin = {
   id: string;
   clientNom: string;
   clientTelephone: string;
+  paymentTelephone?: string | null;
   clientAdresse: string;
   clientVille: string;
   statut: string;
@@ -261,26 +262,6 @@ export function AdminCommandesPage() {
       }
     } catch {
       showError('Erreur réseau lors de la mise à jour.');
-    } finally {
-      setSavingId(null);
-    }
-  };
-
-  const confirmerPaiementLivraison = async (id: string) => {
-    setSavingId(id);
-    try {
-      const res = await fetch(`/api/admin/commandes/${id}/paiement-livraison`, {
-        method: 'POST',
-      });
-      if (res.ok) {
-        showSuccess('Paiement à la livraison confirmé.');
-        await load();
-      } else {
-        const body = await res.json().catch(() => ({}));
-        showError(body.message ?? 'Impossible de confirmer le paiement.');
-      }
-    } catch {
-      showError('Erreur réseau lors de la confirmation.');
     } finally {
       setSavingId(null);
     }
@@ -625,6 +606,12 @@ export function AdminCommandesPage() {
                         <p className="text-xs text-zinc-500">
                           {cmd.clientTelephone} · {cmd.clientVille}
                         </p>
+                        {cmd.paymentTelephone &&
+                          cmd.paymentTelephone !== cmd.clientTelephone && (
+                            <p className="text-xs text-orange-700 font-medium">
+                              Paiement OM : {cmd.paymentTelephone}
+                            </p>
+                          )}
                         <p className="text-xs text-zinc-500 mt-0.5">{cmd.clientAdresse}</p>
                       </div>
 
@@ -634,7 +621,6 @@ export function AdminCommandesPage() {
                         modePaiement={cmd.modePaiement}
                         livreeLe={cmd.livreeLe}
                         courierNom={cmd.courierNom}
-                        livreurPaiementRecu={cmd.livreurPaiementRecu}
                       />
 
                       {cmd.estPremiereCommande && (
@@ -702,20 +688,6 @@ export function AdminCommandesPage() {
                   </div>
                 </div>
 
-                {cmd.modePaiement === 'PAIEMENT_LIVRAISON' &&
-                  cmd.statutPaiement !== 'REUSSIE' && (
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="bg-emerald-700 hover:bg-emerald-800 text-white w-full sm:w-auto"
-                      disabled={savingId === cmd.id}
-                      onClick={() => confirmerPaiementLivraison(cmd.id)}
-                    >
-                      <Banknote className="h-4 w-4 mr-1.5" />
-                      Confirmer paiement (admin)
-                    </Button>
-                  )}
-
                 <AdminAssignCourier
                   courierNom={cmd.courierNom}
                   disabled={
@@ -761,6 +733,12 @@ export function AdminCommandesPage() {
                       prev.map((c) => (c.id === cmd.id ? { ...c, notesAdmin: notes } : c)),
                     )
                   }
+                />
+
+                <AdminPaymentTracesPanel
+                  orderId={cmd.id}
+                  clientTelephone={cmd.clientTelephone}
+                  paymentTelephone={cmd.paymentTelephone}
                 />
 
                 <div className="grid gap-3 sm:grid-cols-3">

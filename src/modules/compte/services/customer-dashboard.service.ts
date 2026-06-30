@@ -1,7 +1,6 @@
 import { prisma } from '@/shared/lib/prisma';
 import { productService } from '@/modules/produits/services/product.service';
-import { newsletterService } from '@/modules/marketing/services/newsletter.service';
-import { STORE_SETTINGS_ID } from '@/modules/admin/services/store-settings.service';
+import { resoudreOffreBienvenue } from '@/modules/marketing/services/welcome-offer.service';
 
 export type DashboardStats = {
   commandes: number;
@@ -116,36 +115,13 @@ export class CustomerDashboardService {
   }
 
   private async obtenirOffreBienvenue(): Promise<DashboardOffre | null> {
-    const settings = await prisma.storeSettings.findUnique({
-      where: { id: STORE_SETTINGS_ID },
-      select: { newsletterCouponCode: true, newsletterRemisePct: true },
-    });
-
-    const code = settings?.newsletterCouponCode?.trim() || 'BIENVENUE10';
-    const coupon = await prisma.coupon.findUnique({
-      where: { code },
-      select: { code: true, type: true, valeur: true, actif: true },
-    });
-
-    if (coupon?.actif) {
-      const remisePct =
-        coupon.type === 'POURCENT'
-          ? Math.round(Number(coupon.valeur))
-          : (settings?.newsletterRemisePct ?? 10);
-      return {
-        code: coupon.code,
-        remisePct,
-        titre: `-${remisePct}% sur votre première commande`,
-      };
-    }
-
-    const config = await newsletterService.getPublicConfig();
-    if (!config.couponCode) return null;
+    const offre = await resoudreOffreBienvenue();
+    if (!offre.actif || !offre.code) return null;
 
     return {
-      code: config.couponCode,
-      remisePct: config.remisePct,
-      titre: `-${config.remisePct}% sur votre première commande`,
+      code: offre.code,
+      remisePct: offre.remisePct,
+      titre: `-${offre.remisePct}% sur votre première commande`,
     };
   }
 }

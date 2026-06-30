@@ -11,6 +11,7 @@ import { storeSettingsService } from '@/modules/admin/services/store-settings.se
 import { getSafeRedirectForCustomer } from '@/shared/lib/auth-redirect';
 import { passwordSchema } from '@/shared/lib/security/password-policy';
 import { enforceRateLimit } from '@/shared/lib/security/enforce-rate-limit';
+import { construireUtilisateurClientAuth } from '@/modules/auth/services/auth-me.service';
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -87,7 +88,11 @@ export async function POST(request: NextRequest) {
     });
 
     const safeRedirect = getSafeRedirectForCustomer(redirect, '/compte');
-    const response = NextResponse.json({ ok: true, redirect: safeRedirect }, { status: 201 });
+    const user = await construireUtilisateurClientAuth(customer.id);
+    const response = NextResponse.json(
+      { ok: true, redirect: safeRedirect, role: 'customer', user },
+      { status: 201 },
+    );
     setSessionCookie(response, token, 'customer');
     return response;
   } catch (error) {

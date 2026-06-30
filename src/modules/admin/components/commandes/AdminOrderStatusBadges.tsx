@@ -14,7 +14,6 @@ type Props = {
   modePaiement: string;
   livreeLe?: string | null;
   courierNom?: string | null;
-  livreurPaiementRecu?: boolean | null;
 };
 
 function Badge({ label, className }: { label: string; className: string }) {
@@ -33,7 +32,6 @@ export function AdminOrderStatusBadges({
   modePaiement,
   livreeLe,
   courierNom,
-  livreurPaiementRecu,
 }: Props) {
   return (
     <div className="flex flex-wrap gap-2">
@@ -57,20 +55,6 @@ export function AdminOrderStatusBadges({
         />
       ) : (
         <Badge label="Livreur : non assigné" className="bg-zinc-100 text-zinc-500 ring-zinc-200/60" />
-      )}
-      {modePaiement === 'PAIEMENT_LIVRAISON' && livreurPaiementRecu != null && (
-        <Badge
-          label={
-            livreurPaiementRecu
-              ? 'Espèces : reçues (livreur)'
-              : 'Espèces : non reçues (livreur)'
-          }
-          className={
-            livreurPaiementRecu
-              ? 'bg-emerald-50 text-emerald-800 ring-emerald-200/60'
-              : 'bg-red-50 text-red-800 ring-red-200/60'
-          }
-        />
       )}
     </div>
   );

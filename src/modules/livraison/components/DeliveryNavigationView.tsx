@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-  AlertTriangle,
   CheckCircle2,
   ExternalLink,
   Loader2,
@@ -39,9 +38,6 @@ export function DeliveryNavigationView({ token, initialData }: Props) {
   const [confirming, setConfirming] = useState(false);
   const [priseEnChargeBusy, setPriseEnChargeBusy] = useState(false);
 
-  const paiementEspecesEnAttente =
-    livraison.modePaiement === 'PAIEMENT_LIVRAISON' &&
-    livraison.statutPaiement === 'EN_ATTENTE';
   const peutConfirmerLivraison =
     livraison.statut !== 'LIVREE' && livraison.statut !== 'ANNULEE';
 
@@ -115,10 +111,8 @@ export function DeliveryNavigationView({ token, initialData }: Props) {
     }
   };
 
-  const confirmerLivraison = async (paiementRecu?: boolean) => {
-    const confirmed = await confirmAction(
-      confirmDeliveryCopy(livraison.clientNom, paiementRecu),
-    );
+  const confirmerLivraison = async () => {
+    const confirmed = await confirmAction(confirmDeliveryCopy(livraison.clientNom));
     if (!confirmed) return;
 
     setConfirming(true);
@@ -127,7 +121,7 @@ export function DeliveryNavigationView({ token, initialData }: Props) {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(paiementRecu !== undefined ? { paiementRecu } : {}),
+        body: JSON.stringify({}),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -303,39 +297,7 @@ export function DeliveryNavigationView({ token, initialData }: Props) {
           <p className="text-sm text-emerald-800">
             Colis en votre charge. Une fois remis au client, confirmez la livraison ici.
           </p>
-          {paiementEspecesEnAttente && (
-            <p className="text-xs text-amber-900 flex items-start gap-1.5">
-              <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-              Déclarez si le client a payé en espèces.
-            </p>
-          )}
-
-          {paiementEspecesEnAttente ? (
-            <div className="grid gap-2 sm:grid-cols-2">
-              <Button
-                type="button"
-                disabled={confirming}
-                className="rounded-full bg-emerald-700 hover:bg-emerald-800"
-                onClick={() => confirmerLivraison(true)}
-              >
-                {confirming ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  'Client a payé — colis livré'
-                )}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={confirming}
-                className="rounded-full border-amber-300 text-amber-900 hover:bg-amber-100"
-                onClick={() => confirmerLivraison(false)}
-              >
-                Client n&apos;a pas payé
-              </Button>
-            </div>
-          ) : (
-            <Button
+          <Button
               type="button"
               disabled={confirming}
               className="rounded-full bg-emerald-700 hover:bg-emerald-800"
@@ -350,7 +312,6 @@ export function DeliveryNavigationView({ token, initialData }: Props) {
                 </>
               )}
             </Button>
-          )}
         </div>
       )}
 

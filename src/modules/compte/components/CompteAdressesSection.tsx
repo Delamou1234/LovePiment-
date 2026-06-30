@@ -151,6 +151,7 @@ export function CompteAdressesSection() {
             <GeolocationAddressPrompt
               key={geoPromptKey}
               autoStart
+              autoAccept
               showManualTrigger={false}
               onAccept={saveSuggestion}
               onDismiss={openAddForm}
@@ -226,6 +227,8 @@ export function CompteAdressesSection() {
             <GeolocationAddressPrompt
               key={`form-${geoPromptKey}`}
               autoStart={!form.adresse.trim()}
+              autoAccept={!form.adresse.trim()}
+              showManualTrigger={false}
               onAccept={applySuggestion}
               compact
             />

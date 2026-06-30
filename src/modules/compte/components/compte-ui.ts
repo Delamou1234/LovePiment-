@@ -36,8 +36,7 @@ export const STATUT_LABELS: Record<string, string> = {
 };
 
 export const MODE_PAIEMENT_LABELS: Record<string, string> = {
-  CINETPAY: 'Paiement en ligne',
-  PAIEMENT_LIVRAISON: 'Paiement à la livraison',
+  ORANGE_MONEY: 'Orange Money',
 };
 
 export const STATUT_PAIEMENT_LABELS: Record<string, string> = {

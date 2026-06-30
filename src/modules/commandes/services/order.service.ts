@@ -69,21 +69,45 @@ export class OrderService {
     return this.repo.mettreAJourStatut(id, statut);
   }
 
-  async confirmerPaiement(id: string, cinetpayTxId: string): Promise<void> {
+  async confirmerPaiement(id: string, paymentOrderId: string): Promise<void> {
     await this.repo.mettreAJourPaiement(id, {
       statutPaiement: 'REUSSIE',
-      cinetpayTxId,
+      paymentOrderId,
     });
     await trackingService.mettreAJourStatut(id, 'PAYEE', {
-      message: 'Paiement en ligne confirmé.',
+      message: 'Paiement Orange Money confirmé.',
     });
   }
 
-  async enregistrerTransactionCinetPay(id: string, cinetpayTxId: string): Promise<void> {
+  async enregistrerSessionPaiement(
+    id: string,
+    data: {
+      paymentOrderId: string;
+      paymentPayToken: string;
+      paymentNotifToken: string;
+      paymentTelephone?: string;
+    },
+  ): Promise<void> {
     await this.repo.mettreAJourPaiement(id, {
       statutPaiement: 'EN_ATTENTE',
-      cinetpayTxId,
+      paymentOrderId: data.paymentOrderId,
+      paymentPayToken: data.paymentPayToken,
+      paymentNotifToken: data.paymentNotifToken,
     });
+    if (data.paymentTelephone) {
+      await this.repo.mettreAJourTelephonePaiement(id, data.paymentTelephone);
+    }
+  }
+
+  async definirTelephonePaiement(id: string, paymentTelephone: string): Promise<void> {
+    await this.repo.mettreAJourTelephonePaiement(id, paymentTelephone);
+  }
+
+  /** Marque le paiement échoué sans annuler la commande (le client peut réessayer). */
+  async marquerPaiementEchoue(id: string): Promise<void> {
+    const commande = await this.repo.trouverParId(id);
+    if (!commande || commande.statutPaiement === 'REUSSIE') return;
+    await this.repo.mettreAJourPaiement(id, { statutPaiement: 'ECHOUEE' });
   }
 
   async echecPaiement(id: string): Promise<void> {
@@ -91,7 +115,7 @@ export class OrderService {
     revalidateBoutique();
   }
 
-  /** Annule une commande et remet le stock (ex. échec CinetPay à l'initiation). */
+  /** Annule une commande et remet le stock (ex. échec Orange Money à l'initiation). */
   async annulerApresEchecPaiement(id: string): Promise<void> {
     await this.repo.annulerEtRestaurerStock(id, { statutPaiement: 'ECHOUEE' });
     revalidateBoutique();

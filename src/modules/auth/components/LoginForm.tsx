@@ -12,6 +12,7 @@ import {
   getSafeRedirectForCustomer,
   isCheckoutRedirect,
 } from '@/shared/lib/auth-redirect';
+import { seedAuthSessionAfterLogin } from '@/shared/lib/auth/auth-session-user';
 import { AuthField } from './AuthField';
 import { PasswordInput } from '@/shared/components/PasswordInput';
 import {
@@ -81,6 +82,7 @@ export function LoginForm({
       }
 
       const role = data.role as 'admin' | 'customer' | 'courier' | undefined;
+      if (data.user) seedAuthSessionAfterLogin(data.user);
       const target = role
         ? getPostLoginRedirect(role, redirectParam ?? data.redirect)
         : (data.redirect ?? safeRedirect);

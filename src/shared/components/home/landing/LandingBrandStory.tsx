@@ -37,7 +37,7 @@ export function LandingBrandStory() {
               </li>
               <li>
                 <Heart className="h-4 w-4 shrink-0 text-[#e91e8c]" strokeWidth={1.75} />
-                Paiement Mobile Money ou à la livraison
+                Paiement Orange Money
               </li>
             </ul>
             <div className="lp-brand-story-actions">

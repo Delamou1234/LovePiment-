@@ -282,15 +282,15 @@ export default function AdminParametresPage() {
 
       <section className="space-y-4">
         <h2 className="text-xs font-bold uppercase tracking-wider text-zinc-500 flex items-center gap-2">
-          <Mail className="h-4 w-4" />
-          Newsletter popup
+          <Gift className="h-4 w-4" />
+          Offre de bienvenue
         </h2>
 
         <div className="rounded-xl border border-[#F2D4DC] bg-white p-5 space-y-4">
           <ToggleRow
-            icon={Mail}
-            title="Popup newsletter active"
-            description="Bandeau d'inscription affiché sur la boutique (titre, texte, remise et code coupon)."
+            icon={Gift}
+            title="Offre bienvenue active"
+            description="Active le popup newsletter et l'application automatique du code coupon sur la première commande (le coupon doit aussi être actif dans Promotions)."
             checked={draft.newsletter.actif}
             onChange={(v) =>
               setDraft((d) => (d ? { ...d, newsletter: { ...d.newsletter, actif: v } } : d))
@@ -354,7 +354,9 @@ export default function AdminParametresPage() {
               />
             </div>
             <div>
-              <label className="mb-1.5 block text-xs font-semibold text-zinc-600">Code coupon</label>
+              <label className="mb-1.5 block text-xs font-semibold text-zinc-600">
+                Code coupon (1ʳᵉ commande)
+              </label>
               <input
                 className={inputClass}
                 value={draft.newsletter.couponCode ?? ''}

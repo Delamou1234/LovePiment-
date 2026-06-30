@@ -10,12 +10,7 @@ function sommeMontantsTournee(
   }[],
 ) {
   const montantTotalGn = orders.reduce((s, o) => s + Number(o.montantTotal), 0);
-  const montantEspecesGn = orders
-    .filter(
-      (o) =>
-        o.modePaiement === 'PAIEMENT_LIVRAISON' && o.statutPaiement === 'EN_ATTENTE',
-    )
-    .reduce((s, o) => s + Number(o.montantTotal), 0);
+  const montantEspecesGn = 0;
   return { montantTotalGn, montantEspecesGn };
 }
 

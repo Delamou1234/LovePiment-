@@ -1,74 +1,191 @@
-import { CinetPayProvider } from '../providers/cinetpay.provider';
+import { OrangeMoneyProvider } from '../providers/orange-money.provider';
 import type { PaymentProvider } from '../providers/payment-provider.interface';
 import { orderService } from '@/modules/commandes/services/order.service';
+import { diagnostiquerOrangeMoney, getAppUrlPaiement } from '@/shared/lib/orange-money-config';
+import { normaliserTelephoneGuinee } from '@/shared/lib/phone-guinea';
+import { enregistrerTracePaiement } from '@/modules/paiement/services/payment-trace.service';
 import { randomUUID } from 'crypto';
+
+export type StatutPaiementCommande = {
+  statutPaiement: string;
+  statutCommande: string;
+  paye: boolean;
+};
+
+function resoudreTelephonePaiement(
+  commande: { clientTelephone: string; paymentTelephone?: string | null },
+  override?: string | null,
+): string {
+  const brut = override?.trim() || commande.paymentTelephone?.trim() || commande.clientTelephone;
+  return normaliserTelephoneGuinee(brut) ?? brut.trim();
+}
 
 export class PaymentService {
   private readonly provider: PaymentProvider;
 
   constructor(provider?: PaymentProvider) {
-    // Injection de dépendance — implémentation interchangeable (tests, providers)
-    this.provider = provider ?? new CinetPayProvider();
+    this.provider = provider ?? new OrangeMoneyProvider();
   }
 
-  async initierPaiementCommande(
+  diagnostiquer() {
+    return diagnostiquerOrangeMoney();
+  }
+
+  private async initierSession(
     commandeId: string,
-    clientEmail?: string,
+    options: { telephonePaiement?: string | null; action: 'INITIATION' | 'RETRY' } = {
+      action: 'INITIATION',
+    },
   ): Promise<{ paymentUrl: string }> {
-    const commande = await orderService.obtenirCommande(commandeId);
-    const transactionId = randomUUID();
-
-    const appUrl = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000').replace(/\/$/, '');
-    const email =
-      clientEmail?.trim() ||
-      `commande+${commande.id.slice(0, 8)}@lovepiment.local`;
-
-    if (/localhost|127\.0\.0\.1/i.test(appUrl)) {
+    const diag = diagnostiquerOrangeMoney();
+    if (!diag.pret) {
       throw new Error(
-        'Paiement CinetPay indisponible en local (URL publique requise). Choisissez « Paiement à la livraison » ou configurez NEXT_PUBLIC_APP_URL (ex. ngrok).',
+        `Configuration Orange Money incomplète : ${diag.manques.join(', ')}`,
       );
     }
 
+    const commande = await orderService.obtenirCommande(commandeId);
+    if (commande.statut === 'ANNULEE') {
+      throw new Error('Cette commande est annulée.');
+    }
+    if (commande.statutPaiement === 'REUSSIE') {
+      throw new Error('Cette commande est déjà payée.');
+    }
+
+    const telephonePaiement = resoudreTelephonePaiement(commande, options.telephonePaiement);
+    if (!normaliserTelephoneGuinee(telephonePaiement)) {
+      throw new Error('Numéro Orange Money invalide. Utilisez un numéro guinéen (ex. 620 00 00 00).');
+    }
+
+    const paymentOrderId = randomUUID();
+    const appUrl = getAppUrlPaiement();
+
     const result = await this.provider.initierPaiement({
-      transactionId,
+      transactionId: paymentOrderId,
       montant: Number(commande.montantTotal),
-      description: `Commande Love Piment& #${commande.id.slice(0, 8)}`,
+      description: `Commande Love Piment #${commande.id.slice(0, 8)}`,
       clientNom: commande.clientNom,
       clientTelephone: commande.clientTelephone,
-      clientEmail: email,
+      telephonePaiement,
+      clientEmail: `commande+${commande.id.slice(0, 8)}@lovepiment.local`,
       clientAdresse: commande.clientAdresse,
       clientVille: commande.clientVille,
       returnUrl: `${appUrl}/commande/confirmation?id=${commandeId}`,
-      notifyUrl: `${appUrl}/api/webhook-cinetpay`,
+      notifyUrl: `${appUrl}/api/webhook-orange-money`,
     });
 
-    if (!result.success || !result.paymentUrl) {
-      throw new Error(result.error ?? 'Impossible d\'initier le paiement CinetPay');
+    if (!result.success || !result.paymentUrl || !result.payToken || !result.notifToken) {
+      throw new Error(result.error ?? 'Impossible d\'initier le paiement Orange Money');
     }
 
-    // Sauvegarder le transactionId CinetPay (paiement encore en attente)
-    await orderService.enregistrerTransactionCinetPay(commandeId, transactionId);
+    await orderService.enregistrerSessionPaiement(commandeId, {
+      paymentOrderId,
+      paymentPayToken: result.payToken,
+      paymentNotifToken: result.notifToken,
+      paymentTelephone: telephonePaiement,
+    });
+
+    await enregistrerTracePaiement({
+      orderId: commandeId,
+      action: options.action,
+      telephoneContact: commande.clientTelephone,
+      telephonePaiement,
+      paymentOrderId,
+      statut: 'EN_ATTENTE',
+    });
 
     return { paymentUrl: result.paymentUrl };
   }
 
-  async traiterWebhook(transactionId: string): Promise<void> {
-    const verification = await this.provider.verifierStatut({ transactionId });
-
-    if (!verification.success) {
-      throw new Error(verification.error ?? 'Erreur de vérification du paiement');
-    }
-
-    // Trouver la commande par transactionId et mettre à jour le statut
-    // (la recherche par cinetpayTxId est gérée dans le OrderRepository)
-    if (verification.statut === 'REUSSIE') {
-      // La mise à jour sera faite depuis la route webhook avec l'ID commande
-    }
+  async initierPaiementCommande(commandeId: string): Promise<{ paymentUrl: string }> {
+    return this.initierSession(commandeId, { action: 'INITIATION' });
   }
 
-  validerWebhook(payload: unknown, signature: string): boolean {
-    return this.provider.validerWebhook(payload, signature);
+  async relancerPaiementCommande(
+    commandeId: string,
+    telephonePaiement?: string | null,
+  ): Promise<{ paymentUrl: string }> {
+    return this.initierSession(commandeId, { telephonePaiement, action: 'RETRY' });
+  }
+
+  async synchroniserPaiementCommande(commandeId: string): Promise<StatutPaiementCommande> {
+    const commande = await orderService.obtenirCommande(commandeId);
+
+    if (commande.statutPaiement === 'REUSSIE') {
+      return {
+        statutPaiement: commande.statutPaiement,
+        statutCommande: commande.statut,
+        paye: true,
+      };
+    }
+
+    if (!commande.paymentOrderId || !commande.paymentPayToken) {
+      return {
+        statutPaiement: commande.statutPaiement,
+        statutCommande: commande.statut,
+        paye: false,
+      };
+    }
+
+    const verification = await this.provider.verifierStatut({
+      transactionId: commande.paymentOrderId,
+      payToken: commande.paymentPayToken,
+      montant: Number(commande.montantTotal),
+    });
+
+    const telPaiement =
+      commande.paymentTelephone ?? commande.clientTelephone;
+
+    if (verification.success && verification.statut === 'REUSSIE') {
+      await orderService.confirmerPaiement(commandeId, commande.paymentOrderId);
+      await enregistrerTracePaiement({
+        orderId: commandeId,
+        action: 'SYNC_SUCCESS',
+        telephoneContact: commande.clientTelephone,
+        telephonePaiement: telPaiement,
+        paymentOrderId: commande.paymentOrderId,
+        statut: 'REUSSIE',
+      });
+      return { statutPaiement: 'REUSSIE', statutCommande: 'PAYEE', paye: true };
+    }
+
+    if (verification.success && verification.statut === 'ECHOUEE') {
+      await orderService.marquerPaiementEchoue(commandeId);
+      await enregistrerTracePaiement({
+        orderId: commandeId,
+        action: 'SYNC_FAILED',
+        telephoneContact: commande.clientTelephone,
+        telephonePaiement: telPaiement,
+        paymentOrderId: commande.paymentOrderId,
+        statut: 'ECHOUEE',
+      });
+      return { statutPaiement: 'ECHOUEE', statutCommande: commande.statut, paye: false };
+    }
+
+    return {
+      statutPaiement: commande.statutPaiement,
+      statutCommande: commande.statut,
+      paye: false,
+    };
+  }
+
+  async verifierPaiementCommande(
+    paymentOrderId: string,
+    payToken: string,
+    montant: number,
+  ): Promise<VerifierStatutResult> {
+    return this.provider.verifierStatut({
+      transactionId: paymentOrderId,
+      payToken,
+      montant,
+    });
+  }
+
+  validerWebhook(payload: unknown, notifTokenAttendu: string): boolean {
+    return this.provider.validerWebhook(payload, notifTokenAttendu);
   }
 }
+
+type VerifierStatutResult = Awaited<ReturnType<PaymentProvider['verifierStatut']>>;
 
 export const paymentService = new PaymentService();

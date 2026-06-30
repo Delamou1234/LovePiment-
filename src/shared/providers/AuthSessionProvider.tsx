@@ -5,52 +5,40 @@ import { usePathname } from 'next/navigation';
 import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import { AVATAR_UPDATED_EVENT } from '@/modules/compte/lib/avatar-events';
 import { confirmLogout, type LogoutRole } from '@/shared/lib/confirm-logout';
-import type { AccountType } from '@/shared/lib/account-type';
+import {
+  clearAuthMeCache,
+  mapMeResponseToSessionUser,
+  readAuthMeCache,
+  writeAuthMeCache,
+  type AuthSessionUser,
+} from '@/shared/lib/auth/auth-session-user';
 
-export type AuthSessionUser = {
-  name: string;
-  email: string;
-  role: 'admin' | 'customer' | 'courier';
-  accountType: AccountType;
-  accountTypeLabel: string;
-  avatarUrl?: string | null;
-};
+export type { AuthSessionUser };
 
 type AuthSessionContextValue = {
   user: AuthSessionUser | null;
   loading: boolean;
+  /** true après le premier paint client — évite les mismatches d'hydratation */
+  hydrated: boolean;
   refresh: () => Promise<void>;
   logout: (role?: 'customer' | 'admin' | 'all') => Promise<void>;
 };
 
 const AuthSessionContext = createContext<AuthSessionContextValue | null>(null);
 
-export const AUTH_ME_CACHE_KEY = 'lovepiment_auth_me_v3';
-
-export function clearAuthMeCache() {
-  try {
-    sessionStorage.removeItem(AUTH_ME_CACHE_KEY);
-  } catch {
-    /* ignore */
-  }
-}
+export { clearAuthMeCache, seedAuthSessionAfterLogin } from '@/shared/lib/auth/auth-session-user';
 
 export function AuthSessionProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const [user, setUser] = useState<AuthSessionUser | null>(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const raw = sessionStorage.getItem(AUTH_ME_CACHE_KEY);
-      if (raw) {
-        const { user: cached } = JSON.parse(raw) as { user: AuthSessionUser | null; ts: number };
-        if (cached?.accountTypeLabel) return cached;
-      }
-    } catch {
-      /* ignore */
-    }
-    return null;
-  });
+  const [user, setUser] = useState<AuthSessionUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    const cached = readAuthMeCache();
+    if (cached) setUser(cached);
+    setHydrated(true);
+  }, []);
 
   const refresh = useCallback(async () => {
     try {
@@ -64,37 +52,10 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      const data = (await res.json()) as {
-        user?: {
-          name: string;
-          email: string;
-          role: 'admin' | 'customer' | 'courier';
-          accountType?: AccountType;
-          accountTypeLabel?: string;
-          avatarUrl?: string | null;
-        } | null;
-      };
-
-      const nextUser: AuthSessionUser | null = data.user?.accountTypeLabel
-        ? {
-            name: data.user.name,
-            email: data.user.email,
-            role: data.user.role,
-            accountType: data.user.accountType ?? 'client',
-            accountTypeLabel: data.user.accountTypeLabel,
-            avatarUrl: data.user.avatarUrl ?? null,
-          }
-        : null;
-
+      const data = (await res.json()) as { user?: Record<string, unknown> | null };
+      const nextUser = mapMeResponseToSessionUser(data.user);
       setUser(nextUser);
-      try {
-        sessionStorage.setItem(
-          AUTH_ME_CACHE_KEY,
-          JSON.stringify({ user: nextUser, ts: Date.now() }),
-        );
-      } catch {
-        /* ignore */
-      }
+      writeAuthMeCache(nextUser);
     } catch {
       setUser(null);
     } finally {
@@ -140,14 +101,7 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
       setUser((prev) => {
         if (!prev) return prev;
         const next = { ...prev, avatarUrl: detail.avatarUrl ?? null };
-        try {
-          sessionStorage.setItem(
-            AUTH_ME_CACHE_KEY,
-            JSON.stringify({ user: next, ts: Date.now() }),
-          );
-        } catch {
-          /* ignore */
-        }
+        writeAuthMeCache(next);
         return next;
       });
       void refresh();
@@ -157,8 +111,8 @@ export function AuthSessionProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   const value = useMemo(
-    () => ({ user, loading, refresh, logout }),
-    [user, loading, refresh, logout],
+    () => ({ user, loading, hydrated, refresh, logout }),
+    [user, loading, hydrated, refresh, logout],
   );
 
   return <AuthSessionContext.Provider value={value}>{children}</AuthSessionContext.Provider>;
@@ -170,4 +124,16 @@ export function useAuthSession() {
     throw new Error('useAuthSession doit être utilisé dans AuthSessionProvider');
   }
   return ctx;
+}
+
+/** Données client connecté (checkout, contact, etc.). */
+export function useCustomerSession() {
+  const { user, loading, hydrated, refresh } = useAuthSession();
+  const isCustomer = user?.role === 'customer';
+  return {
+    customer: isCustomer ? user : null,
+    loading,
+    hydrated,
+    refresh,
+  };
 }

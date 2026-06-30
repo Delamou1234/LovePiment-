@@ -19,9 +19,7 @@ function formatMontant(montant: number): string {
 
 export function messageCommandeCreee(ctx: OrderNotificationContext): string {
   const paiement =
-    ctx.modePaiement === 'CINETPAY'
-      ? 'Paiement en ligne en cours — vous serez notifié(e) dès confirmation.'
-      : 'Paiement à la livraison à Conakry.';
+    'Paiement Orange Money — finalisez sur la page sécurisée Orange (code OTP).';
 
   return [
     `Bonjour ${prenom(ctx.clientNom)},`,

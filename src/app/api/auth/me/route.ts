@@ -8,15 +8,17 @@ import {
   setSessionCookie,
 } from '@/shared/lib/auth/session';
 import { getCustomerSessionWithCourierFallback } from '@/shared/lib/auth/customer-from-courier';
-import { customerAuthRepository } from '@/modules/auth/repository/customer-auth.repository';
-import { resoudreContexteLivreurClient } from '@/modules/livraison/services/courier-customer.service';
-import { libelleTypeCompte, type AccountType } from '@/shared/lib/account-type';
+import {
+  construireUtilisateurAdminAuth,
+  construireUtilisateurClientAuth,
+  construireUtilisateurLivreurAuth,
+} from '@/modules/auth/services/auth-me.service';
 
 /** GET /api/auth/me — session + profil client depuis la base */
 export async function GET() {
   const refreshed = await getCustomerSessionWithRefresh();
   let session = refreshed.user;
-  let refreshedToken = refreshed.refreshedToken;
+  const refreshedToken = refreshed.refreshedToken;
   let role: 'customer' = refreshed.role;
 
   if (!session) {
@@ -36,37 +38,26 @@ export async function GET() {
   if (!session) {
     const adminSession = await getAdminSession();
     if (adminSession) {
-      const admin =
-        (adminSession.id ? await adminAuthRepository.trouverParId(adminSession.id) : null) ??
-        (await adminAuthRepository.trouverParEmail(adminSession.email));
-      if (!admin?.actif) {
+      const admin = await construireUtilisateurAdminAuth(
+        adminSession.id ?? '',
+        adminSession.email,
+      );
+      if (!admin) {
         const response = NextResponse.json({ user: null });
         clearSessionCookie(response, 'admin');
         return response;
       }
-      return NextResponse.json({
-        user: {
-          id: admin.id,
-          email: admin.email,
-          name: admin.nom,
-          role: 'admin' as const,
-          accountType: 'admin' satisfies AccountType,
-          accountTypeLabel: libelleTypeCompte('admin'),
-        },
-      });
+      return NextResponse.json({ user: admin });
     }
 
     const courierSession = await getCourierSession();
     if (courierSession?.id) {
       return NextResponse.json({
-        user: {
+        user: construireUtilisateurLivreurAuth({
           id: courierSession.id,
           email: courierSession.email,
           name: courierSession.name,
-          role: 'courier' as const,
-          accountType: 'livreur' satisfies AccountType,
-          accountTypeLabel: libelleTypeCompte('livreur'),
-        },
+        }),
       });
     }
 
@@ -77,31 +68,10 @@ export async function GET() {
     return buildResponse({ user: session });
   }
 
-  const customer = await customerAuthRepository.trouverParId(session.id);
+  const customer = await construireUtilisateurClientAuth(session.id);
   if (!customer) {
     return buildResponse({ user: null }, true);
   }
 
-  const derniereCommande = await customerAuthRepository.trouverDerniereCommande(customer.id);
-  const livreur = await resoudreContexteLivreurClient(customer.id);
-  const accountType: AccountType = livreur ? 'client-livreur' : 'client';
-
-  return buildResponse({
-    user: {
-      id: customer.id,
-      email: customer.email,
-      name: customer.nom,
-      role: 'customer' as const,
-      accountType,
-      accountTypeLabel: libelleTypeCompte(accountType),
-      telephone: customer.telephone,
-      avatarUrl: customer.avatarUrl,
-      viaGoogle: Boolean(customer.googleId),
-      adressePreferee: customer.adressePreferee,
-      villePreferee: customer.villePreferee,
-      derniereAdresse:
-        customer.adressePreferee ?? derniereCommande?.clientAdresse ?? null,
-      derniereVille: customer.villePreferee ?? derniereCommande?.clientVille ?? null,
-    },
-  });
+  return buildResponse({ user: customer });
 }

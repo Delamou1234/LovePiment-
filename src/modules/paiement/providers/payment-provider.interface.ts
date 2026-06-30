@@ -1,5 +1,4 @@
 // Interface PaymentProvider — principe SOLID O/L
-// Toute implémentation (CinetPay, Stripe...) doit respecter ce contrat.
 
 export interface InitierPaiementParams {
   transactionId: string;
@@ -7,6 +6,8 @@ export interface InitierPaiementParams {
   description: string;
   clientNom: string;
   clientTelephone: string;
+  /** Numéro Orange Money du payeur (peut différer du contact livraison). */
+  telephonePaiement?: string;
   clientEmail: string;
   clientAdresse: string;
   clientVille: string;
@@ -18,11 +19,15 @@ export interface InitierPaiementResult {
   success: boolean;
   paymentUrl?: string;
   transactionId?: string;
+  payToken?: string;
+  notifToken?: string;
   error?: string;
 }
 
 export interface VerifierStatutParams {
   transactionId: string;
+  payToken?: string;
+  montant?: number;
 }
 
 export interface VerifierStatutResult {

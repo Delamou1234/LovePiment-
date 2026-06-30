@@ -61,7 +61,7 @@ function uniq(values: (string | null | undefined)[]) {
 
 const TRUST_ITEMS = [
   { icon: Truck, label: 'Livraison 24–48h', sub: 'Conakry & environs' },
-  { icon: ShieldCheck, label: 'Paiement sécurisé', sub: 'Orange · MTN · CinetPay' },
+  { icon: ShieldCheck, label: 'Paiement sécurisé', sub: 'Orange Money' },
   { icon: RotateCcw, label: 'Authenticité', sub: 'Produits vérifiés' },
 ] as const;
 

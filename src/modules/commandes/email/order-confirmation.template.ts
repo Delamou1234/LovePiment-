@@ -24,10 +24,7 @@ export function buildOrderConfirmationEmail(data: OrderConfirmationEmailData) {
   const baseUrl = getAppUrl();
   const suiviUrl = `${baseUrl}/suivi/${data.suiviToken}`;
   const montant = data.montantTotal.toLocaleString('fr-FR');
-  const paiement =
-    data.modePaiement === 'PAIEMENT_LIVRAISON'
-      ? 'Paiement en espèces à la livraison'
-      : 'Paiement Mobile Money (CinetPay)';
+  const paiement = 'Paiement Orange Money (compte marchand)';
   const creneau = data.creneauLivraison
     ? CRENEAU_LABELS[data.creneauLivraison] ?? data.creneauLivraison
     : null;
@@ -59,11 +56,7 @@ export function buildOrderConfirmationEmail(data: OrderConfirmationEmailData) {
       ${creneau ? `<tr><td style="padding:6px 0;color:#888">Créneau</td><td style="text-align:right">${creneau}</td></tr>` : ''}
       <tr><td style="padding:6px 0;color:#888">Délai estimé</td><td style="text-align:right">${data.delaiLabel ?? '24–48 h'}</td></tr>
     </table>
-    ${
-      data.modePaiement === 'PAIEMENT_LIVRAISON'
-        ? `<p style="background:#fff8e6;border-radius:12px;padding:12px 16px;font-size:13px;color:#7a5c00">💵 Préparez <strong>${montant} GN</strong> en espèces pour le livreur.</p>`
-        : ''
-    }
+    <p style="background:#fdf2f4;border-radius:12px;padding:12px 16px;font-size:13px;color:#7a1a2e">💳 Finalisez le paiement Orange Money si ce n’est pas déjà fait (code OTP sur votre téléphone).</p>
     <p style="text-align:center;margin:28px 0">
       <a href="${suiviUrl}" style="display:inline-block;background:#9B1B2E;color:#fff;text-decoration:none;padding:14px 28px;border-radius:999px;font-weight:bold;font-size:14px">Suivre ma commande</a>
     </p>

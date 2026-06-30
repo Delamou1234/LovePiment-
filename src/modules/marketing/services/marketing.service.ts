@@ -193,12 +193,16 @@ export class MarketingService {
     let codeParrainageUtilise: string | null = null;
 
     if (input.codeCoupon?.trim()) {
-      const coupon = await this.validerCoupon(input.codeCoupon, sousTotal, {
-        customerId: input.customerId,
-        estPremiereCommande: input.estPremiereCommande,
-      });
-      remiseCoupon = coupon.remiseEstimee;
-      couponId = coupon.id;
+      try {
+        const coupon = await this.validerCoupon(input.codeCoupon, sousTotal, {
+          customerId: input.customerId,
+          estPremiereCommande: input.estPremiereCommande,
+        });
+        remiseCoupon = coupon.remiseEstimee;
+        couponId = coupon.id;
+      } catch {
+        /* coupon ignoré pour l'estimation checkout */
+      }
     }
 
     let apresCoupon = Math.max(0, sousTotal - remiseCoupon);
@@ -228,19 +232,23 @@ export class MarketingService {
     if (input.codeParrainage?.trim() && input.customerId) {
       const flags = await storeSettingsService.getFeatureFlags();
       if (flags.parrainageActif) {
-      const code = input.codeParrainage.trim().toUpperCase();
-      const parrain = await this.repo.trouverClientParCodeParrainage(code);
-      if (!parrain) throw new Error('Code parrainage invalide');
-      if (parrain.id === input.customerId) {
-        throw new Error('Vous ne pouvez pas utiliser votre propre code');
-      }
+        try {
+          const code = input.codeParrainage.trim().toUpperCase();
+          const parrain = await this.repo.trouverClientParCodeParrainage(code);
+          if (!parrain) throw new Error('Code parrainage invalide');
+          if (parrain.id === input.customerId) {
+            throw new Error('Vous ne pouvez pas utiliser votre propre code');
+          }
 
-      const commandesPayees = await this.repo.compterCommandesPayees(input.customerId);
-      if (commandesPayees === 0) {
-        remiseParrainage = Math.round(apresCoupon * LOYALTY.FILLEUL_REMISE_PCT);
-        codeParrainageUtilise = code;
-        apresCoupon = Math.max(0, apresCoupon - remiseParrainage);
-      }
+          const commandesPayees = await this.repo.compterCommandesPayees(input.customerId);
+          if (commandesPayees === 0) {
+            remiseParrainage = Math.round(apresCoupon * LOYALTY.FILLEUL_REMISE_PCT);
+            codeParrainageUtilise = code;
+            apresCoupon = Math.max(0, apresCoupon - remiseParrainage);
+          }
+        } catch {
+          /* parrainage ignoré pour l'estimation checkout */
+        }
       }
     }
 

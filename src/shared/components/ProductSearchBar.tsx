@@ -59,7 +59,6 @@ export function ProductSearchBar({
   const [imageLoading, setImageLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [imageError, setImageError] = useState('');
-  const [aiEnhanced, setAiEnhanced] = useState(false);
 
   const trimmed = query.trim();
   const canSearchText = searchMode === 'text' && trimmed.length >= 2;
@@ -81,7 +80,6 @@ export function ProductSearchBar({
 
   const clearImageSearch = useCallback(() => {
     setImageResults([]);
-    setAiEnhanced(false);
     setImagePreview((prev) => {
       if (prev) URL.revokeObjectURL(prev);
       return null;
@@ -155,7 +153,6 @@ export function ProductSearchBar({
       }
 
       setImageResults(data.results ?? []);
-      setAiEnhanced(Boolean(data.poweredByAi));
       setActiveIndex(-1);
     } catch (err) {
       setImageError(err instanceof Error ? err.message : 'Recherche par image impossible');
@@ -189,10 +186,8 @@ export function ProductSearchBar({
         );
         const data = (await res.json()) as {
           suggestions: SuggestionRecherche[];
-          aiEnhanced?: boolean;
         };
         setSuggestions(data.suggestions ?? []);
-        setAiEnhanced(Boolean(data.aiEnhanced));
         setSearchMode('text');
         clearImageSearch();
         setIsOpen(true);

@@ -312,7 +312,7 @@ export function CompteCommandeDetailPanel({ orderId, onClose, onCancelled }: Pro
                       <p className="text-sm text-red-800">
                         Confirmer l&apos;annulation ? Cette action est définitive.
                         {commande.statutPaiement === 'REUSSIE' &&
-                          commande.modePaiement === 'CINETPAY' &&
+                          commande.modePaiement === 'ORANGE_MONEY' &&
                           ' Un remboursement sera traité sous 3 à 5 jours ouvrés.'}
                       </p>
                       <div className="flex gap-2">

@@ -78,13 +78,10 @@ function SidebarContent({
   const onCompteHome = pathname === '/compte';
   const isVip = profil.pointsFidelite >= VIP_POINTS_THRESHOLD;
   const [livreurFetched, setLivreurFetched] = useState<CompteLivreurContext | null>(null);
-  const [livreurLoading, setLivreurLoading] = useState(livreurProp === undefined);
+  const [fetchingLivreur, setFetchingLivreur] = useState(livreurProp === undefined);
 
   useEffect(() => {
-    if (livreurProp !== undefined) {
-      setLivreurLoading(false);
-      return;
-    }
+    if (livreurProp !== undefined) return;
 
     let cancelled = false;
 
@@ -95,7 +92,7 @@ function SidebarContent({
         setLivreurFetched(data.livreur ?? null);
       })
       .finally(() => {
-        if (!cancelled) setLivreurLoading(false);
+        if (!cancelled) setFetchingLivreur(false);
       });
 
     return () => {
@@ -104,13 +101,14 @@ function SidebarContent({
   }, [livreurProp]);
 
   const livreur = livreurProp !== undefined ? livreurProp : livreurFetched;
+  const livreurLoading = livreurProp === undefined && fetchingLivreur;
   const estLivreur = livreurLoading ? false : Boolean(livreur);
   const navGroups = construireGroupesSidebarCompte(estLivreur);
 
   useEffect(() => {
     if (!livreur) return;
     void fetchApi('/api/compte/livreur-context');
-  }, [livreur?.id]);
+  }, [livreur]);
 
   const renderItem = (item: CompteNavItem) => {
     if (item.kind === 'link') {

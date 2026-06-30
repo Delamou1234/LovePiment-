@@ -30,12 +30,11 @@ type AproposRow = {
 const STATUTS_LIVRE = ['LIVREE'] as const;
 
 async function computeChiffresDynamiquesImpl(): Promise<AproposChiffre[]> {
-  const [clients, commandesLivrees, avisApprouves, livraison, produitsActifs] = await Promise.all([
+  const [clients, commandesLivrees, avisApprouves, livraison] = await Promise.all([
     prisma.customer.count(),
     prisma.order.count({ where: { statut: { in: [...STATUTS_LIVRE] } } }),
     prisma.productReview.count({ where: { statut: 'APPROUVE' } }),
     storeSettingsService.getLivraisonConfig(),
-    prisma.product.count({ where: { actif: true } }),
   ]);
 
   return [

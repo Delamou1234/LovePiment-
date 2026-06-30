@@ -57,7 +57,7 @@ export const DEFAULT_APROPOS_VALEURS: AproposValeur[] = [
   {
     icon: 'shield-check',
     title: 'Paiement sécurisé',
-    text: 'Orange Money, MTN MoMo, CinetPay ou espèces à la livraison.',
+    text: 'Orange Money (compte marchand).',
   },
   {
     icon: 'heart',

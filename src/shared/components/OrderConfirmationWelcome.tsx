@@ -9,7 +9,6 @@ type Props = {
   orderId: string;
   clientNom: string;
   suiviToken?: string | null;
-  modePaiement: string;
   statutPaiement: string;
 };
 
@@ -21,7 +20,6 @@ export function OrderConfirmationWelcome({
   orderId,
   clientNom,
   suiviToken,
-  modePaiement,
   statutPaiement,
 }: Props) {
   const [open, setOpen] = useState(false);
@@ -30,7 +28,8 @@ export function OrderConfirmationWelcome({
     const key = `lp-order-welcome-${orderId}`;
     if (sessionStorage.getItem(key)) return;
     sessionStorage.setItem(key, '1');
-    setOpen(true);
+    const timer = window.setTimeout(() => setOpen(true), 0);
+    return () => window.clearTimeout(timer);
   }, [orderId]);
 
   useEffect(() => {
@@ -49,7 +48,6 @@ export function OrderConfirmationWelcome({
 
   if (!open) return null;
 
-  const paiementEnLigne = modePaiement === 'CINETPAY';
   const paye = statutPaiement === 'REUSSIE';
 
   return (
@@ -108,11 +106,9 @@ export function OrderConfirmationWelcome({
         </ul>
 
         <p className="order-welcome-payment">
-          {paiementEnLigne && paye
-            ? 'Paiement confirmé — nous préparons votre colis.'
-            : paiementEnLigne
-              ? 'Paiement en cours de validation — nous vous confirmons sous peu.'
-              : 'Paiement à la livraison — notre livreuse vous contactera avant le passage.'}
+          {paye
+            ? 'Paiement Orange Money confirmé — nous préparons votre colis.'
+            : 'Finalisez ou validez votre paiement Orange Money (code OTP) — nous vous confirmons sous peu.'}
         </p>
 
         <div className="order-welcome-actions">

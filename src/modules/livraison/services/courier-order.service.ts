@@ -109,8 +109,7 @@ function toCourierOrder(order: {
     montantTotal: Number(order.montantTotal),
     modePaiement: order.modePaiement,
     statutPaiement: order.statutPaiement,
-    paiementEspecesEnAttente:
-      order.modePaiement === 'PAIEMENT_LIVRAISON' && order.statutPaiement === 'EN_ATTENTE',
+    paiementEspecesEnAttente: false,
     deliveryRunId: order.deliveryRunId ?? null,
     ordreLivraison: order.ordreLivraison ?? null,
     assignedAt: order.assignedAt?.toISOString() ?? null,
@@ -314,20 +313,8 @@ export class CourierOrderService {
       }),
     ]);
 
-    const especesEncaisseesGn = terminees
-      .filter(
-        (o) =>
-          o.modePaiement === 'PAIEMENT_LIVRAISON' &&
-          (o.livreurPaiementRecu === true || o.statutPaiement === 'REUSSIE'),
-      )
-      .reduce((s, o) => s + Number(o.montantTotal), 0);
-
-    const especesAEncaisserGn = enCours
-      .filter(
-        (o) =>
-          o.modePaiement === 'PAIEMENT_LIVRAISON' && o.statutPaiement === 'EN_ATTENTE',
-      )
-      .reduce((s, o) => s + Number(o.montantTotal), 0);
+    const especesEncaisseesGn = 0;
+    const especesAEncaisserGn = 0;
 
     return {
       livraisonsTerminees: aggTermine._count,
@@ -463,11 +450,7 @@ export class CourierOrderService {
     return prisma.order.findUnique({ where: { id: orderId } });
   }
 
-  async marquerLivree(
-    courierId: string,
-    orderId: string,
-    options?: { paiementRecu?: boolean },
-  ) {
+  async marquerLivree(courierId: string, orderId: string) {
     const order = await prisma.order.findFirst({
       where: { id: orderId, courierId },
     });
@@ -496,44 +479,7 @@ export class CourierOrderService {
       );
     }
 
-    const espècesEnAttente =
-      order.modePaiement === 'PAIEMENT_LIVRAISON' && order.statutPaiement === 'EN_ATTENTE';
-
-    if (espècesEnAttente && options?.paiementRecu === undefined) {
-      throw new Error(
-        'Déclaration obligatoire : indiquez si le client a payé en espèces ou non.',
-      );
-    }
-
-    const montantLabel = Number(order.montantTotal).toLocaleString('fr-FR');
-
-    if (espècesEnAttente && options?.paiementRecu !== undefined) {
-      const recu = options.paiementRecu;
-      await prisma.order.update({
-        where: { id: orderId },
-        data: {
-          livreurPaiementRecu: recu,
-          livreurPaiementDeclareAt: new Date(),
-          statutPaiement: recu ? 'REUSSIE' : 'ECHOUEE',
-        },
-      });
-
-      await trackingRepository.creerEvenement({
-        orderId,
-        type: 'NOTIFICATION',
-        message: recu
-          ? `Livreur : paiement espèces reçu — ${montantLabel} GN.`
-          : `Livreur : client n'a pas payé en espèces (${montantLabel} GN non encaissés).`,
-        notifier: true,
-      });
-    }
-
-    const message =
-      espècesEnAttente && options?.paiementRecu === true
-        ? `Colis livré — ${montantLabel} GN encaissés en espèces.`
-        : espècesEnAttente && options?.paiementRecu === false
-          ? 'Colis livré — paiement espèces non reçu (signalé par le livreur).'
-          : 'Colis remis au client.';
+    const message = 'Colis remis au client.';
 
     await trackingService.mettreAJourStatut(orderId, 'LIVREE', {
       message,

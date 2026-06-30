@@ -121,7 +121,7 @@ export class CustomerOrderService {
       await marketingService.annulerEffetsCommande(tx, order);
 
       const statutPaiement =
-        order.statutPaiement === 'REUSSIE' && order.modePaiement === 'CINETPAY'
+        order.statutPaiement === 'REUSSIE' && order.modePaiement === 'ORANGE_MONEY'
           ? 'REMBOURSEE'
           : order.statutPaiement === 'EN_ATTENTE'
             ? 'ECHOUEE'

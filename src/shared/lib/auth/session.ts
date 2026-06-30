@@ -17,6 +17,7 @@ import type { SessionPayload, SessionRole, SessionUser } from './session-types';
 export type { SessionRole, SessionUser } from './session-types';
 export {
   ADMIN_SESSION_COOKIE,
+  COURIER_SESSION_COOKIE,
   CUSTOMER_SESSION_COOKIE,
   LEGACY_SESSION_COOKIE,
   SESSION_COOKIE,

@@ -2,14 +2,12 @@
 
 import Link from 'next/link';
 import {
-  AlertTriangle,
   CheckCircle2,
   Coins,
   Loader2,
   MapPin,
   Package,
   Phone,
-  Banknote,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { COMPTE_CARD } from '@/modules/livraison/components/livreur-ui';
@@ -23,7 +21,7 @@ type Props = {
   cmd: CourierOrderPublicDto;
   busyId: string | null;
   onPriseEnCharge: (id: string) => void;
-  onLivrer: (id: string, paiementRecu?: boolean) => void;
+  onLivrer: (id: string) => void;
   showOrdre?: boolean;
 };
 
@@ -136,48 +134,7 @@ export function CourierOrderCard({
         </Link>
       </div>
 
-      {cmd.priseEnCharge && cmd.paiementEspecesEnAttente && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 space-y-2">
-          <p className="text-sm font-semibold text-amber-900 flex items-center gap-2">
-            <Banknote className="h-4 w-4" />
-            Paiement espèces à cet arrêt
-          </p>
-          <p className="text-xs text-amber-800 flex items-start gap-1.5">
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-            Déclarez si le client a payé avant de clôturer.
-          </p>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Button
-              type="button"
-              size="sm"
-              className="rounded-full bg-emerald-700 hover:bg-emerald-800"
-              disabled={busyId === cmd.id}
-              onClick={() => onLivrer(cmd.id, true)}
-            >
-              {busyId === cmd.id ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <CheckCircle2 className="h-4 w-4 mr-1" />
-                  Client a payé
-                </>
-              )}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              className="rounded-full border-amber-300 text-amber-900 hover:bg-amber-100"
-              disabled={busyId === cmd.id}
-              onClick={() => onLivrer(cmd.id, false)}
-            >
-              Client n&apos;a pas payé
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {cmd.priseEnCharge && !cmd.paiementEspecesEnAttente && (
+      {cmd.priseEnCharge && (
         <Button
           type="button"
           size="sm"

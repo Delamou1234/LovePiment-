@@ -9,7 +9,7 @@ const ITEMS = [
   {
     icon: ShieldCheck,
     title: 'Paiement sécurisé',
-    desc: 'Mobile Money et paiement à la livraison. Transactions protégées, données strictement confidentielles.',
+    desc: 'Orange Money (compte marchand). Transactions protégées, données strictement confidentielles.',
   },
   {
     icon: Gem,

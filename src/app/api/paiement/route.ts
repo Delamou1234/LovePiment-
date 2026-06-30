@@ -5,8 +5,8 @@ import { paymentService } from '@/modules/paiement/services/payment.service';
 import { getCustomerSessionWithCourierFallback } from '@/shared/lib/auth/customer-from-courier';
 import { customerAuthRepository } from '@/modules/auth/repository/customer-auth.repository';
 import { enforceRateLimit } from '@/shared/lib/security/enforce-rate-limit';
-
-// ─── Schéma de validation commande ───────────────────────────────────────────
+import { validerTelephoneGuinee } from '@/shared/lib/phone-guinea';
+import { MODE_PAIEMENT_BOUTIQUE } from '@/shared/lib/payment-labels';
 
 const creerCommandeSchema = z.object({
   clientNom: z.string().min(2, 'Nom requis (min 2 caractères)').max(100),
@@ -23,10 +23,15 @@ const creerCommandeSchema = z.object({
   notes: z.string().max(500).optional().nullable(),
   clientLatitude: z.number().min(-90).max(90).optional().nullable(),
   clientLongitude: z.number().min(-180).max(180).optional().nullable(),
-  modePaiement: z.enum(['CINETPAY', 'PAIEMENT_LIVRAISON']),
   codeCoupon: z.string().max(40).optional().nullable(),
   pointsUtilises: z.number().int().min(0).optional(),
   codeParrainage: z.string().max(40).optional().nullable(),
+  telephonePaiement: z
+    .string()
+    .max(20)
+    .regex(/^[\d+\s\-()]*$/, 'Numéro de téléphone invalide')
+    .optional()
+    .nullable(),
   items: z
     .array(
       z.object({
@@ -70,44 +75,48 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 1. Créer la commande liée au compte client
+    if (
+      validation.data.telephonePaiement?.trim() &&
+      !validerTelephoneGuinee(validation.data.telephonePaiement)
+    ) {
+      return NextResponse.json(
+        { message: 'Numéro Orange Money invalide. Exemple : 620 00 00 00' },
+        { status: 400 },
+      );
+    }
+
+    const { telephonePaiement, ...commandeData } = validation.data;
+
     const commande = await orderService.creerCommande({
-      ...validation.data,
+      ...commandeData,
+      modePaiement: MODE_PAIEMENT_BOUTIQUE,
       customerId: customer.id,
+      paymentTelephone:
+        telephonePaiement?.trim() &&
+        telephonePaiement.trim() !== commandeData.clientTelephone.trim()
+          ? telephonePaiement.trim()
+          : null,
     });
 
-    // 2. Mettre à jour le profil client (nom / téléphone saisis au checkout)
     await customerAuthRepository.mettreAJourProfil(customer.id, {
       nom: validation.data.clientNom,
       telephone: validation.data.clientTelephone,
     });
 
-    // 3. Si paiement CinetPay → initier le paiement
-    if (validation.data.modePaiement === 'CINETPAY') {
-      try {
-        const { paymentUrl } = await paymentService.initierPaiementCommande(
-          commande.id,
-          customer.email,
-        );
-        return NextResponse.json(
-          { commandeId: commande.id, paymentUrl, redirect: true },
-          { status: 201 },
-        );
-      } catch (err) {
-        await orderService.annulerApresEchecPaiement(commande.id);
-        const message =
-          err instanceof Error
-            ? err.message
-            : 'Paiement en ligne indisponible. Utilisez le paiement à la livraison.';
-        return NextResponse.json({ message }, { status: 503 });
-      }
+    try {
+      const { paymentUrl } = await paymentService.initierPaiementCommande(commande.id);
+      return NextResponse.json(
+        { commandeId: commande.id, paymentUrl, redirect: true },
+        { status: 201 },
+      );
+    } catch (err) {
+      await orderService.annulerApresEchecPaiement(commande.id);
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Paiement Orange Money indisponible. Réessayez dans un instant.';
+      return NextResponse.json({ message }, { status: 503 });
     }
-
-    // 4. Paiement à la livraison → retourner directement la confirmation
-    return NextResponse.json(
-      { commandeId: commande.id, redirect: false },
-      { status: 201 },
-    );
   } catch (error) {
     console.error('[POST /api/paiement]', error);
     return NextResponse.json(

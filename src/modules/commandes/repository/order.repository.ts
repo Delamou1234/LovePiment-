@@ -1,7 +1,9 @@
 import { prisma } from '@/shared/lib/prisma';
 import { marketingService } from '@/modules/marketing/services/marketing.service';
 import { marketingRepository } from '@/modules/marketing/repository/marketing.repository';
+import { codeCouponBienvenueAuto } from '@/modules/marketing/services/welcome-offer.service';
 import { decrementerStockPourArticles, restaurerStockPourArticles } from '@/modules/produits/lib/order-stock';
+import { normaliserTelephoneGuinee } from '@/shared/lib/phone-guinea';
 import type { CommandeAvecItems, CreerCommandeDto, FiltresCommandes } from '../types';
 import type { Pagination } from '@/types';
 import type { OrderStatus, PaymentMethod, PaymentStatus, Prisma } from '@prisma/client';
@@ -31,18 +33,27 @@ export class OrderRepository {
       estPremiereCommande = payees === 0;
     }
 
+    let codeCoupon = dto.codeCoupon?.trim() || null;
+    if (!codeCoupon && estPremiereCommande) {
+      codeCoupon = await codeCouponBienvenueAuto(true);
+    }
+
     const totaux = await marketingService.calculerTotaux({
       sousTotal: sousTotalBrut,
       clientVille: dto.clientVille,
       clientCommune: dto.clientCommune,
       customerId: dto.customerId,
-      codeCoupon: dto.codeCoupon,
+      codeCoupon,
       pointsUtilises: dto.pointsUtilises,
       codeParrainage: dto.codeParrainage,
       estPremiereCommande,
     });
 
-    const crediterPoints = dto.modePaiement === 'PAIEMENT_LIVRAISON';
+    const crediterPoints = false;
+    const telephonePaiement =
+      normaliserTelephoneGuinee(dto.paymentTelephone ?? dto.clientTelephone) ??
+      dto.paymentTelephone?.trim() ??
+      dto.clientTelephone;
 
     return prisma.$transaction(async (tx) => {
       await decrementerStockPourArticles(tx, dto.items);
@@ -52,6 +63,7 @@ export class OrderRepository {
           customerId: dto.customerId,
           clientNom: dto.clientNom,
           clientTelephone: dto.clientTelephone,
+          paymentTelephone: telephonePaiement,
           clientAdresse: dto.clientAdresse,
           clientVille: dto.clientVille,
           clientCommune: dto.clientCommune?.trim() || null,
@@ -166,15 +178,26 @@ export class OrderRepository {
     });
   }
 
+  async mettreAJourTelephonePaiement(id: string, paymentTelephone: string): Promise<void> {
+    await prisma.order.update({
+      where: { id },
+      data: { paymentTelephone },
+    });
+  }
+
   async mettreAJourPaiement(id: string, data: {
     statutPaiement: string;
-    cinetpayTxId?: string;
+    paymentOrderId?: string;
+    paymentPayToken?: string;
+    paymentNotifToken?: string;
   }): Promise<void> {
     await prisma.order.update({
       where: { id },
       data: {
         statutPaiement: data.statutPaiement as PaymentStatus,
-        ...(data.cinetpayTxId && { cinetpayTxId: data.cinetpayTxId }),
+        ...(data.paymentOrderId && { paymentOrderId: data.paymentOrderId }),
+        ...(data.paymentPayToken && { paymentPayToken: data.paymentPayToken }),
+        ...(data.paymentNotifToken && { paymentNotifToken: data.paymentNotifToken }),
         ...(data.statutPaiement === 'REUSSIE' && { statut: 'PAYEE' as OrderStatus }),
       },
     });

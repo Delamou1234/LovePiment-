@@ -14,9 +14,9 @@ import {
   CRENEAUX_LIVRAISON,
   QUARTIERS_PAR_COMMUNE,
 } from '@/shared/lib/communes-conakry';
-import { lienWhatsAppCommande } from '@/shared/lib/shop-whatsapp';
 import { useLivraisonConfig } from '@/shared/hooks/useLivraisonConfig';
 import { CheckoutMarketingPanel } from '@/modules/marketing/components/CheckoutMarketingPanel';
+import { useCustomerSession } from '@/shared/providers/AuthSessionProvider';
 import { GeolocationAddressPrompt } from '@/shared/components/GeolocationAddressPrompt';
 import type { GeolocationAddressSuggestion } from '@/shared/lib/geolocation/reverse-geocode';
 import type { TotauxMarketing } from '@/modules/marketing/types';
@@ -27,12 +27,13 @@ import {
   Loader2, 
   ShoppingBag, 
   MapPin,
-  CheckCircle2,
-  Gift,
-  Banknote,
+  ShieldCheck,
+  Lock,
+  Smartphone,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { getShopPhoneDisplay, getShopTelHref, getShopWhatsAppHref } from '@/shared/lib/shop-contact';
+import { validerTelephoneGuinee } from '@/shared/lib/phone-guinea';
 
 // ─── VALIDATION SCHEMA (ZOD) ─────────────────────────────────────────────────
 
@@ -49,7 +50,7 @@ const checkoutSchema = z.object({
   clientVille: z.string().min(2, 'Ville de livraison requise').max(100),
   creneauLivraison: z.enum(['MATIN', 'APRES_MIDI', 'FLEXIBLE']).default('FLEXIBLE'),
   notes: z.string().max(500).optional(),
-  modePaiement: z.enum(['CINETPAY', 'PAIEMENT_LIVRAISON']),
+  telephonePaiement: z.string().max(20).optional(),
 });
 
 type CheckoutFormValues = z.infer<typeof checkoutSchema>;
@@ -76,17 +77,14 @@ function focusFirstInvalidField(formErrors: FieldErrors<CheckoutFormValues>) {
 }
 
 function messageErreurPaiement(message: string): string {
-  if (message.includes('MINIMUM_REQUIRED_FIELDS')) {
-    return 'Paiement en ligne refusé par CinetPay (informations incomplètes). Choisissez « Paiement à la livraison » ou contactez le support.';
-  }
-  if (message.includes('return_url') || message.includes('notify_url')) {
-    return 'Configuration CinetPay : l’URL du site doit être publique (HTTPS). En développement, utilisez « Paiement à la livraison ».';
+  if (message.includes('return_url') || message.includes('notif_url')) {
+    return 'Configuration Orange Money : l’URL du site doit être publique (HTTPS).';
   }
   if (message.includes('indisponible en local') || message.includes('URL publique')) {
     return message;
   }
-  if (message.includes('non configuré') || message.includes('CINETPAY_API_KEY')) {
-    return 'Paiement Mobile Money non configuré. Choisissez « Paiement à la livraison ».';
+  if (message.includes('non configuré') || message.includes('ORANGE_MONEY')) {
+    return 'Paiement Orange Money non configuré. Contactez la boutique.';
   }
   return message;
 }
@@ -100,15 +98,16 @@ export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
-  const [pointsFidelite, setPointsFidelite] = useState(0);
   const [totauxMarketing, setTotauxMarketing] = useState<TotauxMarketing | null>(null);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [geoDismissed, setGeoDismissed] = useState(false);
+  const [autreNumeroPaiement, setAutreNumeroPaiement] = useState(false);
   const [checkoutContext, setCheckoutContext] = useState<{
     estPremiereCommande: boolean;
-    codeBienvenue: string;
-    remiseBienvenuePct: number;
+    bienvenueActif: boolean;
+    codeBienvenue: string | null;
   } | null>(null);
+  const [checkoutContextReady, setCheckoutContextReady] = useState(false);
   const [deliveryCoords, setDeliveryCoords] = useState<{
     latitude: number;
     longitude: number;
@@ -118,6 +117,7 @@ export default function CheckoutPage() {
     pointsUtilises: 0,
     codeParrainage: null as string | null,
   });
+  const { customer, hydrated: sessionHydrated, loading: sessionLoading } = useCustomerSession();
 
   // Hydration mismatch fix
   useEffect(() => {
@@ -130,57 +130,44 @@ export default function CheckoutPage() {
     setValue,
     watch,
     formState: { errors },
-  } = useForm<CheckoutFormValues>({
+  } = useForm<CheckoutFormValues & { telephonePaiement?: string }>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
       clientVille: livraisonConfig.villeParDefaut,
       clientCommune: COMMUNES_CONAKRY_REFERENCE[0],
       creneauLivraison: 'FLEXIBLE',
-      modePaiement: 'CINETPAY',
     },
   });
 
 
-  // Pré-remplir depuis le compte client en base
+  // Pré-remplir depuis la session client (chargée à la connexion)
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        const user = data?.user;
-        if (!user || user.role !== 'customer') {
-          setProfileLoaded(true);
-          return;
-        }
-        if (user.name) setValue('clientNom', user.name);
-        if (user.telephone) setValue('clientTelephone', user.telephone);
-        if (user.derniereAdresse) setValue('clientAdresse', user.derniereAdresse);
-        if (user.derniereVille) setValue('clientVille', user.derniereVille);
-        setProfileLoaded(true);
-      })
-      .catch(() => setProfileLoaded(true));
+    if (!sessionHydrated || sessionLoading) return;
 
+    if (customer) {
+      if (customer.name) setValue('clientNom', customer.name);
+      if (customer.telephone) setValue('clientTelephone', customer.telephone);
+      if (customer.derniereAdresse) setValue('clientAdresse', customer.derniereAdresse);
+      if (customer.derniereVille) setValue('clientVille', customer.derniereVille);
+    }
+    setProfileLoaded(true);
+  }, [customer, sessionHydrated, sessionLoading, setValue]);
+
+  useEffect(() => {
     fetch('/api/checkout/context')
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (data) {
           setCheckoutContext({
             estPremiereCommande: Boolean(data.estPremiereCommande),
-            codeBienvenue: data.codeBienvenue ?? 'BIENVENUE10',
-            remiseBienvenuePct: data.remiseBienvenuePct ?? 10,
+            bienvenueActif: Boolean(data.bienvenueActif),
+            codeBienvenue: data.codeBienvenue ?? null,
           });
         }
       })
-      .catch(() => {});
-
-    fetch('/api/compte/profil')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.profil?.pointsFidelite != null) {
-          setPointsFidelite(data.profil.pointsFidelite);
-        }
-      })
-      .catch(() => {});
-  }, [setValue]);
+      .catch(() => {})
+      .finally(() => setCheckoutContextReady(true));
+  }, []);
 
   const handleTotauxChange = useCallback((totaux: TotauxMarketing | null) => {
     setTotauxMarketing(totaux);
@@ -198,7 +185,6 @@ export default function CheckoutPage() {
   );
 
   // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form watch pour le checkout
-  const selectedPaymentMethod = watch('modePaiement');
   const selectedVille = watch('clientVille') || livraisonConfig.villeParDefaut;
   const selectedCommune = watch('clientCommune') || '';
   const clientAdresse = watch('clientAdresse');
@@ -215,9 +201,11 @@ export default function CheckoutPage() {
 
   if (!mounted) {
     return (
-      <div className="container-shop py-16 text-center">
-        <div className="skeleton h-6 w-32 mx-auto mb-4"></div>
-        <div className="skeleton h-64 w-full max-w-3xl mx-auto rounded-2xl"></div>
+      <div className="checkout-page">
+        <div className="container-shop py-16 text-center">
+          <div className="skeleton h-6 w-32 mx-auto mb-4"></div>
+          <div className="skeleton h-64 w-full max-w-3xl mx-auto rounded-2xl"></div>
+        </div>
       </div>
     );
   }
@@ -256,6 +244,18 @@ export default function CheckoutPage() {
       return;
     }
 
+    if (autreNumeroPaiement) {
+      const tel = values.telephonePaiement?.trim();
+      if (!tel) {
+        setErrorMsg('Indiquez le numéro Orange Money utilisé pour le paiement.');
+        return;
+      }
+      if (!validerTelephoneGuinee(tel)) {
+        setErrorMsg('Numéro Orange Money invalide. Exemple : 620 00 00 00');
+        return;
+      }
+    }
+
     setLoading(true);
     setErrorMsg('');
 
@@ -277,10 +277,10 @@ export default function CheckoutPage() {
           notes: values.notes || null,
           clientLatitude: deliveryCoords?.latitude ?? null,
           clientLongitude: deliveryCoords?.longitude ?? null,
-          modePaiement: values.modePaiement,
           codeCoupon: marketingRef.current.codeCoupon,
           pointsUtilises: marketingRef.current.pointsUtilises,
           codeParrainage: marketingRef.current.codeParrainage,
+          telephonePaiement: autreNumeroPaiement ? values.telephonePaiement?.trim() || null : null,
           items: items.map((i) => ({
             variantId: i.variantId,
             quantite: i.quantite,
@@ -292,7 +292,7 @@ export default function CheckoutPage() {
       const contentType = response.headers.get('content-type') ?? '';
       const data = contentType.includes('application/json')
         ? await response.json()
-        : { message: 'Erreur serveur. Réessayez ou choisissez le paiement à la livraison.' };
+        : { message: 'Erreur serveur. Réessayez dans un instant.' };
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -308,11 +308,9 @@ export default function CheckoutPage() {
       panier.viderPanier();
 
       // Redirection ou paiement
-      if (values.modePaiement === 'CINETPAY' && data.redirect && data.paymentUrl) {
-        // Redirection vers la passerelle CinetPay
+      if (data.redirect && data.paymentUrl) {
         window.location.href = data.paymentUrl;
       } else {
-        // Redirection directe vers la page de confirmation
         router.push(`/commande/confirmation?id=${data.commandeId}`);
       }
     } catch (err: unknown) {
@@ -329,409 +327,415 @@ export default function CheckoutPage() {
   };
 
   return (
-    <div className="container-shop py-8 animate-fadeIn">
-      {/* ─── BREADCRUMB ────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-1.5 text-xs text-zinc-500 mb-6">
-        <Link href="/" className="hover:text-primary transition font-medium">Accueil</Link>
-        <ChevronRight className="h-3 w-3" />
-        <Link href="/panier" className="hover:text-primary transition font-medium">Mon Panier</Link>
-        <ChevronRight className="h-3 w-3" />
-        <span className="text-zinc-800 font-bold">Tunnel de commande</span>
-      </div>
-
-      <h1 className="text-2xl font-black text-zinc-900 md:text-3xl mb-4">Passer la commande</h1>
-
-      {checkoutContext?.estPremiereCommande && (
-        <div className="mb-6 rounded-2xl border border-primary/25 bg-primary/5 px-4 py-3 flex flex-wrap items-center gap-2 text-sm text-zinc-800">
-          <Gift className="h-5 w-5 text-primary shrink-0" />
-          <span>
-            <strong>Première commande</strong> — code{' '}
-            <span className="font-mono font-bold text-primary">{checkoutContext.codeBienvenue}</span>{' '}
-            (−{checkoutContext.remiseBienvenuePct} %) appliqué automatiquement si éligible.
-          </span>
+    <div className="checkout-page">
+      <div className="container-shop py-8 md:py-10 animate-fadeIn">
+        <div className="flex items-center gap-1.5 text-xs text-zinc-500 mb-5">
+          <Link href="/" className="hover:text-[#9B1B2E] transition font-medium">Accueil</Link>
+          <ChevronRight className="h-3 w-3" />
+          <Link href="/panier" className="hover:text-[#9B1B2E] transition font-medium">Mon panier</Link>
+          <ChevronRight className="h-3 w-3" />
+          <span className="text-zinc-800 font-bold">Commande</span>
         </div>
-      )}
 
-      {items.length > 0 ? (
-        <>
-          {errorMsg && (
-            <div role="alert" className="checkout-error-banner">
-              {errorMsg}
-            </div>
-          )}
-        <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-          
-          {/* ─── COLONNE GAUCHE : ADRESSE & PAIEMENT ────────────────────────── */}
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* 1. Informations Client */}
-            <div className="border border-zinc-100 rounded-2xl p-6 bg-white shadow-sm space-y-4">
-              <h2 className="font-extrabold text-zinc-950 text-lg border-b border-zinc-100 pb-3 flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-primary" /> 1. Adresse de Livraison
-              </h2>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/* Nom */}
-                <div className="space-y-1.5">
-                  <label htmlFor="clientNom" className="text-xs font-black uppercase text-zinc-500 tracking-wider">Nom & Prénom</label>
-                  <input
-                    id="clientNom"
-                    type="text"
-                    placeholder="Ex: Diallo Mamadou"
-                    className="input-shop"
-                    {...register('clientNom')}
-                  />
-                  {errors.clientNom && (
-                    <p className="text-xs font-bold text-red-500">{errors.clientNom.message}</p>
-                  )}
-                </div>
-
-                {/* Téléphone */}
-                <div className="space-y-1.5">
-                  <label htmlFor="clientTelephone" className="text-xs font-black uppercase text-zinc-500 tracking-wider">Téléphone (WhatsApp)</label>
-                  <input
-                    id="clientTelephone"
-                    type="text"
-                    placeholder="Ex: 620000000"
-                    className="input-shop"
-                    {...register('clientTelephone')}
-                  />
-                  {errors.clientTelephone && (
-                    <p className="text-xs font-bold text-red-500">{errors.clientTelephone.message}</p>
-                  )}
-                </div>
-
-                {/* Commune */}
-                <div className="space-y-1.5">
-                  <label htmlFor="clientCommune" className="text-xs font-black uppercase text-zinc-500 tracking-wider">Commune</label>
-                  <select id="clientCommune" className="input-shop" {...register('clientCommune')}>
-                    {COMMUNES_CONAKRY_REFERENCE.map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                  {errors.clientCommune && (
-                    <p className="text-xs font-bold text-red-500">{errors.clientCommune.message}</p>
-                  )}
-                </div>
-
-                {/* Quartier */}
-                <div className="space-y-1.5">
-                  <label htmlFor="clientQuartier" className="text-xs font-black uppercase text-zinc-500 tracking-wider">Quartier</label>
-                  <select id="clientQuartier" className="input-shop" {...register('clientQuartier')}>
-                    <option value="">— Choisir —</option>
-                    {quartiers.map((q) => (
-                      <option key={q} value={q}>
-                        {q}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Adresse */}
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label htmlFor="clientAdresse" className="text-xs font-black uppercase text-zinc-500 tracking-wider">Rue / immeuble</label>
-                  {profileLoaded && !clientAdresse?.trim() && !geoDismissed && (
-                    <GeolocationAddressPrompt
-                      autoStart
-                      showManualTrigger={false}
-                      compact
-                      onAccept={applyCheckoutAddress}
-                      onDismiss={() => setGeoDismissed(true)}
-                      className="mb-2"
-                    />
-                  )}
-                  <input
-                    id="clientAdresse"
-                    type="text"
-                    placeholder="Ex: Camayenne, près de la Mosquée, Immeuble X"
-                    className="input-shop"
-                    {...register('clientAdresse')}
-                  />
-                  {errors.clientAdresse && (
-                    <p className="text-xs font-bold text-red-500">{errors.clientAdresse.message}</p>
-                  )}
-                </div>
-
-                {/* Repère */}
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label htmlFor="clientRepere" className="text-xs font-black uppercase text-zinc-500 tracking-wider">Repère (près de…)</label>
-                  <input
-                    id="clientRepere"
-                    type="text"
-                    placeholder="Ex: près de la mosquée, face au marché…"
-                    className="input-shop"
-                    {...register('clientRepere')}
-                  />
-                </div>
-
-                {/* Créneau */}
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label htmlFor="creneauLivraison" className="text-xs font-black uppercase text-zinc-500 tracking-wider">Créneau de livraison</label>
-                  <select id="creneauLivraison" className="input-shop" {...register('creneauLivraison')}>
-                    {CRENEAUX_LIVRAISON.map((c) => (
-                      <option key={c.value} value={c.value}>
-                        {c.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Instructions */}
-                <div className="space-y-1.5 sm:col-span-2">
-                  <label htmlFor="notes" className="text-xs font-black uppercase text-zinc-500 tracking-wider">Instructions (optionnel)</label>
-                  <textarea
-                    id="notes"
-                    rows={2}
-                    placeholder="Ex: appelez avant d'arriver, 2e étage…"
-                    className="input-shop resize-none"
-                    {...register('notes')}
-                  />
-                </div>
-
-                {/* Ville */}
-                <div className="space-y-1.5">
-                  <label htmlFor="clientVille" className="text-xs font-black uppercase text-zinc-500 tracking-wider">Ville</label>
-                  <input
-                    id="clientVille"
-                    type="text"
-                    placeholder="Conakry"
-                    className="input-shop"
-                    {...register('clientVille')}
-                  />
-                  {errors.clientVille && (
-                    <p className="text-xs font-bold text-red-500">{errors.clientVille.message}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Moyen de Paiement */}
-            <div className="border border-zinc-100 rounded-2xl p-6 bg-white shadow-sm space-y-4">
-              <h2 className="font-extrabold text-zinc-950 text-lg border-b border-zinc-100 pb-3 flex items-center gap-2">
-                <CreditCard className="h-5 w-5 text-primary" /> 2. Mode de Paiement
-              </h2>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {/* Mobile Money CinetPay */}
-                <label 
-                  className={`flex flex-col gap-2 p-4 rounded-xl border-2 cursor-pointer transition ${
-                    selectedPaymentMethod === 'CINETPAY' 
-                      ? 'border-primary bg-primary-50/20' 
-                      : 'border-zinc-200 hover:border-zinc-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-zinc-950 text-sm">Mobile Money (Orange, MTN)</span>
-                    <input
-                      type="radio"
-                      value="CINETPAY"
-                      className="text-primary focus:ring-primary h-4 w-4"
-                      {...register('modePaiement')}
-                    />
-                  </div>
-                  <p className="text-xs text-zinc-500 leading-relaxed">
-                    Réglez en ligne instantanément avec votre compte Orange Money ou MTN Mobile Money via la passerelle sécurisée CinetPay.
-                  </p>
-                </label>
-
-                {/* Paiement livraison */}
-                <label 
-                  className={`flex flex-col gap-2 p-4 rounded-xl border-2 cursor-pointer transition ${
-                    selectedPaymentMethod === 'PAIEMENT_LIVRAISON' 
-                      ? 'border-primary bg-primary-50/20' 
-                      : 'border-zinc-200 hover:border-zinc-300'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-zinc-950 text-sm">Paiement à la livraison</span>
-                    <input
-                      type="radio"
-                      value="PAIEMENT_LIVRAISON"
-                      className="text-primary focus:ring-primary h-4 w-4"
-                      {...register('modePaiement')}
-                    />
-                  </div>
-                  <p className="text-xs text-zinc-500 leading-relaxed">
-                    Payez en espèces (GNF) directement au livreur lors de la réception de votre commande.
-                  </p>
-                </label>
-              </div>
-
-              {selectedPaymentMethod === 'PAIEMENT_LIVRAISON' && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 space-y-1">
-                  <p className="font-bold flex items-center gap-2">
-                    <Banknote className="h-4 w-4" />
-                    Paiement espèces — à prévoir
-                  </p>
-                  <p>
-                    Préparez <strong>{formattedTotal}</strong> en billets pour le livreur. Le montant exact
-                    est confirmé ci-contre avant validation.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <CheckoutMarketingPanel
-              sousTotal={sousTotal}
-              clientVille={selectedVille}
-              clientCommune={selectedCommune}
-              estPremiereCommande={checkoutContext?.estPremiereCommande}
-              codeBienvenue={checkoutContext?.codeBienvenue}
-              pointsDisponibles={pointsFidelite}
-              onTotauxChange={handleTotauxChange}
-              onMarketingChange={handleMarketingChange}
-            />
-
+        <header className="checkout-hero">
+          <h1 className="checkout-hero-title">Finaliser ma commande</h1>
+          <p className="checkout-hero-sub">
+            Livraison discrète à Conakry — paiement sécurisé Orange Money en quelques secondes.
+          </p>
+          <div className="checkout-steps" aria-label="Étapes de commande">
+            <span className="checkout-step is-active">
+              <span className="checkout-step-num">1</span>
+              Adresse de livraison
+            </span>
+            <span className="checkout-step is-active">
+              <span className="checkout-step-num">2</span>
+              Paiement Orange Money
+            </span>
           </div>
+        </header>
 
-          {/* ─── COLONNE DROITE : RÉSUMÉ & CONFIRMATION ────────────────────── */}
-          <div className="space-y-6">
-            
-            {/* Résumé de commande */}
-            <div className="border border-zinc-100 rounded-2xl p-6 bg-zinc-50 space-y-4 shadow-sm">
-              <h3 className="font-extrabold text-zinc-950 text-base border-b border-zinc-200 pb-3 flex items-center gap-2">
-                <ShoppingBag className="h-5 w-5 text-primary" /> Résumé de ma commande
-              </h3>
+        {items.length > 0 ? (
+          <>
+            {errorMsg && (
+              <div role="alert" className="checkout-error-banner">
+                {errorMsg}
+              </div>
+            )}
 
-              {/* Liste articles */}
-              <div className="max-h-60 overflow-y-auto divide-y divide-zinc-200/60 pr-1">
-                {items.map((item) => (
-                  <div key={item.variantId} className="py-3 flex gap-3 items-center text-xs">
-                    <div className="relative h-12 w-9 rounded-lg overflow-hidden shrink-0 border border-zinc-200 bg-zinc-50">
-                      <Image
-                        src={item.image}
-                        alt={item.nomProduit}
-                        fill
-                        className="object-cover"
+            <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="checkout-layout">
+              <div className="checkout-main">
+                <section className="checkout-card">
+                  <div className="checkout-card-head">
+                    <div className="checkout-card-icon">
+                      <MapPin className="h-5 w-5" strokeWidth={1.75} />
+                    </div>
+                    <div>
+                      <h2 className="checkout-card-title">Où livrer votre colis ?</h2>
+                      <p className="checkout-card-desc">Emballage discret — aucune mention sur le colis.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="checkout-field">
+                      <label htmlFor="clientNom">Nom & prénom</label>
+                      <input
+                        id="clientNom"
+                        type="text"
+                        placeholder="Ex : Diallo Mamadou"
+                        className="input-shop"
+                        {...register('clientNom')}
+                      />
+                      {errors.clientNom && (
+                        <p className="text-xs font-bold text-red-500 mt-1">{errors.clientNom.message}</p>
+                      )}
+                    </div>
+
+                    <div className="checkout-field">
+                      <label htmlFor="clientTelephone">Téléphone (WhatsApp)</label>
+                      <input
+                        id="clientTelephone"
+                        type="text"
+                        placeholder="Ex : 620 00 00 00"
+                        className="input-shop"
+                        {...register('clientTelephone')}
+                      />
+                      {errors.clientTelephone && (
+                        <p className="text-xs font-bold text-red-500 mt-1">{errors.clientTelephone.message}</p>
+                      )}
+                    </div>
+
+                    <div className="checkout-field">
+                      <label htmlFor="clientCommune">Commune</label>
+                      <select id="clientCommune" className="input-shop" {...register('clientCommune')}>
+                        {COMMUNES_CONAKRY_REFERENCE.map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                      </select>
+                      {errors.clientCommune && (
+                        <p className="text-xs font-bold text-red-500 mt-1">{errors.clientCommune.message}</p>
+                      )}
+                    </div>
+
+                    <div className="checkout-field">
+                      <label htmlFor="clientQuartier">Quartier</label>
+                      <select id="clientQuartier" className="input-shop" {...register('clientQuartier')}>
+                        <option value="">— Choisir —</option>
+                        {quartiers.map((q) => (
+                          <option key={q} value={q}>
+                            {q}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="checkout-field sm:col-span-2">
+                      <label htmlFor="clientAdresse">Rue / immeuble</label>
+                      {profileLoaded && !clientAdresse?.trim() && !geoDismissed && (
+                        <GeolocationAddressPrompt
+                          autoStart
+                          autoAccept
+                          showManualTrigger={false}
+                          compact
+                          tone="checkout"
+                          onAccept={applyCheckoutAddress}
+                          onDismiss={() => setGeoDismissed(true)}
+                          className="mb-3"
+                        />
+                      )}
+                      <input
+                        id="clientAdresse"
+                        type="text"
+                        placeholder="Ex : Camayenne, près de la mosquée, immeuble X"
+                        className="input-shop"
+                        {...register('clientAdresse')}
+                      />
+                      {errors.clientAdresse && (
+                        <p className="text-xs font-bold text-red-500 mt-1">{errors.clientAdresse.message}</p>
+                      )}
+                    </div>
+
+                    <div className="checkout-field sm:col-span-2">
+                      <label htmlFor="clientRepere">Repère (près de…)</label>
+                      <input
+                        id="clientRepere"
+                        type="text"
+                        placeholder="Ex : face au marché, 2ᵉ étage…"
+                        className="input-shop"
+                        {...register('clientRepere')}
                       />
                     </div>
-                    <div className="flex-grow min-w-0">
-                      <p className="font-extrabold text-zinc-950 line-clamp-1 leading-snug">{item.nomProduit}</p>
-                      <p className="text-[10px] text-zinc-500 font-semibold pt-0.5">
-                        {item.taille ? `T: ${item.taille}` : ''} {item.couleur ? `| C: ${item.couleur}` : ''}
+
+                    <div className="checkout-field sm:col-span-2">
+                      <label htmlFor="creneauLivraison">Créneau de livraison</label>
+                      <select id="creneauLivraison" className="input-shop" {...register('creneauLivraison')}>
+                        {CRENEAUX_LIVRAISON.map((c) => (
+                          <option key={c.value} value={c.value}>
+                            {c.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="checkout-field sm:col-span-2">
+                      <label htmlFor="notes">Instructions (optionnel)</label>
+                      <textarea
+                        id="notes"
+                        rows={2}
+                        placeholder="Ex : appelez avant d'arriver…"
+                        className="input-shop resize-none"
+                        {...register('notes')}
+                      />
+                    </div>
+
+                    <div className="checkout-field">
+                      <label htmlFor="clientVille">Ville</label>
+                      <input
+                        id="clientVille"
+                        type="text"
+                        placeholder="Conakry"
+                        className="input-shop"
+                        {...register('clientVille')}
+                      />
+                      {errors.clientVille && (
+                        <p className="text-xs font-bold text-red-500 mt-1">{errors.clientVille.message}</p>
+                      )}
+                    </div>
+                  </div>
+                </section>
+
+                <section className="checkout-card">
+                  <div className="checkout-card-head">
+                    <div className="checkout-card-icon">
+                      <CreditCard className="h-5 w-5" strokeWidth={1.75} />
+                    </div>
+                    <div>
+                      <h2 className="checkout-card-title">Paiement Orange Money</h2>
+                      <p className="checkout-card-desc">Vous serez redirigé vers la page sécurisée Orange.</p>
+                    </div>
+                  </div>
+
+                  <div className="mb-4 space-y-3">
+                    <label className="flex items-start gap-2.5 cursor-pointer text-sm text-zinc-700">
+                      <input
+                        type="checkbox"
+                        checked={autreNumeroPaiement}
+                        onChange={(e) => {
+                          setAutreNumeroPaiement(e.target.checked);
+                          if (!e.target.checked) setValue('telephonePaiement', '');
+                        }}
+                        className="mt-1 rounded border-zinc-300 text-[#9B1B2E] focus:ring-[#9B1B2E]"
+                      />
+                      <span>
+                        <strong>Payer avec un autre numéro Orange Money</strong>
+                        <span className="block text-xs text-zinc-500 mt-0.5 font-normal">
+                          Votre numéro WhatsApp / livraison reste inchangé. Ce numéro sert uniquement au paiement.
+                        </span>
+                      </span>
+                    </label>
+                        {autreNumeroPaiement && (
+                      <div className="checkout-field pl-7">
+                        <label htmlFor="telephonePaiement">Numéro Orange Money du payeur</label>
+                        <input
+                          id="telephonePaiement"
+                          type="tel"
+                          placeholder="Ex : 620 12 34 56"
+                          className="input-shop"
+                          {...register('telephonePaiement')}
+                        />
+                        {errors.telephonePaiement && (
+                          <p className="text-xs font-bold text-red-500 mt-1">
+                            {errors.telephonePaiement.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="checkout-om-card space-y-3">
+                    <span className="checkout-om-badge">
+                      <Smartphone className="h-3 w-3" />
+                      Orange Money
+                    </span>
+                    <p className="text-sm font-semibold text-zinc-900 leading-relaxed">
+                      Confirmez le paiement avec votre code OTP (USSD) sur votre téléphone.
+                      L&apos;argent est versé directement sur le compte marchand Love Piment&amp;.
+                    </p>
+                    <p className="text-sm font-black text-[#9B1B2E]">
+                      Montant à régler : {formattedTotal}
+                    </p>
+                    <div className="checkout-trust-row">
+                      <span className="checkout-trust-pill">
+                        <Lock className="h-3 w-3 text-[#9B1B2E]" />
+                        Paiement sécurisé
+                      </span>
+                      <span className="checkout-trust-pill">
+                        <ShieldCheck className="h-3 w-3 text-[#9B1B2E]" />
+                        Livraison discrète
+                      </span>
+                    </div>
+                  </div>
+                </section>
+
+                <CheckoutMarketingPanel
+                  sousTotal={sousTotal}
+                  clientVille={selectedVille}
+                  clientCommune={selectedCommune}
+                  estPremiereCommande={checkoutContext?.estPremiereCommande}
+                  contexteCharge={checkoutContextReady}
+                  bienvenueActif={checkoutContext?.bienvenueActif}
+                  codeBienvenue={checkoutContext?.codeBienvenue}
+                  onTotauxChange={handleTotauxChange}
+                  onMarketingChange={handleMarketingChange}
+                />
+              </div>
+
+              <aside className="space-y-4">
+                <div className="checkout-summary checkout-summary--sticky">
+                  <div className="checkout-card-head !mb-4 !pb-3">
+                    <div className="checkout-card-icon">
+                      <ShoppingBag className="h-5 w-5" strokeWidth={1.75} />
+                    </div>
+                    <div>
+                      <h3 className="checkout-card-title">Récapitulatif</h3>
+                      <p className="checkout-card-desc">
+                        {items.length} article{items.length > 1 ? 's' : ''}
                       </p>
                     </div>
-                    <div className="shrink-0 text-right font-extrabold text-zinc-900">
-                      <p>{(item.prix * item.quantite).toLocaleString('fr-FR')} GN</p>
-                      <p className="text-[10px] text-zinc-400 font-semibold">Qté: {item.quantite}</p>
+                  </div>
+
+                  <div className="max-h-52 overflow-y-auto divide-y divide-zinc-100 pr-1 -mx-1 px-1">
+                    {items.map((item) => (
+                      <div key={item.variantId} className="py-3 flex gap-3 items-center">
+                        <div className="relative h-14 w-11 rounded-lg overflow-hidden shrink-0 border border-zinc-100 bg-zinc-50">
+                          <Image
+                            src={item.image}
+                            alt={item.nomProduit}
+                            fill
+                            sizes="44px"
+                            className="object-cover"
+                          />
+                        </div>
+                        <div className="flex-grow min-w-0">
+                          <p className="font-bold text-zinc-900 text-sm line-clamp-2 leading-snug">
+                            {item.nomProduit}
+                          </p>
+                          <p className="text-[11px] text-zinc-500 mt-0.5">
+                            {[item.taille && `T. ${item.taille}`, item.couleur && item.couleur]
+                              .filter(Boolean)
+                              .join(' · ')}{' '}
+                            · Qté {item.quantite}
+                          </p>
+                        </div>
+                        <p className="shrink-0 text-sm font-bold text-zinc-900 tabular-nums">
+                          {(item.prix * item.quantite).toLocaleString('fr-FR')} GN
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t border-zinc-100 space-y-2 text-sm text-zinc-600">
+                    <div className="flex justify-between">
+                      <span>Sous-total</span>
+                      <span className="font-semibold text-zinc-900">{formattedSubtotal}</span>
+                    </div>
+                    {totauxFinaux.remiseCoupon > 0 && (
+                      <div className="flex justify-between text-emerald-600">
+                        <span>Coupon</span>
+                        <span className="font-semibold">−{formaterPrixGN(totauxFinaux.remiseCoupon)}</span>
+                      </div>
+                    )}
+                    {totauxFinaux.remisePoints > 0 && (
+                      <div className="flex justify-between text-emerald-600">
+                        <span>Points fidélité</span>
+                        <span className="font-semibold">−{formaterPrixGN(totauxFinaux.remisePoints)}</span>
+                      </div>
+                    )}
+                    {totauxFinaux.remiseParrainage > 0 && (
+                      <div className="flex justify-between text-emerald-600">
+                        <span>Parrainage</span>
+                        <span className="font-semibold">−{formaterPrixGN(totauxFinaux.remiseParrainage)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span>Livraison ({selectedVille})</span>
+                      <span className={`font-semibold ${totauxFinaux.livraisonGratuite ? 'text-emerald-600' : 'text-zinc-900'}`}>
+                        {formattedShipping}
+                      </span>
+                    </div>
+                    {!totauxFinaux.livraisonGratuite && livraisonConfig.gratuiteActive && (
+                      <p className="text-[11px] text-zinc-400">{libelleLivraisonOfferte(livraisonConfig)}</p>
+                    )}
+                    <div className="flex justify-between items-end pt-3 border-t border-zinc-100">
+                      <span className="font-bold text-zinc-900">Total</span>
+                      <span className="checkout-summary-total">{formattedTotal}</span>
                     </div>
                   </div>
-                ))}
-              </div>
 
-              {/* Totaux */}
-              <div className="border-t border-zinc-200 pt-3 space-y-2 text-xs font-semibold text-zinc-500">
-                <div className="flex justify-between">
-                  <span>Sous-total</span>
-                  <span>{formattedSubtotal}</span>
-                </div>
-                {totauxFinaux.remiseCoupon > 0 && (
-                  <div className="flex justify-between text-emerald-600">
-                    <span>Coupon</span>
-                    <span>−{formaterPrixGN(totauxFinaux.remiseCoupon)}</span>
+                  <div className="mt-5">
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="btn-primary w-full py-6 rounded-full font-bold text-base shadow-lg flex items-center justify-center gap-2"
+                    >
+                      {loading ? (
+                        <>
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          Redirection Orange Money…
+                        </>
+                      ) : (
+                        <>
+                          <Smartphone className="h-5 w-5" />
+                          Payer avec Orange Money
+                        </>
+                      )}
+                    </Button>
                   </div>
-                )}
-                {totauxFinaux.remisePoints > 0 && (
-                  <div className="flex justify-between text-emerald-600">
-                    <span>Points fidélité</span>
-                    <span>−{formaterPrixGN(totauxFinaux.remisePoints)}</span>
-                  </div>
-                )}
-                {totauxFinaux.remiseParrainage > 0 && (
-                  <div className="flex justify-between text-emerald-600">
-                    <span>Parrainage</span>
-                    <span>−{formaterPrixGN(totauxFinaux.remiseParrainage)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between">
-                  <span>Frais de livraison ({selectedVille})</span>
-                  <span className={totauxFinaux.livraisonGratuite ? 'text-emerald-600 font-bold' : ''}>
-                    {formattedShipping}
-                  </span>
                 </div>
-                {!totauxFinaux.livraisonGratuite && livraisonConfig.gratuiteActive && (
-                  <p className="text-[10px] text-zinc-400">
-                    {libelleLivraisonOfferte(livraisonConfig)}
-                  </p>
-                )}
-                
-                <div className="border-t border-zinc-200 pt-3 flex justify-between items-end">
-                  <span className="font-bold text-zinc-950 text-sm">Total final</span>
-                  <span className="price-display">{formattedTotal}</span>
-                </div>
-              </div>
 
-              {/* Bouton de confirmation */}
-              <div className="pt-2">
-                <Button 
-                  type="submit"
-                  disabled={loading}
-                  className="btn-primary w-full py-6 rounded-full font-bold text-base shadow-lg flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-5 w-5 animate-spin" /> Traitement en cours...
-                    </>
-                  ) : selectedPaymentMethod === 'CINETPAY' ? (
-                    <>
-                      💳 Procéder au paiement
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="h-5 w-5" /> Confirmer ma commande
-                    </>
-                  )}
-                </Button>
-              </div>
+                <div className="checkout-help-card flex gap-3 text-xs leading-relaxed text-zinc-600">
+                  <Truck className="h-5 w-5 text-[#9B1B2E] shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-bold text-zinc-800">Besoin d&apos;aide ?</p>
+                    <p className="mt-1">
+                      WhatsApp{' '}
+                      <a
+                        href={getShopWhatsAppHref()}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[#9B1B2E] font-bold hover:underline"
+                      >
+                        ici
+                      </a>{' '}
+                      ou au{' '}
+                      <a href={getShopTelHref()} className="text-[#9B1B2E] font-bold hover:underline">
+                        {getShopPhoneDisplay()}
+                      </a>
+                      .
+                    </p>
+                  </div>
+                </div>
+              </aside>
+            </form>
+          </>
+        ) : (
+          <div className="checkout-empty">
+            <div className="rounded-full bg-[#9B1B2E]/10 p-6 text-[#9B1B2E] mb-5">
+              <ShoppingBag className="h-12 w-12" />
             </div>
-
-            {/* Note d'information */}
-            <div className="border border-zinc-100 rounded-2xl p-4 bg-white shadow-sm flex gap-3 text-xs leading-relaxed text-zinc-500">
-              <Truck className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold text-zinc-800">Besoin d&apos;aide pour finaliser ?</p>
-                <p className="mt-1">
-                  Écrivez-nous sur{' '}
-                  <a
-                    href={getShopWhatsAppHref()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary font-bold hover:underline"
-                  >
-                    WhatsApp
-                  </a>
-                  {' '}ou appelez le{' '}
-                  <a href={getShopTelHref()} className="text-primary font-bold hover:underline">
-                    {getShopPhoneDisplay()}
-                  </a>
-                  .
-                </p>
-              </div>
-            </div>
-
+            <h2 className="text-xl font-bold text-zinc-950 mb-2">Votre panier est vide</h2>
+            <p className="text-sm text-zinc-500 max-w-xs leading-relaxed mb-8">
+              Ajoutez des articles avant de passer commande.
+            </p>
+            <Link href="/produits">
+              <Button className="btn-primary rounded-full px-8 py-5 text-base font-bold shadow-lg">
+                Découvrir la boutique
+              </Button>
+            </Link>
           </div>
-
-        </form>
-        </>
-      ) : (
-        /* PANIER VIDE */
-        <div className="flex flex-col items-center justify-center py-20 text-center border border-dashed border-zinc-100 rounded-3xl bg-zinc-50/50">
-          <div className="rounded-full bg-primary/10 p-6 text-primary mb-6">
-            <ShoppingBag className="h-12 w-12" />
-          </div>
-          <h2 className="text-xl font-bold text-zinc-950 mb-2">Votre panier est vide</h2>
-          <p className="text-sm text-zinc-500 max-w-xs leading-relaxed mb-8">
-            Ajoutez d&apos;abord des articles au panier pour pouvoir valider une commande.
-          </p>
-          <Link href="/produits">
-            <Button className="btn-primary rounded-full px-8 py-5 text-base font-bold shadow-lg">
-              Voir le catalogue
-            </Button>
-          </Link>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

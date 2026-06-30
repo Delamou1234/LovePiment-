@@ -28,18 +28,11 @@ export const FAQ_ITEMS: FaqItem[] = [
       'Les frais dépendent de votre commune. Ils sont affichés clairement avant validation du paiement. La livraison peut être offerte à partir d’un certain montant de commande à Conakry — le seuil est indiqué sur le panier et au checkout.',
   },
   {
-    id: 'paiement-especes',
-    category: 'paiement',
-    question: 'Puis-je payer en espèces à la livraison ?',
-    answer:
-      'Oui. Choisissez « Paiement à la livraison » au moment de commander. Préparez le montant exact indiqué sur votre confirmation. Le livreur vous remettra votre commande après encaissement.',
-  },
-  {
     id: 'mobile-money',
     category: 'paiement',
-    question: 'Quels moyens de paiement en ligne acceptez-vous ?',
+    question: 'Comment payer ma commande ?',
     answer:
-      'Nous acceptons Orange Money et MTN Mobile Money via CinetPay, une passerelle sécurisée. Le paiement en ligne confirme immédiatement votre commande.',
+      'Le paiement se fait uniquement via Orange Money, directement sur le compte marchand Love Piment&. Après validation du panier, vous êtes redirigé vers Orange Money et confirmez avec un code OTP envoyé sur votre téléphone.',
   },
   {
     id: 'suivi',
@@ -60,7 +53,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     category: 'compte',
     question: 'Y a-t-il une offre pour les nouveaux clients ?',
     answer:
-      'Oui ! Utilisez le code BIENVENUE10 lors de votre première commande pour bénéficier de −10 % (sous conditions de montant minimum). Vous gagnez aussi des points fidélité à chaque achat.',
+      'Oui ! Quand l’offre est activée par la boutique, la remise de bienvenue s’applique automatiquement sur votre première commande (montant minimum selon les conditions du coupon). Vous gagnez aussi des points fidélité à chaque achat.',
   },
   {
     id: 'parrainage',

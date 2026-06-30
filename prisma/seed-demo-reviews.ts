@@ -96,7 +96,7 @@ export async function ensureDemoReviews(prisma: PrismaClient) {
           clientAdresse: 'Quartier résidentiel',
           clientVille: avis.ville,
           statut: 'LIVREE',
-          modePaiement: 'PAIEMENT_LIVRAISON',
+          modePaiement: 'ORANGE_MONEY',
           statutPaiement: 'REUSSIE',
           montantTotal: Number(product.prix),
           livreeLe: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),

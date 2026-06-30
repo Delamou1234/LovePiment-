@@ -40,7 +40,7 @@ export function libelleStatutPaiement(statut: string): string {
 }
 
 export function libelleModePaiement(mode: string): string {
-  return mode === 'PAIEMENT_LIVRAISON' ? 'À la livraison' : 'En ligne (CinetPay)';
+  return 'Orange Money';
 }
 
 export function classeBadgeStatutCommande(statut: string): string {

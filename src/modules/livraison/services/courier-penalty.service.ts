@@ -7,22 +7,8 @@ export class CourierPenaltyService {
    * Si une commande espèces est livrée sans déclaration du livreur,
    * le montant est imputé au livreur (une seule fois par commande).
    */
-  async verifierEtAppliquerPenalite(orderId: string) {
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-    if (!order?.courierId) return null;
-
-    const espècesNonDeclare =
-      order.modePaiement === 'PAIEMENT_LIVRAISON' &&
-      order.statutPaiement === 'EN_ATTENTE' &&
-      order.livreurPaiementRecu == null &&
-      order.penaliteLivreurGn == null;
-
-    if (!espècesNonDeclare) return null;
-
-    const montant = Number(order.montantTotal);
-    if (!Number.isFinite(montant) || montant <= 0) return null;
-
-    return this.appliquerPenalite(order.courierId, orderId, montant);
+  async verifierEtAppliquerPenalite(_orderId: string) {
+    return null;
   }
 
   async appliquerPenalite(courierId: string, orderId: string, montantGn: number) {

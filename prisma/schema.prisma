@@ -18,8 +18,7 @@ enum OrderStatus {
 }
 
 enum PaymentMethod {
-  CINETPAY
-  PAIEMENT_LIVRAISON
+  ORANGE_MONEY
 }
 
 enum PaymentStatus {
@@ -243,8 +242,12 @@ model Order {
   livreurPriseEnChargeAck  Boolean?  @map("livreur_prise_en_charge_ack")
   penaliteLivreurGn        Decimal?  @db.Decimal(10, 0) @map("penalite_livreur_gn")
   primeLivreurGn           Decimal?  @db.Decimal(10, 0) @map("prime_livreur_gn")
-  // Référence CinetPay (si applicable)
-  cinetpayTxId    String?       @unique @map("cinetpay_tx_id")
+  // Référence paiement en ligne Orange Money (si applicable)
+  paymentOrderId    String?     @unique @map("payment_order_id")
+  paymentPayToken   String?     @map("payment_pay_token")
+  paymentNotifToken String?     @map("payment_notif_token")
+  /** Numéro Orange Money utilisé pour le paiement (peut différer du téléphone livraison/WhatsApp). */
+  paymentTelephone  String?     @map("payment_telephone")
   // Notes internes
   notes           String?
   notesAdmin      String?       @map("notes_admin")
@@ -256,6 +259,7 @@ model Order {
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
   items           OrderItem[]
+  paymentTraces   PaymentTrace[]
   trackingEvents  OrderTrackingEvent[]
   avis            ProductReview[]
 
@@ -269,6 +273,25 @@ model Order {
   @@index([clientNom])
   @@index([clientTelephone])
   @@map("orders")
+}
+
+// ─── TRACES PAIEMENT ORANGE MONEY ────────────────────────────────────────────
+
+model PaymentTrace {
+  id                String   @id @default(cuid())
+  orderId           String   @map("order_id")
+  order             Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  action            String
+  telephoneContact  String?  @map("telephone_contact")
+  telephonePaiement String   @map("telephone_paiement")
+  paymentOrderId    String?  @map("payment_order_id")
+  statut            String?
+  details           Json?
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([orderId])
+  @@index([createdAt])
+  @@map("payment_traces")
 }
 
 // ─── TOURNÉE DE LIVRAISON (plusieurs commandes, un livreur) ─────────────────

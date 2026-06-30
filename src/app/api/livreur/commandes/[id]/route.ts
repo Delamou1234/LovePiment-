@@ -5,9 +5,7 @@ import { getCourierSession } from '@/shared/lib/auth/session';
 
 type Params = Promise<{ id: string }>;
 
-const livrerSchema = z.object({
-  paiementRecu: z.boolean().optional(),
-});
+const livrerSchema = z.object({});
 
 export async function GET(_request: NextRequest, { params }: { params: Params }) {
   const session = await getCourierSession();
@@ -38,9 +36,7 @@ export async function POST(request: NextRequest, { params }: { params: Params })
   }
 
   try {
-    const order = await courierOrderService.marquerLivree(session.id, id, {
-      paiementRecu: parsed.data.paiementRecu,
-    });
+    const order = await courierOrderService.marquerLivree(session.id, id);
     if (!order) {
       return NextResponse.json(
         { message: 'Commande introuvable ou non assignée à votre compte' },

@@ -2,7 +2,7 @@
 
 import { useRunAfterMount } from '@/shared/hooks/useRunAfterMount';
 import { useCallback, useState } from 'react';
-import { Loader2, Route } from 'lucide-react';
+import { Route } from 'lucide-react';
 import { ADMIN_CARD, ADMIN_CARD_PAD } from '@/modules/admin/components/admin-ui';
 
 type Tournee = {

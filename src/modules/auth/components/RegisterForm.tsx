@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Heart, Loader2, Lock, Mail, Phone, User, UserPlus, Users } from 'lucide-react';
 import { getSafeRedirect } from '@/shared/lib/auth-redirect';
+import { seedAuthSessionAfterLogin } from '@/shared/lib/auth/auth-session-user';
 import { PARRAINAGE_SESSION_KEY } from '@/modules/marketing/lib/referral-code';
 import { useFeatureFlags } from '@/shared/hooks/useFeatureFlags';
 import { AuthField } from './AuthField';
@@ -99,6 +100,7 @@ export function RegisterForm({
         setErrorMsg(data.message ?? 'Inscription impossible.');
         return;
       }
+      if (data.user) seedAuthSessionAfterLogin(data.user);
       const target = data.redirect ?? safeRedirect;
       window.location.assign(target);
     } catch {

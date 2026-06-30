@@ -24,6 +24,9 @@
     "db:migrate": "prisma migrate deploy && npm run db:ensure-admin",
     "db:health": "npx tsx scripts/db-health.ts",
     "db:check-courier": "npx tsx scripts/db-check-courier.ts",
+    "icons:pwa": "node scripts/generate-pwa-icons.mjs",
+    "verify:pwa": "node scripts/verify-pwa.mjs",
+    "verify:orange-money": "node scripts/verify-orange-money.mjs",
     "postinstall": "prisma generate"
   },
   "dependencies": {

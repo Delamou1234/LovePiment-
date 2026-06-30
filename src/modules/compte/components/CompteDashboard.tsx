@@ -45,6 +45,7 @@ type Props = {
 const SHORTCUTS = [
   { label: 'Mes adresses', icon: MapPin, action: 'adresses' as const },
   { label: 'Messagerie', icon: MessageSquare, href: '/compte/messages' },
+  { label: 'Mes avis', icon: Star, action: 'avis' as const },
   { label: 'Mes offres', icon: Tag, action: 'fidelite' as const },
   { label: 'Mon profil', icon: CreditCard, action: 'profil' as const },
 ];
@@ -111,10 +112,11 @@ export function CompteDashboard({
   const recentOrders = commandes.slice(0, 4);
   const prenom = prenomClient(profil.nom);
 
-  const shortcutAction = (action: 'adresses' | 'fidelite' | 'profil') => {
+  const shortcutAction = (action: 'adresses' | 'fidelite' | 'profil' | 'avis') => {
     if (action === 'adresses') onVoirAdresses();
     if (action === 'fidelite') onVoirFidelite();
     if (action === 'profil') onVoirProfil();
+    if (action === 'avis') onVoirAvis();
   };
 
   return (
@@ -346,7 +348,7 @@ export function CompteDashboard({
       <section className="compte-dash-trust">
         {[
           { icon: Truck, title: 'Livraison discrète', desc: 'Emballage neutre, sans indication.' },
-          { icon: Shield, title: 'Paiement sécurisé', desc: 'Mobile Money et espèces à la livraison.' },
+          { icon: Shield, title: 'Paiement sécurisé', desc: 'Orange Money (compte marchand).' },
           { icon: Star, title: 'Qualité garantie', desc: 'Produits sélectionnés avec soin.' },
           { icon: Headphones, title: 'Support réactif', desc: 'Une équipe à votre écoute.' },
         ].map(({ icon: Icon, title, desc }) => (

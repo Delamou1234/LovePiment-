@@ -24,7 +24,7 @@ export async function formaterInfosBoutiquePourPrompt(): Promise<string> {
       ? `- Livraison gratuite ${livraison.villeParDefaut} à partir de ${livraison.seuilGratuit.toLocaleString('fr-FR')} GN de commande`
       : '- Pas de livraison gratuite configurée actuellement',
     livraison.delaiLabel ? `- Délai indicatif : ${livraison.delaiLabel}` : null,
-    '- Paiement : Mobile Money (Orange, MTN), CinetPay, ou paiement à la livraison',
+    '- Paiement : Orange Money uniquement (compte marchand)',
     '- Ne jamais inventer un produit, un prix ou un stock : utiliser uniquement le catalogue ci-dessous',
     '- Si rupture de stock : proposer une alternative du catalogue ou inviter à WhatsApp',
   ]

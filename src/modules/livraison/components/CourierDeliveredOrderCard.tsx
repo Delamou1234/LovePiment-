@@ -118,18 +118,6 @@ export function CourierDeliveredOrderCard({ livraison }: { livraison: CourierHis
                 +{livraison.primeLivreurGn.toLocaleString('fr-FR')} GN
               </span>
             )}
-            {livraison.modePaiement === 'PAIEMENT_LIVRAISON' &&
-              livraison.livreurPaiementRecu != null && (
-                <span
-                  className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-                    livraison.livreurPaiementRecu
-                      ? 'bg-emerald-50 text-emerald-800'
-                      : 'bg-amber-50 text-amber-800'
-                  }`}
-                >
-                  {livraison.livreurPaiementRecu ? 'Espèces reçues' : 'Espèces non reçues'}
-                </span>
-              )}
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin text-olive" />
             ) : open ? (
@@ -179,7 +167,7 @@ export function CourierDeliveredOrderCard({ livraison }: { livraison: CourierHis
                   : 'En attente'}
             </span>
             <span className="rounded-full bg-white border border-beige-border px-2.5 py-1 font-semibold text-zinc-700">
-              {detail.modePaiement === 'PAIEMENT_LIVRAISON' ? 'À la livraison' : 'En ligne'}
+              Orange Money
             </span>
             <span className="rounded-full bg-emerald-50 border border-emerald-200 px-2.5 py-1 font-semibold text-emerald-800">
               <Banknote className="inline h-3 w-3 mr-1" />
